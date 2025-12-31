@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:fm_sons/view/auth/auth_screen.dart';
 import 'package:fm_sons/view/dashboard/dashboard_screen.dart';
 import 'package:fm_sons/view/splash/splash_screen.dart';
-import 'package:fm_sons/view/invoice/invoice_items_section.dart';
+// import 'package:fm_sons/view/invoice/invoice_items_section.dart';
+import 'package:fm_sons/view/invoice/create_invoice_screen.dart';
+import 'package:fm_sons/view/invoice/controller/create_invoice_controller.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => InvoiceController(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -28,7 +36,8 @@ class MyApp extends StatelessWidget {
         '/': (context) => SplashScreen(),
         '/auth': (context) => const AuthScreen(),
         '/home': (context) => const DashboardScreen(),
-        '/invoice': (context) => const InvoiceItemsSection(),
+        '/invoice': (context) => const CreateInvoiceScreen(),
+        // '/invoice': (context) => const InvoiceItemsSection(),
       },
     );
   }

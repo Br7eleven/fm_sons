@@ -19,6 +19,16 @@ class InvoiceItem {
 class InvoiceController extends ChangeNotifier {
   final List<InvoiceItem> _items = [];
 
+  final String invoiceNumber = 'INV-0001';
+  DateTime _invoiceDate = DateTime.now();
+
+  DateTime get invoiceDate => _invoiceDate;
+
+  void updateInvoiceDate(DateTime date) {
+    _invoiceDate = date;
+    notifyListeners();
+  }
+
   List<InvoiceItem> get items => _items;
 
   void addItem(InvoiceItem item) {
