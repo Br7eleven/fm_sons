@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
+import 'package:fm_sons/view/masters/unit/unit_controller.dart';
+import 'package:fm_sons/view/masters/unit/unit_model.dart';
 import 'package:provider/provider.dart';
-
+import '.././masters/unit/unit_form_screen.dart';
 import 'controller/create_invoice_controller.dart';
 
 class AddInvoiceItemScreen extends StatefulWidget {
@@ -14,7 +16,8 @@ class AddInvoiceItemScreen extends StatefulWidget {
 class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
   // TEMP: mocked product & unit (until masters exist)
   final String _selectedProduct = 'Portland Cement (Grade 43)';
-  String _selectedUnit = 'Bag';
+
+  Unit? _selectedUnit;
 
   final _qtyController = TextEditingController(text: '1');
   final _rateController = TextEditingController();
@@ -29,6 +32,9 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<InvoiceController>();
+
+    final unitController = context.watch<UnitController>();
+    final units = unitController.units;
 
     final qty = int.tryParse(_qtyController.text) ?? 0;
     final rate = double.tryParse(_rateController.text) ?? 0;
@@ -79,16 +85,28 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
                   /// Unit of Measure
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      Text(
+                    children: [
+                      const Text(
                         'Unit of Measure',
                         style: TextStyle(fontSize: 13, color: Colors.grey),
                       ),
-                      Text(
-                        '+ Custom',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF1E5EFF),
+                      InkWell(
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const UnitFormScreen(),
+                            ),
+                          );
+                          // No setState needed — Provider will auto-update
+                        },
+                        child: const Text(
+                          '+ Custom',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Color(0xFF1E5EFF),
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ],
@@ -97,17 +115,15 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
 
                   Wrap(
                     spacing: 8,
-                    children: ['Bag', 'Kg', 'Meter', 'Labor-Hour']
-                        .map(
-                          (unit) => ChoiceChip(
-                            label: Text(unit),
-                            selected: _selectedUnit == unit,
-                            onSelected: (_) {
-                              setState(() => _selectedUnit = unit);
-                            },
-                          ),
-                        )
-                        .toList(),
+                    children: units.map((unit) {
+                      return ChoiceChip(
+                        label: Text(unit.name),
+                        selected: _selectedUnit?.id == unit.id,
+                        onSelected: (_) {
+                          setState(() => _selectedUnit = unit);
+                        },
+                      );
+                    }).toList(),
                   ),
 
                   const SizedBox(height: 24),
@@ -192,10 +208,12 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
                   ),
                 ),
                 onPressed: () {
+                  if (_selectedUnit == null) return;
+
                   controller.addItem(
                     InvoiceItem(
                       name: _selectedProduct,
-                      unit: _selectedUnit,
+                      unit: _selectedUnit!.name,
                       quantity: qty,
                       rate: rate,
                     ),

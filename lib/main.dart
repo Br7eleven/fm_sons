@@ -3,15 +3,20 @@ import 'package:provider/provider.dart';
 import 'package:fm_sons/view/auth/auth_screen.dart';
 import 'package:fm_sons/view/dashboard/dashboard_screen.dart';
 import 'package:fm_sons/view/splash/splash_screen.dart';
-// import 'package:fm_sons/view/invoice/invoice_items_section.dart';
+import 'package:fm_sons/view/masters/unit/unit_controller.dart';
 import 'package:fm_sons/view/invoice/create_invoice_screen.dart';
 import 'package:fm_sons/view/invoice/controller/create_invoice_controller.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => InvoiceController(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => InvoiceController()),
+        ChangeNotifierProvider(
+          create: (_) => UnitController()..seedDefaultUnits(),
+        ),
+      ],
       child: const MyApp(),
     ),
   );
