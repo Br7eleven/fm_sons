@@ -59,56 +59,64 @@ class _UnitTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = context.read<UnitController>();
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Row(
-        children: [
-          /// Unit Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  unit.name,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
+    return GestureDetector(
+      onLongPress: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => UnitFormScreen(unit: unit)),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            /// Unit Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    unit.name,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Symbol: ${unit.symbol} • '
-                  '${unit.allowDecimal ? 'Decimals allowed' : 'No decimals'}',
-                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    'Symbol: ${unit.symbol} • '
+                    '${unit.allowDecimal ? 'Decimals allowed' : 'No decimals'}',
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  ),
+                ],
+              ),
             ),
-          ),
 
-          /// Edit
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => UnitFormScreen(unit: unit)),
-              );
-            },
-          ),
+            /// Edit (still works on tap)
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => UnitFormScreen(unit: unit)),
+                );
+              },
+            ),
 
-          /// Delete
-          IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.red),
-            onPressed: () {
-              controller.removeUnit(unit.id);
-            },
-          ),
-        ],
+            /// Delete
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.red),
+              onPressed: () {
+                controller.removeUnit(unit.id);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

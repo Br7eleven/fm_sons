@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
+import 'package:fm_sons/view/masters/product/product_selector_bottom_sheet.dart';
+import 'package:fm_sons/view/masters/product/product_model.dart';
 import 'package:fm_sons/view/masters/unit/unit_controller.dart';
 import 'package:fm_sons/view/masters/unit/unit_model.dart';
 import 'package:provider/provider.dart';
@@ -15,7 +17,8 @@ class AddInvoiceItemScreen extends StatefulWidget {
 
 class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
   // TEMP: mocked product & unit (until masters exist)
-  final String _selectedProduct = 'Portland Cement (Grade 43)';
+  // final String _selectedProduct = 'Portland Cement (Grade 43)';
+  Product? _selectedProduct;
 
   Unit? _selectedUnit;
 
@@ -78,50 +81,80 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
                     style: TextStyle(fontSize: 13, color: Colors.grey),
                   ),
                   const SizedBox(height: 6),
-                  _selectorField(_selectedProduct),
+                  // _selectorField(_selectedProduct),
+                  _selectorField(
+                    _selectedProduct?.name ?? 'Select Product',
+                    onTap: () async {
+                      final product = await showModalBottomSheet<Product>(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: FMSons.bgWhite,
+                        builder: (_) => const ProductSelectorBottomSheet(),
+                      );
+
+                      if (product != null) {
+                        setState(() {
+                          _selectedProduct = product;
+                          _selectedUnit = product.unit;
+                          _rateController.text = product.defaultRate
+                              .toStringAsFixed(2);
+                        });
+                      }
+                    },
+                  ),
 
                   const SizedBox(height: 20),
 
                   /// Unit of Measure
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text(
-                        'Unit of Measure',
-                        style: TextStyle(fontSize: 13, color: Colors.grey),
-                      ),
-                      InkWell(
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const UnitFormScreen(),
-                            ),
-                          );
-                          // No setState needed — Provider will auto-update
-                        },
-                        child: const Text(
-                          '+ Custom',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF1E5EFF),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  // Row(
+                  //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //   children: [
+                  //     const Text(
+                  //       'Unit of Measure',
+                  //       style: TextStyle(fontSize: 13, color: Colors.grey),
+                  //     ),
+                  //     InkWell(
+                  //       onTap: () async {
+                  //         await Navigator.push(
+                  //           context,
+                  //           MaterialPageRoute(
+                  //             builder: (_) => const UnitFormScreen(),
+                  //           ),
+                  //         );
+                  //         // No setState needed — Provider will auto-update
+                  //       },
+                  //       child: const Text(
+                  //         '+ Custom',
+                  //         style: TextStyle(
+                  //           fontSize: 13,
+                  //           color: Color(0xFF1E5EFF),
+                  //           fontWeight: FontWeight.w500,
+                  //         ),
+                  //       ),
+                  //     ),
+                  //   ],
+                  // ),
                   const SizedBox(height: 10),
 
                   Wrap(
-                    spacing: 8,
+                    spacing: 4,
                     children: units.map((unit) {
-                      return ChoiceChip(
-                        label: Text(unit.name),
-                        selected: _selectedUnit?.id == unit.id,
-                        onSelected: (_) {
-                          setState(() => _selectedUnit = unit);
+                      return GestureDetector(
+                        onLongPress: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => UnitFormScreen(unit: unit),
+                            ),
+                          );
                         },
+                        child: ChoiceChip(
+                          label: Text(unit.name),
+                          selected: _selectedUnit?.id == unit.id,
+                          onSelected: (_) {
+                            setState(() => _selectedUnit = unit);
+                          },
+                        ),
                       );
                     }).toList(),
                   ),
@@ -169,7 +202,9 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          '$qty $_selectedUnit × \$${rate.toStringAsFixed(2)}',
+                          _selectedProduct == null
+                              ? '-'
+                              : '$qty ${_selectedProduct!.unit.name} × \$${rate.toStringAsFixed(2)}',
                           style: const TextStyle(fontSize: 14),
                         ),
                         const SizedBox(height: 8),
@@ -208,12 +243,12 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
                   ),
                 ),
                 onPressed: () {
-                  if (_selectedUnit == null) return;
+                  if (_selectedProduct == null) return;
 
                   controller.addItem(
                     InvoiceItem(
-                      name: _selectedProduct,
-                      unit: _selectedUnit!.name,
+                      name: _selectedProduct!.name,
+                      unit: _selectedProduct!.unit.id,
                       quantity: qty,
                       rate: rate,
                     ),
@@ -230,19 +265,22 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
 
   // --- small helpers (UI only) ---
 
-  Widget _selectorField(String value) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
-        color: Colors.white,
-      ),
-      child: Row(
-        children: [
-          Expanded(child: Text(value)),
-          Icon(Icons.expand_more, color: Colors.grey.shade600),
-        ],
+  Widget _selectorField(String value, {required VoidCallback onTap}) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade300),
+          color: Colors.white,
+        ),
+        child: Row(
+          children: [
+            Expanded(child: Text(value)),
+            Icon(Icons.expand_more, color: Colors.grey.shade600),
+          ],
+        ),
       ),
     );
   }

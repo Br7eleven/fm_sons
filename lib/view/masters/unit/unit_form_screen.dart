@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:provider/provider.dart';
 
 import 'unit_controller.dart';
 import 'unit_model.dart';
 
 class UnitFormScreen extends StatefulWidget {
-  final Unit? unit; // null = add, non-null = edit
+  final Unit? unit;
 
   const UnitFormScreen({super.key, this.unit});
 
@@ -27,22 +28,12 @@ class _UnitFormScreenState extends State<UnitFormScreen> {
   @override
   void initState() {
     super.initState();
-
     _nameController = TextEditingController(text: widget.unit?.name ?? '');
     _symbolController = TextEditingController(text: widget.unit?.symbol ?? '');
     _descriptionController = TextEditingController(
       text: widget.unit?.description ?? '',
     );
-
     _allowDecimal = widget.unit?.allowDecimal ?? false;
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _symbolController.dispose();
-    _descriptionController.dispose();
-    super.dispose();
   }
 
   @override
@@ -51,129 +42,154 @@ class _UnitFormScreenState extends State<UnitFormScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         title: Text(
           isEdit ? 'Edit Unit' : 'Add Unit',
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          style: TextStyle(fontWeight: FontWeight.w600),
         ),
-        centerTitle: true,
+        actions: [
+          // TextButton(
+          //   onPressed: () => _save(controller),
+          //   child: const Text(
+          //     'Save',
+          //     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          //   ),
+          // ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _formKey,
-          child: Column(
+          child: ListView(
             children: [
-              /// Unit Name
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Unit Name',
-                  hintText: 'e.g. Bag, Kg, RFT',
+              _card(
+                title: 'Unit Name',
+                child: TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    hintText: 'e.g. Bag, Kg, RFT',
+                    border: InputBorder.none,
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Unit name is required';
-                  }
-                  return null;
-                },
               ),
 
               const SizedBox(height: 16),
 
-              /// Symbol
-              TextFormField(
-                controller: _symbolController,
-                decoration: const InputDecoration(
-                  labelText: 'Symbol',
-                  hintText: 'e.g. bag, kg, rft',
+              _card(
+                title: 'Symbol',
+                child: TextFormField(
+                  controller: _symbolController,
+                  decoration: const InputDecoration(
+                    hintText: 'e.g. bag, kg, rft',
+                    border: InputBorder.none,
+                  ),
+                  validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                 ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Symbol is required';
-                  }
-                  return null;
-                },
               ),
 
               const SizedBox(height: 16),
 
-              /// Allow Decimal
-              SwitchListTile(
-                title: const Text('Allow Decimal Quantity'),
-                subtitle: const Text(
-                  'Enable for units like Kg, RFT, SqFt, Cum',
+              _card(
+                title: 'Quantity Rules',
+                child: SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Allow Decimal Quantity'),
+                  subtitle: const Text('Enable for Kg, RFT, SqFt, Cum'),
+                  value: _allowDecimal,
+                  onChanged: (v) => setState(() => _allowDecimal = v),
                 ),
-                value: _allowDecimal,
-                onChanged: (value) {
-                  setState(() => _allowDecimal = value);
-                },
               ),
 
               const SizedBox(height: 16),
 
-              /// Description (optional)
-              TextFormField(
-                controller: _descriptionController,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'Description (optional)',
-                  hintText: 'Any clarification or govt note',
-                ),
-              ),
-
-              const Spacer(),
-
-              /// Save Button
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (!_formKey.currentState!.validate()) return;
-
-                    final unit = Unit(
-                      id: isEdit
-                          ? widget.unit!.id
-                          : DateTime.now().millisecondsSinceEpoch.toString(),
-                      name: _nameController.text.trim(),
-                      symbol: _symbolController.text.trim(),
-                      allowDecimal: _allowDecimal,
-                      description: _descriptionController.text.trim().isEmpty
-                          ? null
-                          : _descriptionController.text.trim(),
-                    );
-
-                    try {
-                      if (isEdit) {
-                        controller.updateUnit(unit);
-                      } else {
-                        controller.addUnit(unit);
-                      }
-
-                      Navigator.pop(context);
-                    } catch (e) {
-                      _showError(context, e.toString());
-                    }
-                  },
-                  child: Text(
-                    isEdit ? 'Update Unit' : 'Save Unit',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+              _card(
+                title: 'Description',
+                child: TextFormField(
+                  controller: _descriptionController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    hintText: 'Govt notes or clarification (optional)',
+                    border: InputBorder.none,
                   ),
                 ),
               ),
+
+              const SizedBox(height: 80),
             ],
+          ),
+        ),
+      ),
+
+      /// Bottom Button (same style as Add to Invoice)
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16),
+        child: SizedBox(
+          height: 56,
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1E5EFF),
+              foregroundColor: FMSons.bgWhite,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            icon: const Icon(Icons.add),
+            label: Text(
+              isEdit ? 'Update Unit' : 'Save Unit',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            onPressed: () => _save(controller),
           ),
         ),
       ),
     );
   }
 
-  void _showError(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.red),
+  Widget _card({required String title, required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 8),
+          child,
+        ],
+      ),
     );
+  }
+
+  void _save(UnitController controller) {
+    if (!_formKey.currentState!.validate()) return;
+
+    final unit = Unit(
+      id: isEdit
+          ? widget.unit!.id
+          : DateTime.now().millisecondsSinceEpoch.toString(),
+      name: _nameController.text.trim(),
+      symbol: _symbolController.text.trim(),
+      allowDecimal: _allowDecimal,
+      description: _descriptionController.text.trim().isEmpty
+          ? null
+          : _descriptionController.text.trim(),
+    );
+
+    isEdit ? controller.updateUnit(unit) : controller.addUnit(unit);
+    Navigator.pop(context);
   }
 }

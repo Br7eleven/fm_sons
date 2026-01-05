@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../masters/unit/unit_controller.dart';
 
 import '../controller/create_invoice_controller.dart';
 
@@ -12,6 +13,9 @@ class BillableItemTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = context.watch<InvoiceController>();
     final item = controller.items[index];
+
+    final unitController = context.read<UnitController>();
+    final unit = unitController.getUnitById(item.unit);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -60,11 +64,16 @@ class BillableItemTile extends StatelessWidget {
           /// Measurement row (govt style)
           Row(
             children: [
-              _InfoChip(label: 'Qty', value: '${item.quantity} ${item.unit}'),
+              _InfoChip(
+                label: 'Qty',
+                value: '${item.quantity} ${unit?.name ?? ''}',
+              ),
+
               const SizedBox(width: 12),
               _InfoChip(
                 label: 'Rate',
-                value: '\$${item.rate.toStringAsFixed(2)} / ${item.unit}',
+                value:
+                    '\$${item.rate.toStringAsFixed(2)} / ${unit?.name ?? ''}',
               ),
             ],
           ),
@@ -73,7 +82,7 @@ class BillableItemTile extends StatelessWidget {
 
           /// Calculation hint (optional but powerful)
           Text(
-            '${item.quantity} ${item.unit} × \$${item.rate.toStringAsFixed(2)}',
+            '${item.quantity} ${unit?.name ?? ''} × \$${item.rate.toStringAsFixed(2)}',
             style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
           ),
 

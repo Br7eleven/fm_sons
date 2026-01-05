@@ -6,6 +6,7 @@ import 'package:fm_sons/view/splash/splash_screen.dart';
 import 'package:fm_sons/view/masters/unit/unit_controller.dart';
 import 'package:fm_sons/view/invoice/create_invoice_screen.dart';
 import 'package:fm_sons/view/invoice/controller/create_invoice_controller.dart';
+import 'view/masters/product/product_controller.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +16,10 @@ void main() {
         ChangeNotifierProvider(create: (_) => InvoiceController()),
         ChangeNotifierProvider(
           create: (_) => UnitController()..seedDefaultUnits(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) =>
+              ProductController(unitController: context.read<UnitController>()),
         ),
       ],
       child: const MyApp(),
