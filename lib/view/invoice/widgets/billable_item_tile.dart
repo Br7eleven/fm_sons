@@ -73,7 +73,7 @@ class BillableItemTile extends StatelessWidget {
               _InfoChip(
                 label: 'Rate',
                 value:
-                    '\$${item.rate.toStringAsFixed(2)} / ${unit?.name ?? ''}',
+                    'PKR ${item.rate.toStringAsFixed(2)} / ${unit?.name ?? ''}',
               ),
             ],
           ),
@@ -82,7 +82,7 @@ class BillableItemTile extends StatelessWidget {
 
           /// Calculation hint (optional but powerful)
           Text(
-            '${item.quantity} ${unit?.name ?? ''} × \$${item.rate.toStringAsFixed(2)}',
+            '${item.quantity} ${unit?.name ?? ''} × PKR ${item.rate.toStringAsFixed(2)}',
             style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
           ),
 
@@ -92,7 +92,7 @@ class BillableItemTile extends StatelessWidget {
           Align(
             alignment: Alignment.centerRight,
             child: Text(
-              '\$${item.total.toStringAsFixed(2)}',
+              'PKR ${item.total.toStringAsFixed(2)}',
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ),

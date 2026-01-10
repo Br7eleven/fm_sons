@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/view/masters/customer/customer_model.dart';
 
 class InvoiceItem {
   final String name;
@@ -29,6 +30,7 @@ class InvoiceController extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Invoice Items
   List<InvoiceItem> get items => _items;
 
   void addItem(InvoiceItem item) {
@@ -43,5 +45,22 @@ class InvoiceController extends ChangeNotifier {
 
   double get totalAmount {
     return _items.fold(0, (sum, item) => sum + item.total);
+  }
+ Customer? _customer;
+
+  Customer? get customer => _customer;
+
+  /// Derived value (NO duplication)
+  String? get customerName => _customer?.name;
+
+  void setCustomer(Customer customer) {
+    _customer = customer;
+    notifyListeners();
+  }
+
+  /// Optional: when user types a new name directly
+  void setCustomerName(String name) {
+    _customer = Customer.temp(name); // temporary unsaved customer
+    notifyListeners();
   }
 }

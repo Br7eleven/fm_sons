@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
+import 'package:fm_sons/view/invoice/preview/invoice_preview_screen.dart';
+import 'package:fm_sons/view/masters/customer/customer_selector_bottom_sheet.dart.dart';
 import 'package:provider/provider.dart';
 
 import 'controller/create_invoice_controller.dart';
@@ -70,9 +72,34 @@ class CreateInvoiceScreen extends StatelessWidget {
 /*                           CLIENT INFO SECTION                               */
 /* -------------------------------------------------------------------------- */
 
-class _ClientInfoSection extends StatelessWidget {
+class _ClientInfoSection extends StatefulWidget {
+  @override
+  State<_ClientInfoSection> createState() => _ClientInfoSectionState();
+}
+
+class _ClientInfoSectionState extends State<_ClientInfoSection> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    final invoiceController = context.read<InvoiceController>();
+
+    _controller = TextEditingController(
+      text: invoiceController.customerName ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final invoiceController = context.watch<InvoiceController>();
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -81,67 +108,50 @@ class _ClientInfoSection extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
-        children: const [
-          _ReadOnlyField(
-            label: 'Contract Reference',
-            value: 'Select Contract...',
-            isDropdown: true,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Customer Name',
+            style: TextStyle(fontSize: 13, color: Colors.grey),
           ),
-          SizedBox(height: 12),
-          _ReadOnlyField(
-            label: 'Billed To',
-            value: 'Department of Transportation',
-            icon: Icons.apartment,
+          const SizedBox(height: 6),
+
+          TextField(
+            controller: _controller,
+            onChanged: invoiceController.setCustomerName,
+            decoration: InputDecoration(
+              hintText: 'Enter customer name',
+              filled: true,
+              fillColor: Colors.white,
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.arrow_drop_down),
+                onPressed: () async {
+                  final customer = await showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.white,
+                    barrierColor: Colors.black26,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(16),
+                      ),
+                    ),
+                    builder: (_) => const CustomerSelectorBottomSheet(),
+                  );
+
+                  if (customer != null) {
+                    invoiceController.setCustomer(customer);
+                    _controller.text = customer.name; // 🔥 keep sync
+                  }
+                },
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ReadOnlyField extends StatelessWidget {
-  final String label;
-  final String value;
-  final bool isDropdown;
-  final IconData? icon;
-
-  const _ReadOnlyField({
-    required this.label,
-    required this.value,
-    this.isDropdown = false,
-    this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade300),
-          ),
-          child: Row(
-            children: [
-              if (icon != null)
-                Icon(icon, size: 18, color: Colors.grey.shade600),
-              if (icon != null) const SizedBox(width: 8),
-              Expanded(
-                child: Text(value, style: const TextStyle(fontSize: 15)),
-              ),
-              if (isDropdown)
-                Icon(Icons.expand_more, color: Colors.grey.shade600),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }
@@ -181,7 +191,7 @@ class _InvoiceBottomBar extends StatelessWidget {
                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
               ),
               Text(
-                '\$${controller.totalAmount.toStringAsFixed(2)}',
+                'PKR ${controller.totalAmount.toStringAsFixed(2)}',
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
@@ -204,8 +214,19 @@ class _InvoiceBottomBar extends StatelessWidget {
                 ),
               ),
               onPressed: () {
-                //
-                //  Navigate to invoice preview screen
+                if (controller.items.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Add at least one item')),
+                  );
+                  return;
+                }
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const InvoicePreviewScreen(),
+                  ),
+                );
               },
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,

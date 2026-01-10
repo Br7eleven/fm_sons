@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/view/masters/customer/customer_controller.dart';
 import 'package:provider/provider.dart';
 import 'package:fm_sons/view/auth/auth_screen.dart';
 import 'package:fm_sons/view/dashboard/dashboard_screen.dart';
@@ -21,6 +22,7 @@ void main() {
           create: (context) =>
               ProductController(unitController: context.read<UnitController>()),
         ),
+        ChangeNotifierProvider(create: (_) => CustomerController()),
       ],
       child: const MyApp(),
     ),

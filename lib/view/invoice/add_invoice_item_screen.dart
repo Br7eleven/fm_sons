@@ -176,7 +176,7 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
                         child: _labeledField(
                           label: 'Rate per Unit',
                           controller: _rateController,
-                          prefix: '\$ ',
+                          prefix: 'PKR ',
                           onChanged: () => setState(() {}),
                         ),
                       ),
@@ -204,12 +204,12 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
                         Text(
                           _selectedProduct == null
                               ? '-'
-                              : '$qty ${_selectedProduct!.unit.name} × \$${rate.toStringAsFixed(2)}',
+                              : '$qty ${_selectedProduct!.unit.name} × PKR ${rate.toStringAsFixed(2)}',
                           style: const TextStyle(fontSize: 14),
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '\$${total.toStringAsFixed(2)}',
+                          'PKR ${total.toStringAsFixed(2)}',
                           style: const TextStyle(
                             fontSize: 28,
                             fontWeight: FontWeight.bold,

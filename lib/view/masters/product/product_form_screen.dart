@@ -133,7 +133,8 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                       await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const UnitFormScreen(),
+                          builder: (_) =>
+                              const UnitFormScreen(), //navigates to unit add screen
                         ),
                       );
                     },
