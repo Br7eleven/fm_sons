@@ -30,16 +30,16 @@ class TemplateOrange extends InvoiceTemplate {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: const [
                 Text(
-                  '<Your Company>',
+                  'FM Sons',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 SizedBox(height: 2),
-                Text('<Your address>', style: TextStyle(fontSize: 11)),
-                Text('<Your contact>', style: TextStyle(fontSize: 11)),
-                Text('details', style: TextStyle(fontSize: 11)),
+                Text('fmsons514@gmail.com', style: TextStyle(fontSize: 11)),
+                Text('PHQ Hospital Road', style: TextStyle(fontSize: 11)),
+                Text('Modern Glass Aluminium Decoration Center', style: TextStyle(fontSize: 11)),
               ],
             ),
             // ESTIMATE title
@@ -106,19 +106,12 @@ class TemplateOrange extends InvoiceTemplate {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '<Contact Name>',
-                      style: const TextStyle(fontSize: 11),
-                    ),
-                    Text(
                       customerDisplayName,
                       style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const Text('<Address>', style: TextStyle(fontSize: 11)),
-                    const Text('<Phone>', style: TextStyle(fontSize: 11)),
-                    const Text('<Email>', style: TextStyle(fontSize: 11)),
                   ],
                 ),
               ),
@@ -141,7 +134,6 @@ class TemplateOrange extends InvoiceTemplate {
                       color: Colors.black,
                     ),
                     const SizedBox(height: 8),
-                    const Text('<Name / Dept>', style: TextStyle(fontSize: 11)),
                     Text(
                       customerDisplayName,
                       style: const TextStyle(
@@ -149,8 +141,6 @@ class TemplateOrange extends InvoiceTemplate {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const Text('<Address>', style: TextStyle(fontSize: 11)),
-                    const Text('<Phone>', style: TextStyle(fontSize: 11)),
                   ],
                 ),
               ),
@@ -299,12 +289,36 @@ class TemplateOrange extends InvoiceTemplate {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Left: Note
-            const Expanded(
+            // Left: Note and Terms
+            Expanded(
               flex: 2,
-              child: Text(
-                'Remarks, notes on how long the estimate is valid, project duration estimates.',
-                style: TextStyle(fontSize: 10, color: Colors.black87),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Note',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    invoice.notes.trim().isEmpty ? '-' : invoice.notes.trim(),
+                    style: const TextStyle(fontSize: 10, color: Colors.black87),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Terms And Conditions',
+                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    '1. Goods once sold will not be returned.',
+                    style: TextStyle(fontSize: 10),
+                  ),
+                  const Text(
+                    '2. Thank you for doing business with us.',
+                    style: TextStyle(fontSize: 10),
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: 24),

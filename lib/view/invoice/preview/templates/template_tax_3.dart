@@ -29,8 +29,17 @@ class TemplateTax3 extends InvoiceTemplate {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'Email: info@fmsons.com',
+                    'Government Contractor General Order Supplier',
+                    style: TextStyle(fontSize: 10, color: Colors.grey),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    'Email: fmsons514@gmail.com',
                     style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  Text(
+                    'PHQ Hospital Road - Modern Glass Aluminium Decoration Center',
+                    style: TextStyle(fontSize: 10, color: Colors.grey),
                   ),
                 ],
               ),
@@ -268,14 +277,21 @@ class TemplateTax3 extends InvoiceTemplate {
           ),
           const SizedBox(height: 4),
           const Text(
-            'Thank you for doing business with us.',
+            '1. Goods once sold will not be returned.',
+            style: TextStyle(fontSize: 11),
+          ),
+          const Text(
+            '2. Thank you for doing business with us.',
             style: TextStyle(fontSize: 11),
           ),
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: const [
-              Text('For: FM Sons', style: TextStyle(fontSize: 12)),
+              Text(
+                'For: FM Sons Government Contractor Vendor Number 30140988',
+                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+              ),
               Text('Authorized Signatory', style: TextStyle(fontSize: 12)),
             ],
           ),

@@ -15,7 +15,7 @@ class TemplateBlue extends InvoiceTemplate {
       children: [
         // Company Name in Blue
         const Text(
-          '<Company Name>',
+          'FM Sons',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
@@ -24,17 +24,17 @@ class TemplateBlue extends InvoiceTemplate {
         ),
         const SizedBox(height: 4),
         const Text(
-          '<123 Street Address, City, State, Zip/Post>',
+          'Government Contractor General Order Supplier',
           style: TextStyle(fontSize: 10, color: Colors.black87),
         ),
         const SizedBox(height: 2),
         const Text(
-          '<Website, Email Address>',
+          'fmsons514@gmail.com',
           style: TextStyle(fontSize: 10, color: Colors.black87),
         ),
         const SizedBox(height: 2),
         const Text(
-          '<Phone Number>',
+          'PHQ Hospital Road - Modern Glass Aluminium Decoration Center',
           style: TextStyle(fontSize: 10, color: Colors.black87),
         ),
       ],
@@ -75,7 +75,6 @@ class TemplateBlue extends InvoiceTemplate {
                       color: const Color(0xFF1565C0),
                     ),
                     const SizedBox(height: 8),
-                    const Text('<Contact Name>', style: TextStyle(fontSize: 10)),
                     Text(
                       customerDisplayName,
                       style: const TextStyle(
@@ -83,8 +82,6 @@ class TemplateBlue extends InvoiceTemplate {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const Text('<Address>', style: TextStyle(fontSize: 10)),
-                    const Text('<Phone, Email>', style: TextStyle(fontSize: 10)),
                   ],
                 ),
               ),
@@ -108,7 +105,6 @@ class TemplateBlue extends InvoiceTemplate {
                       color: const Color(0xFF1565C0),
                     ),
                     const SizedBox(height: 8),
-                    const Text('<Name / Dept>', style: TextStyle(fontSize: 10)),
                     Text(
                       customerDisplayName,
                       style: const TextStyle(
@@ -116,8 +112,6 @@ class TemplateBlue extends InvoiceTemplate {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const Text('<Address>', style: TextStyle(fontSize: 10)),
-                    const Text('<Phone>', style: TextStyle(fontSize: 10)),
                   ],
                 ),
               ),
@@ -319,13 +313,44 @@ class TemplateBlue extends InvoiceTemplate {
 
   @override
   Widget buildFooter(BuildContext context) {
+    final note = invoice.notes.trim();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
-        // Terms & Instructions
+        // Amount in Words
         const Text(
-          'Terms & Instructions',
+          'Estimate Amount in Words',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1565C0),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          amountInWordsLabel,
+          style: const TextStyle(fontSize: 10, fontStyle: FontStyle.italic),
+        ),
+        const SizedBox(height: 12),
+        // Note
+        const Text(
+          'Note',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF1565C0),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          note.isEmpty ? '-' : note,
+          style: const TextStyle(fontSize: 10, color: Colors.black87),
+        ),
+        const SizedBox(height: 12),
+        // Terms & Conditions
+        const Text(
+          'Terms And Conditions',
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
@@ -340,18 +365,24 @@ class TemplateBlue extends InvoiceTemplate {
         ),
         const SizedBox(height: 8),
         const Text(
-          '<Add payment requirements here, for example deposit amount and payment method>',
+          '1. Goods once sold will not be returned.',
           style: TextStyle(fontSize: 10, color: Colors.black87),
         ),
         const SizedBox(height: 4),
         const Text(
-          '<Add terms here, e.g: warranty, returns policy...>',
+          '2. Thank you for doing business with us.',
           style: TextStyle(fontSize: 10, color: Colors.black87),
         ),
-        const SizedBox(height: 4),
-        const Text(
-          '<Include project timeline>',
-          style: TextStyle(fontSize: 10, color: Colors.black87),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: const [
+            Text(
+              'For: FM Sons Government Contractor Vendor Number 30140988',
+              style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+            ),
+            Text('Authorized Signatory', style: TextStyle(fontSize: 11)),
+          ],
         ),
       ],
     );

@@ -71,6 +71,7 @@ abstract class InvoiceTemplate extends StatelessWidget {
         ),
         padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 40),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             buildHeader(context),
             const SizedBox(height: 20),
