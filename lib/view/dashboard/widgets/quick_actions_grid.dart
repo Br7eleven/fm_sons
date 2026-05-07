@@ -1,10 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:fm_sons/view/invoice/create_invoice_screen.dart';
 // import 'package:fm_sons/view/invoice/invoice_items_section.dart';
 import 'quick_action_tile.dart';
 
 class QuickActionGrid extends StatelessWidget {
-  const QuickActionGrid({super.key});
+  final Future<void> Function()? onNewInvoiceTap;
+  final VoidCallback? onHistoryTap;
+  final VoidCallback? onClientsTap;
+
+  const QuickActionGrid({
+    super.key,
+    this.onNewInvoiceTap,
+    this.onHistoryTap,
+    this.onClientsTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -23,11 +34,17 @@ class QuickActionGrid extends StatelessWidget {
           title: 'New Invoice',
           subtitle: 'Create a new government contract bill',
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const CreateInvoiceScreen()),
+            if (onNewInvoiceTap != null) {
+              unawaited(onNewInvoiceTap!());
+              return;
+            }
+
+            unawaited(
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CreateInvoiceScreen()),
+              ),
             );
-            // Navigator.push(...)
           },
         ),
 
@@ -41,7 +58,7 @@ class QuickActionGrid extends StatelessWidget {
                 icon: Icons.history,
                 title: 'History',
                 subtitle: 'View past records',
-                onTap: () {},
+                onTap: onHistoryTap ?? () {},
               ),
             ),
             const SizedBox(width: 12),
@@ -50,7 +67,7 @@ class QuickActionGrid extends StatelessWidget {
                 icon: Icons.people,
                 title: 'Clients',
                 subtitle: 'Manage database',
-                onTap: () {},
+                onTap: onClientsTap ?? () {},
               ),
             ),
           ],

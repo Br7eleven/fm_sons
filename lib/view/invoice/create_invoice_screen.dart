@@ -13,18 +13,97 @@ class CreateInvoiceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FC),
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.white,
-        leading: const CloseButton(color: Colors.black),
-        centerTitle: true,
-        title: const Text(
-          'New Invoice',
-          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+    final invoiceController = context.watch<InvoiceController>();
+
+    return PopScope(
+      canPop: true,
+      onPopInvokedWithResult: (didPop, result) {
+        // Draft is automatically saved via _saveDraft() on each change
+        // No need to clear draft when navigating away
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF7F9FC),
+        appBar: AppBar(
+          elevation: 0,
+          backgroundColor: Colors.white,
+          leading: IconButton(
+            onPressed: () {
+              // Just navigate back, draft is preserved automatically
+              Navigator.of(context).pop();
+            },
+            icon: const Icon(Icons.close, color: Colors.black),
+          ),
+          centerTitle: true,
+          title: Text(
+            invoiceController.isEditingInvoice ? 'Edit Invoice' : 'New Invoice',
+            style: const TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          actions: [
+            if (invoiceController.items.isNotEmpty ||
+                invoiceController.customerName != null)
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert, color: Colors.black),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                itemBuilder: (context) => [
+                  const PopupMenuItem(
+                    value: 'discard',
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline, color: Colors.red),
+                        SizedBox(width: 12),
+                        Text(
+                          'Discard Draft',
+                          style: TextStyle(color: Colors.red),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                onSelected: (value) async {
+                  if (value == 'discard') {
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (dialogContext) => AlertDialog(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        title: const Text('Discard Draft?'),
+                        content: const Text(
+                          'All unsaved changes will be lost. This action cannot be undone.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialogContext, false),
+                            child: const Text('Cancel'),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => Navigator.pop(dialogContext, true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                              foregroundColor: Colors.white,
+                            ),
+                            child: const Text('Discard'),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true && context.mounted) {
+                      await context.read<InvoiceController>().resetDraft();
+                      if (context.mounted) {
+                        Navigator.of(context).pop();
+                      }
+                    }
+                  }
+                },
+              ),
+          ],
         ),
-      ),
 
       /// MAIN LAYOUT
       body: Column(
@@ -53,6 +132,11 @@ class CreateInvoiceScreen extends StatelessWidget {
                   /// Billable Items
                   const InvoiceItemsSection(),
 
+                  const SizedBox(height: 24),
+
+                  /// Notes
+                  const _InvoiceNotesSection(),
+
                   /// Space for fixed bottom bar
                   // const SizedBox(height: 120),
                 ],
@@ -63,6 +147,7 @@ class CreateInvoiceScreen extends StatelessWidget {
           /// 🔹 Fixed Bottom Bar
           const _InvoiceBottomBar(),
         ],
+        ),
       ),
     );
   }
@@ -214,9 +299,23 @@ class _InvoiceBottomBar extends StatelessWidget {
                 ),
               ),
               onPressed: () {
+                if (controller.isLoading) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please wait...')),
+                  );
+                  return;
+                }
+
                 if (controller.items.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(content: Text('Add at least one item')),
+                  );
+                  return;
+                }
+
+                if ((controller.customerName ?? '').trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Customer name is required')),
                   );
                   return;
                 }
@@ -238,6 +337,71 @@ class _InvoiceBottomBar extends StatelessWidget {
                   SizedBox(width: 8),
                   Icon(Icons.arrow_forward),
                 ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                               NOTES SECTION                                */
+/* -------------------------------------------------------------------------- */
+
+class _InvoiceNotesSection extends StatefulWidget {
+  const _InvoiceNotesSection();
+
+  @override
+  State<_InvoiceNotesSection> createState() => _InvoiceNotesSectionState();
+}
+
+class _InvoiceNotesSectionState extends State<_InvoiceNotesSection> {
+  late final TextEditingController _notesController;
+
+  @override
+  void initState() {
+    super.initState();
+    final controller = context.read<InvoiceController>();
+    _notesController = TextEditingController(text: controller.notes);
+  }
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = context.watch<InvoiceController>();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Note',
+            style: TextStyle(fontSize: 13, color: Colors.grey),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _notesController,
+            maxLines: 3,
+            onChanged: controller.setNotes,
+            decoration: InputDecoration(
+              hintText: 'Add note or description',
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
             ),
           ),

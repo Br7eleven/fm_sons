@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:provider/provider.dart';
 
 import 'customer_controller.dart';
@@ -15,6 +16,7 @@ class CustomerFormScreen extends StatefulWidget {
 
 class _CustomerFormScreenState extends State<CustomerFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  bool _isSubmitting = false;
 
   late final TextEditingController _nameController;
   late final TextEditingController _phoneController;
@@ -47,12 +49,12 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
     final customerController = context.read<CustomerController>();
 
     return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          16,
-          12,
-          16,
-          MediaQuery.of(context).viewInsets.bottom + 16,
+      child: SingleChildScrollView(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 12,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
         ),
         child: Form(
           key: _formKey,
@@ -67,7 +69,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: FMSons.primary,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -80,73 +82,135 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
+                    color: FMSons.textPrimary,
                   ),
                 ),
               ),
 
               const SizedBox(height: 24),
 
+              /// Customer Name
               _label('Customer Name'),
               TextFormField(
                 controller: _nameController,
-                decoration: _input('Enter customer name'),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Required' : null,
+                decoration: _inputDecoration('Enter customer name'),
+                validator: (v) {
+                  final text = (v ?? '').trim();
+                  if (text.isEmpty) return 'Required';
+                  if (text.length < 2) return 'Enter at least 2 characters';
+                  return null;
+                },
               ),
 
               const SizedBox(height: 16),
 
+              /// Phone
               _label('Phone (optional)'),
               TextFormField(
                 controller: _phoneController,
-                decoration: _input('Phone number'),
+                decoration: _inputDecoration('Phone number'),
                 keyboardType: TextInputType.phone,
+                validator: (v) {
+                  final text = (v ?? '').trim();
+                  if (text.isEmpty) return null;
+
+                  final normalized = text.replaceAll(RegExp(r'\s+'), '');
+                  final isValid = RegExp(
+                    r'^[+]?[0-9]{7,15}$',
+                  ).hasMatch(normalized);
+                  if (!isValid) return 'Enter a valid phone number';
+                  return null;
+                },
               ),
 
               const SizedBox(height: 16),
 
+              /// Address
               _label('Address (optional)'),
               TextFormField(
                 controller: _addressController,
-                maxLines: 2,
-                decoration: _input('Address'),
+                maxLines: 3,
+                decoration: _inputDecoration('Enter customer address'),
               ),
 
               const SizedBox(height: 24),
 
+              /// Save Button
               SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (!_formKey.currentState!.validate()) return;
-
-                    final customer = Customer(
-                      id: isEdit
-                          ? widget.customer!.id
-                          : DateTime.now().millisecondsSinceEpoch.toString(),
-                      name: _nameController.text.trim(),
-                      phone: _phoneController.text.trim().isEmpty
-                          ? null
-                          : _phoneController.text.trim(),
-                      address: _addressController.text.trim().isEmpty
-                          ? null
-                          : _addressController.text.trim(),
-                    );
-
-                    final saved = isEdit
-                        ? customer
-                        : customerController.addOrGetCustomer(customer);
-
-                    Navigator.pop(context, saved);
-                  },
-                  child: Text(
-                    isEdit ? 'Update Customer' : 'Save Customer',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E5EFF),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
                     ),
+                    foregroundColor: FMSons.bgWhite,
                   ),
+                  onPressed: _isSubmitting
+                      ? null
+                      : () async {
+                          if (!_formKey.currentState!.validate()) return;
+
+                          final messenger = ScaffoldMessenger.of(context);
+                          final navigator = Navigator.of(context);
+
+                          setState(() => _isSubmitting = true);
+
+                          final customer = Customer(
+                            id: isEdit
+                                ? widget.customer!.id
+                                : DateTime.now().millisecondsSinceEpoch
+                                      .toString(),
+                            name: _nameController.text.trim(),
+                            phone: _phoneController.text.trim().isEmpty
+                                ? null
+                                : _phoneController.text.trim(),
+                            address: _addressController.text.trim().isEmpty
+                                ? null
+                                : _addressController.text.trim(),
+                          );
+
+                          try {
+                            final saved = isEdit
+                                ? (await customerController
+                                      .updateCustomer(customer)
+                                      .then((_) => customer))
+                                : await customerController.addOrGetCustomer(
+                                    customer,
+                                  );
+
+                            if (!mounted) return;
+                            navigator.pop(saved);
+                          } catch (e) {
+                            if (!mounted) return;
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to save customer: $e'),
+                              ),
+                            );
+                          } finally {
+                            if (mounted) {
+                              setState(() => _isSubmitting = false);
+                            }
+                          }
+                        },
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: FMSons.bgWhite,
+                          ),
+                        )
+                      : Text(
+                          isEdit ? 'Update Customer' : 'Save Customer',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -160,13 +224,30 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
   /*                                  HELPERS                                   */
   /* -------------------------------------------------------------------------- */
 
-  Widget _label(String text) =>
-      Text(text, style: const TextStyle(fontSize: 13, color: Colors.grey));
+  Widget _label(String text) {
+    return Text(
+      text,
+      style: const TextStyle(fontSize: 13, color: FMSons.textPrimary),
+    );
+  }
 
-  InputDecoration _input(String hint) => InputDecoration(
-    hintText: hint,
-    filled: true,
-    fillColor: Colors.white,
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-  );
+  InputDecoration _inputDecoration(String hint) {
+    return InputDecoration(
+      hintText: hint,
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFF1E5EFF)),
+      ),
+    );
+  }
 }

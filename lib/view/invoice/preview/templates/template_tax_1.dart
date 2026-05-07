@@ -18,24 +18,29 @@ class TemplateTax1 extends InvoiceTemplate {
           decoration: BoxDecoration(
             color: brandRed,
             border: Border.all(color: Colors.black, width: 1),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(30),
+              topRight: Radius.circular(30),
+              bottomRight: Radius.circular(30),
+            ),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 15),
+          padding: const EdgeInsets.symmetric(horizontal: 30),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: const [
-              Icon(Icons.email, color: Colors.white, size: 14),
+              Icon(Icons.email, color: Colors.white, size: 16),
               SizedBox(width: 4),
               Text(
-                'fmsons514@gmail.com',
-                style: TextStyle(color: Colors.white, fontSize: 10),
+                ' | fmsons514@gmail.com',
+                style: TextStyle(color: Colors.white, fontSize: 14),
               ),
               SizedBox(width: 20),
               Icon(Icons.location_on, color: Colors.white, size: 14),
               SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  'PHQ Hospital Road modern gilas aluminium decoration centre',
-                  style: TextStyle(color: Colors.white, fontSize: 10),
+                  '| PHQ Hospital Road modern glass aluminium decoration center',
+                  style: TextStyle(color: Colors.white, fontSize: 14),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -43,29 +48,34 @@ class TemplateTax1 extends InvoiceTemplate {
           ),
         ),
         // Dark Banner (With Line Box)
-        Container(
-          width: double.infinity,
-          height: 70,
-          decoration: BoxDecoration(
-            color: brandDark,
-            border: const Border(
-              left: BorderSide(color: Colors.black),
-              right: BorderSide(color: Colors.black),
-              bottom: BorderSide(color: Colors.black),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Container(
+              width: 470,
+              height: 70,
+              decoration: BoxDecoration(
+                color: brandDark,
+                border: const Border(
+                  left: BorderSide(color: Colors.black),
+                  right: BorderSide(color: Colors.black),
+                  bottom: BorderSide(color: Colors.black),
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomRight: Radius.circular(60),
+                ),
+              ),
+              padding: const EdgeInsets.only(left: 20, top: 12),
+              child: const Text(
+                'FM Sons Government Contractor General\nOrder Supplier Vendor Number 30140988',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ),
-            borderRadius: const BorderRadius.only(
-              bottomRight: Radius.circular(60),
-            ),
-          ),
-          padding: const EdgeInsets.only(left: 20, top: 12),
-          child: const Text(
-            'Fm sons Government Contractor General\nOrder Supplier Vendor Number 30140988',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          ],
         ),
       ],
     );
@@ -74,7 +84,7 @@ class TemplateTax1 extends InvoiceTemplate {
   @override
   Widget buildInvoiceInfo(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20),
+      padding: const EdgeInsets.symmetric(vertical: 16),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -86,32 +96,31 @@ class TemplateTax1 extends InvoiceTemplate {
                 style: TextStyle(
                   color: brandRed,
                   fontWeight: FontWeight.bold,
-                  fontSize: 14,
+                  fontSize: 16,
                 ),
               ),
               const SizedBox(height: 4),
               Text(
-                invoice.customerName ?? '-',
+                customerDisplayName,
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
           Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               const Text(
                 'Invoice',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w300),
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
               _metaRow('Invoice No.:', invoice.invoiceNumber),
-              _metaRow(
-                'Date:',
-                invoice.invoiceDate.toString().split(' ').first,
-              ),
+              _metaRow('Date:', invoiceDateLabel),
             ],
           ),
         ],
@@ -132,17 +141,42 @@ class TemplateTax1 extends InvoiceTemplate {
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
           child: Row(
             children: [
-              _cell('#', flex: 1, isHeader: true),
-              _cell('Item Name', flex: 5, isHeader: true),
-              _cell('Quantity', flex: 2, isHeader: true),
-              _cell('Unit', flex: 2, isHeader: true),
-              _cell('Price/ Unit', flex: 3, isHeader: true),
-              _cell('Amount', flex: 3, isHeader: true),
+              _cell('#', flex: 1, isHeader: true, align: TextAlign.center),
+              _cell(
+                'Item Name',
+                flex: 5,
+                isHeader: true,
+                align: TextAlign.left,
+              ),
+              _cell(
+                'Quantity',
+                flex: 2,
+                isHeader: true,
+                align: TextAlign.center,
+              ),
+              _cell('Unit', flex: 2, isHeader: true, align: TextAlign.center),
+              _cell('Price', flex: 3, isHeader: true, align: TextAlign.right),
+              _cell('Amount', flex: 3, isHeader: true, align: TextAlign.right),
             ],
           ),
         ),
         // Rows with Borders
-        ...invoice.items.asMap().entries.map((e) => _itemRow(e.key, e.value)),
+        ...previewItems.asMap().entries.map((e) => _itemRow(e.key, e.value)),
+        if (hiddenItemsCount > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '+$hiddenItemsCount more item(s) not shown in preview',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.black54,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          ),
         // Total Row with Border + Color
         Container(
           decoration: BoxDecoration(
@@ -177,7 +211,7 @@ class TemplateTax1 extends InvoiceTemplate {
               Expanded(
                 flex: 3,
                 child: Text(
-                  'Rs ${invoice.totalAmount}',
+                  formatMoney(grandTotalAmount),
                   textAlign: TextAlign.right,
                   style: const TextStyle(
                     color: Colors.white,
@@ -188,57 +222,76 @@ class TemplateTax1 extends InvoiceTemplate {
             ],
           ),
         ),
+        // Summary Table with Full Borders and Red Highlights
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            SizedBox(
+              width: 260,
+              child: Table(
+                border: TableBorder.all(color: Colors.black, width: .5),
+                children: [
+                  _totalTableRow('Sub Total', formatMoney(subtotalAmount)),
+                  _totalTableRow('Tax', formatMoney(taxAmount)),
+                  _totalTableRow(
+                    'Total',
+                    formatMoney(grandTotalAmount),
+                    isRed: true,
+                  ),
+                  _totalTableRow('Received', formatMoney(0)),
+                  _totalTableRow('Balance', formatMoney(grandTotalAmount)),
+                ],
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
 
-  Widget _itemRow(int index, item) {
-    return Row(
-      children: [
-        Container(
-          decoration: BoxDecoration(
-            border: const Border(
-              left: BorderSide(color: Colors.black),
-              right: BorderSide(color: Colors.black),
-              bottom: BorderSide(color: Colors.black, width: 0.5),
-            ),
-            color: index % 2 != 0 ? Colors.grey[50] : Colors.white,
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-          child: Row(
-            children: [
-              _cell('${index + 1}', flex: 1),
-              _cell(item.name, flex: 5, align: TextAlign.left),
-              _cell('${item.quantity}', flex: 2),
-              _cell(item.unit, flex: 2),
-              _cell('Rs ${item.rate}', flex: 3, align: TextAlign.right),
-              _cell(
-                'Rs ${item.total}',
-                flex: 3,
-                align: TextAlign.right,
-                isBold: true,
-              ),
-            ],
-          ),
+  Widget _itemRow(int index, dynamic item) {
+    return Container(
+      decoration: BoxDecoration(
+        border: const Border(
+          left: BorderSide(color: Colors.black),
+          right: BorderSide(color: Colors.black),
+          bottom: BorderSide(color: Colors.black, width: 0.5),
         ),
-        SizedBox(
-          width: 260,
-          child: Table(
-            border: TableBorder.all(color: Colors.black, width: 1),
-            children: [
-              _totalTableRow('Sub Total', 'Rs ${invoice.totalAmount}'),
-              _totalTableRow('Total', 'Rs ${invoice.totalAmount}', isRed: true),
-              _totalTableRow('Received', 'Rs 0.00'),
-              _totalTableRow('Balance', 'Rs ${invoice.totalAmount}'),
-            ],
+        color: index % 2 != 0 ? Colors.grey[50] : Colors.white,
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+      child: Row(
+        children: [
+          _cell('${index + 1}', flex: 1),
+          _cell(
+            item.name,
+            flex: 5,
+            align: TextAlign.left,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
-        ),
-      ],
+          _cell(formatQuantity(item.quantity), flex: 2),
+          _cell(
+            item.unit,
+            flex: 2,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          _cell(formatMoney(item.rate), flex: 3, align: TextAlign.right),
+          _cell(
+            formatMoney(item.total),
+            flex: 3,
+            align: TextAlign.right,
+            isBold: true,
+          ),
+        ],
+      ),
     );
   }
 
   @override
   Widget buildTotals(BuildContext context) {
+    final note = invoice.notes.trim();
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -254,16 +307,29 @@ class TemplateTax1 extends InvoiceTemplate {
                   fontSize: 11,
                 ),
               ),
-              const SizedBox(height: 4),
               Text(
-                invoice.amountInWords.isEmpty
-                    ? "Zero Rupees only"
-                    : invoice.amountInWords,
+                amountInWordsLabel,
                 style: const TextStyle(
-                  fontSize: 10,
+                  fontSize: 11,
                   fontStyle: FontStyle.italic,
-                  color: Colors.black87,
                 ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Note',
+                style: TextStyle(
+                  color: brandRed,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                ),
+              ),
+              Text(
+                note.isEmpty ? '-' : note,
+                style: const TextStyle(fontSize: 10),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 15),
               const Text(
@@ -285,8 +351,19 @@ class TemplateTax1 extends InvoiceTemplate {
             ],
           ),
         ),
-
-        // Summary Table with Full Borders and Red Highlights
+        // // Summary Table with Full Borders and Red Highlights
+        // SizedBox(
+        //   width: 260,
+        //   child: Table(
+        //     border: TableBorder.all(color: Colors.black, width: 1),
+        //     children: [
+        //       _totalTableRow('Sub Total', 'Rs ${invoice.totalAmount}'),
+        //       _totalTableRow('Total', 'Rs ${invoice.totalAmount}', isRed: true),
+        //       _totalTableRow('Received', 'Rs 0.00'),
+        //       _totalTableRow('Balance', 'Rs ${invoice.totalAmount}'),
+        //     ],
+        //   ),
+        // ),
       ],
     );
   }
@@ -328,12 +405,16 @@ class TemplateTax1 extends InvoiceTemplate {
     bool isHeader = false,
     TextAlign align = TextAlign.center,
     bool isBold = false,
+    int maxLines = 1,
+    TextOverflow overflow = TextOverflow.ellipsis,
   }) {
     return Expanded(
       flex: flex,
       child: Text(
         text,
         textAlign: align,
+        maxLines: maxLines,
+        overflow: overflow,
         style: TextStyle(
           color: isHeader ? Colors.white : Colors.black,
           fontWeight: (isHeader || isBold)

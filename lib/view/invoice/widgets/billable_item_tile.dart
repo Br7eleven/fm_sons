@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../masters/unit/unit_controller.dart';
 
+import '../add_invoice_item_screen.dart';
 import '../controller/create_invoice_controller.dart';
 
 class BillableItemTile extends StatelessWidget {
@@ -15,7 +16,10 @@ class BillableItemTile extends StatelessWidget {
     final item = controller.items[index];
 
     final unitController = context.read<UnitController>();
-    final unit = unitController.getUnitById(item.unit);
+    final unit = item.unitId == null
+        ? null
+        : unitController.getUnitById(item.unitId!);
+    final unitLabel = unit?.name ?? item.unit;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -40,6 +44,34 @@ class BillableItemTile extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(width: 6),
+              InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () async {
+                  await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => AddInvoiceItemScreen(
+                        itemIndex: index,
+                        initialItem: item,
+                      ),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.edit_outlined,
+                    size: 18,
+                    color: Colors.blue,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
               InkWell(
                 borderRadius: BorderRadius.circular(20),
                 onTap: () => controller.removeItem(index),
@@ -66,14 +98,13 @@ class BillableItemTile extends StatelessWidget {
             children: [
               _InfoChip(
                 label: 'Qty',
-                value: '${item.quantity} ${unit?.name ?? ''}',
+                value: '${item.quantity} $unitLabel',
               ),
 
               const SizedBox(width: 12),
               _InfoChip(
                 label: 'Rate',
-                value:
-                    'PKR ${item.rate.toStringAsFixed(2)} / ${unit?.name ?? ''}',
+                value: 'PKR ${item.rate.toStringAsFixed(2)} / $unitLabel',
               ),
             ],
           ),
@@ -82,7 +113,7 @@ class BillableItemTile extends StatelessWidget {
 
           /// Calculation hint (optional but powerful)
           Text(
-            '${item.quantity} ${unit?.name ?? ''} × PKR ${item.rate.toStringAsFixed(2)}',
+            '${item.quantity} $unitLabel × PKR ${item.rate.toStringAsFixed(2)}',
             style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
           ),
 

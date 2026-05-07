@@ -15,9 +15,7 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => InvoiceController()),
-        ChangeNotifierProvider(
-          create: (_) => UnitController()..seedDefaultUnits(),
-        ),
+        ChangeNotifierProvider(create: (_) => UnitController()),
         ChangeNotifierProvider(
           create: (context) =>
               ProductController(unitController: context.read<UnitController>()),

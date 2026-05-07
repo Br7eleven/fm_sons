@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../controller/create_invoice_controller.dart';
+
 import 'invoice_template_base.dart';
 
 class TemplateTax3 extends InvoiceTemplate {
-  const TemplateTax3({
-    super.key,
-    required super.invoice,
-  });
+  const TemplateTax3({super.key, required super.invoice});
 
   /* -------------------------------------------------------------------------- */
   /*                                   HEADER                                   */
@@ -15,38 +12,40 @@ class TemplateTax3 extends InvoiceTemplate {
   @override
   Widget buildHeader(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: const [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'FM Sons',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: const [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'FM Sons',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Email: info@fmsons.com',
+                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
               ),
-              SizedBox(height: 2),
               Text(
-                'Construction & Supplies',
-                style: TextStyle(fontSize: 12),
+                'Estimate',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF8F8CD9),
+                ),
               ),
             ],
           ),
-          Text(
-            'INVOICE',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          const SizedBox(height: 6),
+          Container(height: 2, color: const Color(0xFF8F8CD9)),
         ],
       ),
     );
@@ -59,7 +58,7 @@ class TemplateTax3 extends InvoiceTemplate {
   @override
   Widget buildInvoiceInfo(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.only(top: 8),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -69,16 +68,15 @@ class TemplateTax3 extends InvoiceTemplate {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Customer',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  'Estimate For',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  invoice.customerName ?? '-',
+                  customerDisplayName,
                   style: const TextStyle(fontSize: 14),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -88,11 +86,13 @@ class TemplateTax3 extends InvoiceTemplate {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              _meta('Invoice No', invoice.invoiceNumber),
-              _meta(
-                'Date',
-                invoice.invoiceDate.toString().split(' ').first,
+              const Text(
+                'Estimate Details',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
               ),
+              const SizedBox(height: 4),
+              _meta('Estimate No', invoice.invoiceNumber),
+              _meta('Date', invoiceDateLabel),
             ],
           ),
         ],
@@ -114,19 +114,35 @@ class TemplateTax3 extends InvoiceTemplate {
         Container(
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: Colors.grey.shade200,
+            color: const Color(0xFF8F8CD9),
             borderRadius: BorderRadius.circular(6),
           ),
           child: const Row(
             children: [
-              Expanded(flex: 4, child: Text('Item')),
-              Expanded(child: Text('Qty')),
-              Expanded(child: Text('Unit')),
-              Expanded(child: Text('Rate')),
+              Expanded(
+                child: Text('#', style: TextStyle(color: Colors.white)),
+              ),
+              Expanded(
+                flex: 4,
+                child: Text('Item Name', style: TextStyle(color: Colors.white)),
+              ),
+              Expanded(
+                child: Text('Quantity', style: TextStyle(color: Colors.white)),
+              ),
+              Expanded(
+                child: Text('Unit', style: TextStyle(color: Colors.white)),
+              ),
+              Expanded(
+                child: Text(
+                  'Price/Unit',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
               Expanded(
                 child: Text(
                   'Amount',
                   textAlign: TextAlign.right,
+                  style: TextStyle(color: Colors.white),
                 ),
               ),
             ],
@@ -136,23 +152,35 @@ class TemplateTax3 extends InvoiceTemplate {
         const SizedBox(height: 6),
 
         /// Items
-        ...invoice.items.map(
-          (item) => Container(
+        ...previewItems.asMap().entries.map(
+          (entry) => Container(
             padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: Colors.grey.shade300),
-              ),
+              border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
             ),
             child: Row(
               children: [
-                Expanded(flex: 4, child: Text(item.name)),
-                Expanded(child: Text(item.quantity.toString())),
-                Expanded(child: Text(item.unit)),
-                Expanded(child: Text(item.rate.toStringAsFixed(2))),
+                Expanded(child: Text('${entry.key + 1}')),
+                Expanded(
+                  flex: 4,
+                  child: Text(
+                    entry.value.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Expanded(child: Text(formatQuantity(entry.value.quantity))),
                 Expanded(
                   child: Text(
-                    item.total.toStringAsFixed(2),
+                    entry.value.unit,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Expanded(child: Text(formatMoney(entry.value.rate))),
+                Expanded(
+                  child: Text(
+                    formatMoney(entry.value.total),
                     textAlign: TextAlign.right,
                   ),
                 ),
@@ -160,6 +188,21 @@ class TemplateTax3 extends InvoiceTemplate {
             ),
           ),
         ),
+        if (hiddenItemsCount > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '+$hiddenItemsCount more item(s) not shown in preview',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -171,34 +214,22 @@ class TemplateTax3 extends InvoiceTemplate {
   @override
   Widget buildTotals(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 24),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey.shade100,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(
-              children: [
-                const Text(
-                  'Grand Total:',
-                  style: TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'PKR ${invoice.totalAmount.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
+      padding: const EdgeInsets.only(top: 18),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: Container(
+          width: 220,
+          decoration: BoxDecoration(
+            color: const Color(0xFF8F8CD9),
+            borderRadius: BorderRadius.circular(6),
           ),
-        ],
+          child: Column(
+            children: [
+              _totalRow('Sub Total', subtotalAmount),
+              _totalRow('Total', grandTotalAmount),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -209,24 +240,44 @@ class TemplateTax3 extends InvoiceTemplate {
 
   @override
   Widget buildFooter(BuildContext context) {
+    final note = invoice.notes.trim();
     return Padding(
-      padding: const EdgeInsets.only(top: 32),
+      padding: const EdgeInsets.only(top: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Divider(),
-          SizedBox(height: 8),
-          Text(
-            'This is a system generated invoice.',
+        children: [
+          const Divider(),
+          const SizedBox(height: 10),
+          const Text(
+            'Description',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+          Text(note.isEmpty ? '-' : note, style: const TextStyle(fontSize: 12)),
+          const SizedBox(height: 12),
+          const Text(
+            'Estimate Amount in Words',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+          Text(amountInWordsLabel, style: const TextStyle(fontSize: 11)),
+          const SizedBox(height: 14),
+          const Text(
+            'Terms And Conditions',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Thank you for doing business with us.',
             style: TextStyle(fontSize: 11),
           ),
-          SizedBox(height: 24),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              'Authorized Signature',
-              style: TextStyle(fontSize: 12),
-            ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: const [
+              Text('For: FM Sons', style: TextStyle(fontSize: 12)),
+              Text('Authorized Signatory', style: TextStyle(fontSize: 12)),
+            ],
           ),
         ],
       ),
@@ -240,9 +291,33 @@ class TemplateTax3 extends InvoiceTemplate {
   Widget _meta(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
-      child: Text(
-        '$label: $value',
-        style: const TextStyle(fontSize: 12),
+      child: Text('$label: $value', style: const TextStyle(fontSize: 12)),
+    );
+  }
+
+  Widget _totalRow(String label, double value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.white24)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.white, fontSize: 12),
+            ),
+          ),
+          Text(
+            formatMoney(value),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+        ],
       ),
     );
   }

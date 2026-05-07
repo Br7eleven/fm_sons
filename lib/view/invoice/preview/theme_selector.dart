@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 /// Enum for available invoice themes
-enum InvoiceThemeType { taxTheme1, taxTheme3, modernRed, modernDark }
+enum InvoiceThemeType { taxTheme1, taxTheme3, orangeEstimate, blueEstimate }
 
 class ThemeSelector extends StatelessWidget {
   final InvoiceThemeType selectedTheme;
@@ -25,12 +25,12 @@ class ThemeSelector extends StatelessWidget {
         color: const Color(0xFF0D47A1),
       ),
       _ThemeItem(
-        type: InvoiceThemeType.modernRed,
-        color: const Color(0xFFD32F2F),
+        type: InvoiceThemeType.orangeEstimate,
+        color: const Color(0xFFFF5722),
       ),
       _ThemeItem(
-        type: InvoiceThemeType.modernDark,
-        color: const Color(0xFF263238),
+        type: InvoiceThemeType.blueEstimate,
+        color: const Color(0xFF1976D2),
       ),
     ];
 
@@ -39,7 +39,7 @@ class ThemeSelector extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: themes.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        separatorBuilder: (_, _) => const SizedBox(width: 12),
         itemBuilder: (context, index) {
           final theme = themes[index];
           final isSelected = theme.type == selectedTheme;

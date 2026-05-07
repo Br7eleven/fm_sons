@@ -1,29 +1,40 @@
 import 'package:flutter/material.dart';
 
 class StatCardRow extends StatelessWidget {
-  const StatCardRow({super.key});
+  final String pendingAmountLabel;
+  final String paidAmountLabel;
+  final int totalInvoices;
+  final int todayInvoices;
+
+  const StatCardRow({
+    super.key,
+    required this.pendingAmountLabel,
+    required this.paidAmountLabel,
+    required this.totalInvoices,
+    required this.todayInvoices,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: const [
+      children: [
         Expanded(
           child: StatCard(
-            title: "This Month's Total",
-            value: '₹ 12.5L',
-            subtitle: '+5%',
-            icon: Icons.calendar_month,
-            iconColor: Colors.blue,
+            title: 'Pending Amount',
+            value: pendingAmountLabel,
+            subtitle: 'Paid: $paidAmountLabel',
+            icon: Icons.pending_actions,
+            iconColor: Colors.deepOrange,
           ),
         ),
-        SizedBox(width: 12),
+        const SizedBox(width: 12),
         Expanded(
           child: StatCard(
-            title: 'Invoices Today',
-            value: '3',
-            subtitle: 'Pending: 1',
+            title: 'Total Invoices',
+            value: totalInvoices.toString(),
+            subtitle: 'Today: $todayInvoices',
             icon: Icons.receipt_long,
-            iconColor: Colors.orange,
+            iconColor: Colors.green,
           ),
         ),
       ],

@@ -104,7 +104,30 @@ class _ProductSelectorBottomSheetState
             const SizedBox(height: 16),
 
             /// Product List
-            if (products.isEmpty)
+            if (productController.isLoading)
+              const Padding(
+                padding: EdgeInsets.all(24),
+                child: CircularProgressIndicator(),
+              )
+            else if (productController.hasError)
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Text(
+                      productController.errorMessage ??
+                          'Failed to load products',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => productController.refresh(),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              )
+            else if (products.isEmpty)
               const Padding(
                 padding: EdgeInsets.all(24),
                 child: Text(
@@ -146,47 +169,73 @@ class _ProductTile extends StatelessWidget {
 
   const _ProductTile({required this.product, required this.onTap});
 
+  Future<void> _openEditProduct(BuildContext context) async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => ProductFormScreen(product: product),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
-        ),
-        child: Row(
-          children: [
-            /// Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
+    return GestureDetector(
+      onLongPress: () => _openEditProduct(context),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Row(
+            children: [
+              /// Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${product.unit.name} • ${product.type.name}',
-                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Text(
+                      '${product.unit.name} • ${product.type.name}',
+                      style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
-            /// Rate
-            Text(
-              '\$${product.defaultRate.toStringAsFixed(2)}',
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-            ),
-          ],
+              /// Rate
+              Text(
+                'PKR ${product.defaultRate.toStringAsFixed(2)}',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+
+              const SizedBox(width: 4),
+
+              /// Edit Button
+              IconButton(
+                icon: Icon(Icons.edit_outlined, size: 20, color: Colors.grey.shade600),
+                onPressed: () => _openEditProduct(context),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                tooltip: 'Edit Product',
+              ),
+            ],
+          ),
         ),
       ),
     );

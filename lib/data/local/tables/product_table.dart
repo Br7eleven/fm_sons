@@ -3,12 +3,18 @@ class ProductTable {
 
   static const createTable =
       '''
-  CREATE TABLE $tableName (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    unit TEXT NOT NULL,
-    default_rate REAL,
-    description TEXT
+  CREATE TABLE IF NOT EXISTS $tableName (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL COLLATE NOCASE UNIQUE,
+    type TEXT NOT NULL,
+    unit_id TEXT NOT NULL,
+    default_rate REAL NOT NULL DEFAULT 0,
+    description TEXT,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (unit_id) REFERENCES units(id)
+      ON DELETE RESTRICT
   );
   ''';
 }

@@ -21,7 +21,14 @@ class UnitListScreen extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: units.isEmpty
+      body: controller.isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : controller.hasError
+          ? _ErrorState(
+              message: controller.errorMessage ?? 'Failed to load units',
+              onRetry: () => controller.refresh(),
+            )
+          : units.isEmpty
           ? _EmptyState(onAdd: () => _openAdd(context))
           : ListView.separated(
               padding: const EdgeInsets.all(16),
@@ -111,8 +118,15 @@ class _UnitTile extends StatelessWidget {
             /// Delete
             IconButton(
               icon: const Icon(Icons.delete_outline, color: Colors.red),
-              onPressed: () {
-                controller.removeUnit(unit.id);
+              onPressed: () async {
+                try {
+                  await controller.removeUnit(unit.id);
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(e.toString())));
+                }
               },
             ),
           ],
@@ -153,6 +167,36 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             ElevatedButton(onPressed: onAdd, child: const Text('Add Unit')),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+
+  const _ErrorState({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: Colors.redAccent),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.black87),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton(onPressed: onRetry, child: const Text('Retry')),
           ],
         ),
       ),

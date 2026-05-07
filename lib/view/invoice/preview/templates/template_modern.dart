@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../controller/create_invoice_controller.dart';
+
 import 'invoice_template_base.dart';
 
 class TemplateModern extends InvoiceTemplate {
@@ -60,11 +60,13 @@ class TemplateModern extends InvoiceTemplate {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  invoice.customerName ?? '-',
+                  customerDisplayName,
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -75,7 +77,7 @@ class TemplateModern extends InvoiceTemplate {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               _meta('Invoice', invoice.invoiceNumber),
-              _meta('Date', invoice.invoiceDate.toString().split(' ').first),
+              _meta('Date', invoiceDateLabel),
             ],
           ),
         ],
@@ -111,18 +113,31 @@ class TemplateModern extends InvoiceTemplate {
           ),
 
           /// Items
-          ...invoice.items.map(
+          ...previewItems.map(
             (item) => Padding(
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Row(
                 children: [
-                  Expanded(flex: 4, child: Text(item.name)),
-                  Expanded(child: Text(item.quantity.toString())),
-                  Expanded(child: Text(item.unit)),
-                  Expanded(child: Text(item.rate.toStringAsFixed(2))),
+                  Expanded(
+                    flex: 4,
+                    child: Text(
+                      item.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Expanded(child: Text(formatQuantity(item.quantity))),
                   Expanded(
                     child: Text(
-                      item.total.toStringAsFixed(2),
+                      item.unit,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Expanded(child: Text(formatMoney(item.rate))),
+                  Expanded(
+                    child: Text(
+                      formatMoney(item.total),
                       textAlign: TextAlign.right,
                     ),
                   ),
@@ -130,6 +145,21 @@ class TemplateModern extends InvoiceTemplate {
               ),
             ),
           ),
+          if (hiddenItemsCount > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '+$hiddenItemsCount more item(s) not shown in preview',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -160,7 +190,7 @@ class TemplateModern extends InvoiceTemplate {
                 ),
                 const SizedBox(width: 16),
                 Text(
-                  'PKR ${invoice.totalAmount.toStringAsFixed(2)}',
+                  formatMoney(grandTotalAmount),
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -180,14 +210,37 @@ class TemplateModern extends InvoiceTemplate {
 
   @override
   Widget buildFooter(BuildContext context) {
+    final note = invoice.notes.trim();
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
-          Divider(),
-          SizedBox(height: 8),
-          Text('Thank you for your business!', style: TextStyle(fontSize: 13)),
+        children: [
+          const Divider(),
+          const SizedBox(height: 8),
+          const Text(
+            'Note',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            note.isEmpty ? '-' : note,
+            style: const TextStyle(fontSize: 12),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Amount In Words: $amountInWordsLabel',
+            style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Thank you for your business!',
+            style: TextStyle(fontSize: 13),
+          ),
         ],
       ),
     );

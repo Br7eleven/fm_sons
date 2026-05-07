@@ -19,6 +19,7 @@ class ProductFormScreen extends StatefulWidget {
 
 class _ProductFormScreenState extends State<ProductFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  bool _isSubmitting = false;
 
   late TextEditingController _nameController;
   late TextEditingController _rateController;
@@ -105,8 +106,12 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               TextFormField(
                 controller: _nameController,
                 decoration: _inputDecoration('Enter product name'),
-                validator: (v) =>
-                    v == null || v.trim().isEmpty ? 'Required' : null,
+                validator: (v) {
+                  final text = (v ?? '').trim();
+                  if (text.isEmpty) return 'Required';
+                  if (text.length < 2) return 'Enter at least 2 characters';
+                  return null;
+                },
               ),
 
               const SizedBox(height: 16),
@@ -151,13 +156,20 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
               ),
               const SizedBox(height: 6),
 
-              DropdownButtonFormField<Unit>(
-                initialValue: _selectedUnit,
+              DropdownButtonFormField<String>(
+                initialValue: _selectedUnit?.id,
                 items: units
-                    .map((u) => DropdownMenuItem(value: u, child: Text(u.name)))
+                    .map((u) => DropdownMenuItem(
+                          value: u.id,
+                          child: Text(u.name),
+                        ))
                     .toList(),
-                onChanged: (value) {
-                  setState(() => _selectedUnit = value);
+                onChanged: (unitId) {
+                  if (unitId != null) {
+                    setState(() {
+                      _selectedUnit = units.firstWhere((u) => u.id == unitId);
+                    });
+                  }
                 },
                 decoration: _inputDecoration('Select unit'),
                 validator: (v) => v == null ? 'Unit required' : null,
@@ -174,8 +186,11 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 ),
                 decoration: _inputDecoration('0.00'),
                 validator: (v) {
-                  if (v == null || v.isEmpty) return 'Required';
-                  if (double.tryParse(v) == null) return 'Invalid number';
+                  final text = (v ?? '').trim();
+                  if (text.isEmpty) return 'Required';
+                  final parsed = double.tryParse(text);
+                  if (parsed == null) return 'Invalid number';
+                  if (parsed <= 0) return 'Must be greater than zero';
                   return null;
                 },
               ),
@@ -204,42 +219,67 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                     ),
                     foregroundColor: FMSons.bgWhite,
                   ),
-                  onPressed: () {
-                    if (!_formKey.currentState!.validate()) return;
+                  onPressed: _isSubmitting
+                      ? null
+                      : () async {
+                          if (!_formKey.currentState!.validate()) return;
 
-                    final product = Product(
-                      id: isEdit
-                          ? widget.product!.id
-                          : DateTime.now().millisecondsSinceEpoch.toString(),
-                      name: _nameController.text.trim(),
-                      type: _type,
-                      unit: _selectedUnit!,
-                      defaultRate: double.parse(_rateController.text.trim()),
-                      description: _descriptionController.text.trim().isEmpty
-                          ? null
-                          : _descriptionController.text.trim(),
-                    );
+                          final messenger = ScaffoldMessenger.of(context);
+                          final navigator = Navigator.of(context);
 
-                    try {
-                      if (isEdit) {
-                        productController.updateProduct(product);
-                      } else {
-                        productController.addProduct(product);
-                      }
-                      Navigator.pop(context);
-                    } catch (e) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text(e.toString())));
-                    }
-                  },
-                  child: Text(
-                    isEdit ? 'Update Product' : 'Save Product',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                          setState(() => _isSubmitting = true);
+
+                          final product = Product(
+                            id: isEdit
+                                ? widget.product!.id
+                                : DateTime.now().millisecondsSinceEpoch
+                                      .toString(),
+                            name: _nameController.text.trim(),
+                            type: _type,
+                            unit: _selectedUnit!,
+                            defaultRate: double.parse(
+                              _rateController.text.trim(),
+                            ),
+                            description:
+                                _descriptionController.text.trim().isEmpty
+                                ? null
+                                : _descriptionController.text.trim(),
+                          );
+
+                          try {
+                            if (isEdit) {
+                              await productController.updateProduct(product);
+                            } else {
+                              await productController.addProduct(product);
+                            }
+                            if (!mounted) return;
+                            navigator.pop();
+                          } catch (e) {
+                            if (!mounted) return;
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to save product: $e'),
+                              ),
+                            );
+                          } finally {
+                            if (mounted) {
+                              setState(() => _isSubmitting = false);
+                            }
+                          }
+                        },
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Text(
+                          isEdit ? 'Update Product' : 'Save Product',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                 ),
               ),
             ],

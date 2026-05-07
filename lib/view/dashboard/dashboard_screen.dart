@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:fm_sons/view/invoice/create_invoice_screen.dart';
 import 'package:fm_sons/view/dashboard/widgets/dashborad_app_bar.dart';
 import 'package:fm_sons/view/dashboard/widgets/overview_card.dart';
 import 'package:fm_sons/view/dashboard/widgets/stat_card.dart';
@@ -6,7 +8,9 @@ import 'package:fm_sons/view/dashboard/widgets/quick_actions_grid.dart';
 import '.././shared/bottom_nav.dart';
 
 import '../../data/local/dao/invoice_dao.dart';
-// import '../../data/local/models/invoice_model.dart';
+import '../invoice/invoice_history_tab.dart';
+import '../masters/customer/clients_tab.dart';
+import '../settings/settings_tab.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -15,70 +19,253 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
-  final invoiceDao = InvoiceDao();
+class _DashboardScreenState extends State<DashboardScreen>
+    with WidgetsBindingObserver {
+  final InvoiceDao _invoiceDao = InvoiceDao();
+  final NumberFormat _currencyFormat = NumberFormat.currency(
+    locale: 'en_IN',
+    symbol: 'PKR ',
+    decimalDigits: 0,
+  );
 
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   _insertTestInvoiceOnce();
-  // }
+  int _currentIndex = 0;
+  bool _isLoading = true;
+  String? _loadError;
+  int _totalInvoices = 0;
+  int _todayInvoices = 0;
+  double _pendingAmount = 0;
+  double _paidAmount = 0;
+  double _todayBilledAmount = 0;
 
-  // Future<void> _insertTestInvoiceOnce() async {
-  //   try {
-  //     final invoice = InvoiceModel(
-  //       invoiceNumber: 'INV-1001',
-  //       clientName: 'Govt Works Department',
-  //       clientAddress: 'Gilgit Baltistan',
-  //       contractId: 1,
-  //       invoiceDate: DateTime.now().toIso8601String(),
-  //       dueDate: DateTime.now().add(const Duration(days: 30)).toIso8601String(),
-  //       subtotal: 40000,
-  //       tax: 5000,
-  //       total: 45000,
-  //       status: 'pending',
-  //       createdAt: DateTime.now().toIso8601String(),
-  //     );
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _loadDashboardData();
+  }
 
-  //     final id = await invoiceDao.insertInvoice(invoice);
-  //     debugPrint('✅ Test Invoice Inserted with ID: $id');
-  //   } catch (e) {
-  //     debugPrint('⚠️ Invoice insert skipped: $e');
-  //   }
-  // }
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _loadDashboardData();
+    }
+  }
+
+  Future<void> _loadDashboardData() async {
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
+
+    try {
+      final summary = await _invoiceDao.getInvoiceStatusSummary();
+      final invoices = await _invoiceDao.getAllInvoices();
+
+      final now = DateTime.now();
+      var todayInvoices = 0;
+      var todayBilled = 0.0;
+
+      for (final invoice in invoices) {
+        final parsedDate = DateTime.tryParse(invoice.invoiceDate);
+        if (parsedDate == null) continue;
+
+        final localDate = parsedDate.toLocal();
+        final isToday =
+            localDate.year == now.year &&
+            localDate.month == now.month &&
+            localDate.day == now.day;
+
+        if (isToday) {
+          todayInvoices += 1;
+          todayBilled += invoice.total;
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _totalInvoices = (summary['total_count'] ?? 0).toInt();
+        _pendingAmount = (summary['pending_amount'] ?? 0).toDouble();
+        _paidAmount = (summary['paid_amount'] ?? 0).toDouble();
+        _todayInvoices = todayInvoices;
+        _todayBilledAmount = todayBilled;
+        _isLoading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = 'Unable to load dashboard data. Pull to refresh.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _openCreateInvoiceFlow() async {
+    // Don't reset draft - it should be preserved when navigating back
+    // Draft is only cleared after successful save or explicit discard
+    if (!mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CreateInvoiceScreen()),
+    );
+
+    if (!mounted) return;
+    await _loadDashboardData();
+  }
+
+  String _formatCurrency(num value) => _currencyFormat.format(value);
+
+  void _handleTabChanged(int index) {
+    setState(() => _currentIndex = index);
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    switch (_currentIndex) {
+      case 1:
+        return InvoiceHistoryAppBar(
+          onSettingsTap: () => setState(() => _currentIndex = 3),
+        );
+      case 2:
+        return AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          title: const Text(
+            'Clients',
+            style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w800),
+          ),
+        );
+      case 3:
+        return SettingsAppBar(
+          onBackTap: () => setState(() => _currentIndex = 0),
+        );
+      default:
+        return const DashboardAppBar();
+    }
+  }
+
+  Widget _buildBody() {
+    return IndexedStack(
+      index: _currentIndex,
+      children: [
+        _DashboardOverviewTab(
+          isLoading: _isLoading,
+          loadError: _loadError,
+          billedAmountLabel: _formatCurrency(_todayBilledAmount),
+          pendingAmountLabel: _formatCurrency(_pendingAmount),
+          paidAmountLabel: _formatCurrency(_paidAmount),
+          totalInvoices: _totalInvoices,
+          todayInvoices: _todayInvoices,
+          onNewInvoiceTap: _openCreateInvoiceFlow,
+          onOpenInvoicesTap: () => setState(() => _currentIndex = 1),
+          onOpenClientsTap: () => setState(() => _currentIndex = 2),
+          onRefresh: _loadDashboardData,
+        ),
+        const InvoiceHistoryTab(),
+        const ClientsTab(),
+        const SettingsTab(),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF7F9FC),
-      appBar: const DashboardAppBar(),
+      appBar: _buildAppBar(),
       bottomNavigationBar: BottomNav(
-        currentIndex: 0,
-        onTap: (index) {
-          //handle naigation here
-        },
+        currentIndex: _currentIndex,
+        onTap: _handleTabChanged,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const OverviewCard(),
+      body: _buildBody(),
+    );
+  }
+}
 
-            // SizedBox(
-            //   child: ElevatedButton(
-            //     onPressed: () async {
-            //       await _insertTestInvoiceOnce();
-            //     },
-            //     child: const Text('Insert Test Invoice'),
-            //   ),
-            // ),
-            SizedBox(height: 16),
-            StatCardRow(),
-            SizedBox(height: 24),
-            QuickActionGrid(),
+class _DashboardOverviewTab extends StatelessWidget {
+  final bool isLoading;
+  final String? loadError;
+  final String billedAmountLabel;
+  final String pendingAmountLabel;
+  final String paidAmountLabel;
+  final int totalInvoices;
+  final int todayInvoices;
+  final Future<void> Function()? onNewInvoiceTap;
+  final VoidCallback onOpenInvoicesTap;
+  final VoidCallback onOpenClientsTap;
+  final Future<void> Function() onRefresh;
+
+  const _DashboardOverviewTab({
+    required this.isLoading,
+    required this.loadError,
+    required this.billedAmountLabel,
+    required this.pendingAmountLabel,
+    required this.paidAmountLabel,
+    required this.totalInvoices,
+    required this.todayInvoices,
+    required this.onNewInvoiceTap,
+    required this.onOpenInvoicesTap,
+    required this.onOpenClientsTap,
+    required this.onRefresh,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          OverviewCard(
+            billedAmountLabel: billedAmountLabel,
+            trendLabel: todayInvoices == 0
+                ? 'No invoices today'
+                : '$todayInvoices today',
+          ),
+          const SizedBox(height: 16),
+          StatCardRow(
+            pendingAmountLabel: pendingAmountLabel,
+            paidAmountLabel: paidAmountLabel,
+            totalInvoices: totalInvoices,
+            todayInvoices: todayInvoices,
+          ),
+          const SizedBox(height: 24),
+          if (loadError != null)
+            Container(
+              width: double.infinity,
+              margin: const EdgeInsets.only(bottom: 16),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      loadError!,
+                      style: TextStyle(color: Colors.red.shade700),
+                    ),
+                  ),
+                  TextButton(onPressed: onRefresh, child: const Text('Retry')),
+                ],
+              ),
+            ),
+          QuickActionGrid(
+            onNewInvoiceTap: onNewInvoiceTap,
+            onHistoryTap: onOpenInvoicesTap,
+            onClientsTap: onOpenClientsTap,
+          ),
+          if (isLoading) ...[
+            const SizedBox(height: 20),
+            const Center(child: CircularProgressIndicator()),
           ],
-        ),
+        ],
       ),
     );
   }

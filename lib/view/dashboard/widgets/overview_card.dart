@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
 class OverviewCard extends StatelessWidget {
-  const OverviewCard({super.key});
+  final String billedAmountLabel;
+  final String trendLabel;
+
+  const OverviewCard({
+    super.key,
+    required this.billedAmountLabel,
+    this.trendLabel = 'Live',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +29,10 @@ class OverviewCard extends StatelessWidget {
           // 🔹 Top row (icon + badge placeholder)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [_IconBox(), _GrowthBadge()],
+            children: [
+              const _IconBox(),
+              _GrowthBadge(label: trendLabel),
+            ],
           ),
 
           const SizedBox(height: 24),
@@ -32,8 +42,8 @@ class OverviewCard extends StatelessWidget {
             style: TextStyle(color: Colors.white70, fontSize: 14),
           ),
           const SizedBox(height: 6),
-          const Text(
-            '₹ 45,000',
+          Text(
+            billedAmountLabel,
             style: TextStyle(
               color: Colors.white,
               fontSize: 32,
@@ -48,6 +58,8 @@ class OverviewCard extends StatelessWidget {
 
 /// 🔹 Left icon box (as in PNG)
 class _IconBox extends StatelessWidget {
+  const _IconBox();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -63,6 +75,10 @@ class _IconBox extends StatelessWidget {
 
 /// 🔹 Right "+12% vs yest." badge
 class _GrowthBadge extends StatelessWidget {
+  final String label;
+
+  const _GrowthBadge({this.label = 'Live'});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -71,8 +87,8 @@ class _GrowthBadge extends StatelessWidget {
         color: Colors.green.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: const Text(
-        '+12% vs yest.',
+      child: Text(
+        label,
         style: TextStyle(
           color: Colors.white,
           fontSize: 12,

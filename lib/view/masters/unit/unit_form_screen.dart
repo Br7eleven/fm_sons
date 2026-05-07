@@ -16,6 +16,7 @@ class UnitFormScreen extends StatefulWidget {
 
 class _UnitFormScreenState extends State<UnitFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  bool _isSubmitting = false;
 
   late TextEditingController _nameController;
   late TextEditingController _symbolController;
@@ -71,7 +72,12 @@ class _UnitFormScreenState extends State<UnitFormScreen> {
                     hintText: 'e.g. Bag, Kg, RFT',
                     border: InputBorder.none,
                   ),
-                  validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                  validator: (v) {
+                    final text = (v ?? '').trim();
+                    if (text.isEmpty) return 'Required';
+                    if (text.length < 2) return 'Enter at least 2 characters';
+                    return null;
+                  },
                 ),
               ),
 
@@ -85,7 +91,17 @@ class _UnitFormScreenState extends State<UnitFormScreen> {
                     hintText: 'e.g. bag, kg, rft',
                     border: InputBorder.none,
                   ),
-                  validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                  validator: (v) {
+                    final text = (v ?? '').trim();
+                    if (text.isEmpty) return 'Required';
+                    final isValid = RegExp(
+                      r'^[a-zA-Z0-9_-]{1,10}$',
+                    ).hasMatch(text);
+                    if (!isValid) {
+                      return 'Use 1-10 letters/numbers (_,- allowed)';
+                    }
+                    return null;
+                  },
                 ),
               ),
 
@@ -135,12 +151,20 @@ class _UnitFormScreenState extends State<UnitFormScreen> {
                 borderRadius: BorderRadius.circular(14),
               ),
             ),
-            icon: const Icon(Icons.add),
+            icon: _isSubmitting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.add),
             label: Text(
-              isEdit ? 'Update Unit' : 'Save Unit',
+              _isSubmitting
+                  ? 'Saving...'
+                  : (isEdit ? 'Update Unit' : 'Save Unit'),
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
-            onPressed: () => _save(controller),
+            onPressed: _isSubmitting ? null : () => _save(controller),
           ),
         ),
       ),
@@ -174,8 +198,13 @@ class _UnitFormScreenState extends State<UnitFormScreen> {
     );
   }
 
-  void _save(UnitController controller) {
+  Future<void> _save(UnitController controller) async {
     if (!_formKey.currentState!.validate()) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    setState(() => _isSubmitting = true);
 
     final unit = Unit(
       id: isEdit
@@ -189,7 +218,24 @@ class _UnitFormScreenState extends State<UnitFormScreen> {
           : _descriptionController.text.trim(),
     );
 
-    isEdit ? controller.updateUnit(unit) : controller.addUnit(unit);
-    Navigator.pop(context);
+    try {
+      if (isEdit) {
+        await controller.updateUnit(unit);
+      } else {
+        await controller.addUnit(unit);
+      }
+
+      if (!mounted) return;
+      navigator.pop();
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(content: Text('Failed to save unit: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+      }
+    }
   }
 }

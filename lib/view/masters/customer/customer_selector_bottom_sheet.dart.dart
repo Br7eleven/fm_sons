@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:provider/provider.dart';
 
 import 'customer_controller.dart';
@@ -23,6 +24,26 @@ class _CustomerSelectorBottomSheetState
     super.dispose();
   }
 
+  Future<void> _editCustomer(Customer customer) async {
+    final updated = await showModalBottomSheet<Customer>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: CustomerFormScreen(customer: customer),
+      ),
+    );
+
+    if (updated != null && mounted) {
+      // Refresh the list
+      setState(() {});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final customerController = context.watch<CustomerController>();
@@ -38,8 +59,8 @@ class _CustomerSelectorBottomSheetState
           MediaQuery.of(context).viewInsets.bottom + 16,
         ),
         decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          color: FMSons.bgLight,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -48,9 +69,9 @@ class _CustomerSelectorBottomSheetState
             Container(
               width: 40,
               height: 4,
-              margin: const EdgeInsets.only(bottom: 12),
+              margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: FMSons.primary,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -61,28 +82,42 @@ class _CustomerSelectorBottomSheetState
               children: [
                 const Text(
                   'Select Customer',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: FMSons.textPrimary,
+                  ),
                 ),
-                TextButton(
+                TextButton.icon(
                   onPressed: () async {
                     final customer = await showModalBottomSheet<Customer>(
                       context: context,
                       isScrollControlled: true,
-                      backgroundColor: Colors.white,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(16),
+                      backgroundColor: Colors.transparent,
+                      builder: (_) => Container(
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(20),
+                          ),
                         ),
+                        child: const CustomerFormScreen(),
                       ),
-                      builder: (_) => const CustomerFormScreen(),
                     );
 
-                    if (customer != null) {
+                    if (customer != null && mounted) {
                       // ignore: use_build_context_synchronously
                       Navigator.pop(context, customer);
                     }
                   },
-                  child: const Text('+ Add'),
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text(
+                    'Add New',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  style: TextButton.styleFrom(
+                    foregroundColor: const Color(0xFF1E5EFF),
+                  ),
                 ),
               ],
             ),
@@ -94,12 +129,26 @@ class _CustomerSelectorBottomSheetState
               controller: _searchController,
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                hintText: 'Search customer',
-                prefixIcon: const Icon(Icons.search),
+                hintText: 'Search by name, phone, or address',
+                hintStyle: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+                prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
                 filled: true,
                 fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Color(0xFF1E5EFF)),
                 ),
               ),
             ),
@@ -107,14 +156,76 @@ class _CustomerSelectorBottomSheetState
             const SizedBox(height: 16),
 
             /// Results
-            if (customers.isEmpty && query.isNotEmpty)
+            if (customerController.isLoading)
+              const Padding(
+                padding: EdgeInsets.all(32),
+                child: CircularProgressIndicator(),
+              )
+            else if (customerController.hasError)
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Colors.red.shade300,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      customerController.errorMessage ??
+                          'Failed to load customers',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: FMSons.textPrimary,
+                        fontSize: 15,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () => customerController.refresh(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E5EFF),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              )
+            else if (customers.isEmpty && query.isNotEmpty)
               _AddTypedCustomerTile(name: query)
             else if (customers.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'No customers found',
-                  style: TextStyle(color: Colors.grey),
+              Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.people_outline,
+                      size: 64,
+                      color: Colors.grey.shade300,
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'No customers found',
+                      style: TextStyle(
+                        color: Colors.grey,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Add your first customer to get started',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
                 ),
               )
             else
@@ -122,18 +233,115 @@ class _CustomerSelectorBottomSheetState
                 child: ListView.separated(
                   shrinkWrap: true,
                   itemCount: customers.length,
-                  separatorBuilder: (_, _) =>
-                      Divider(height: 1, color: Colors.grey.shade200),
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final customer = customers[index];
-                    return ListTile(
-                      title: Text(customer.name),
+                    return _CustomerTile(
+                      customer: customer,
                       onTap: () => Navigator.pop(context, customer),
+                      onLongPress: () => _editCustomer(customer),
                     );
                   },
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              CUSTOMER TILE                                 */
+/* -------------------------------------------------------------------------- */
+
+class _CustomerTile extends StatelessWidget {
+  final Customer customer;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+
+  const _CustomerTile({
+    required this.customer,
+    required this.onTap,
+    required this.onLongPress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E5EFF).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.person_outline,
+                  color: Color(0xFF1E5EFF),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      customer.name,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: FMSons.textPrimary,
+                      ),
+                    ),
+                    if (customer.phone != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        customer.phone!,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                    if (customer.address != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        customer.address!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade500,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.grey.shade400, size: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -151,12 +359,71 @@ class _AddTypedCustomerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: const Icon(Icons.add),
-      title: Text('Add "$name"'),
-      onTap: () {
-        Navigator.pop(context, Customer.temp(name));
-      },
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF1E5EFF).withValues(alpha: 0.3),
+          width: 1.5,
+        ),
+      ),
+      child: InkWell(
+        onTap: () {
+          Navigator.pop(context, Customer.temp(name));
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E5EFF).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.add,
+                  color: Color(0xFF1E5EFF),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Add as new customer',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1E5EFF),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward,
+                color: Color(0xFF1E5EFF),
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

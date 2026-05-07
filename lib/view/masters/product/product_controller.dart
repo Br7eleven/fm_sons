@@ -1,18 +1,60 @@
 import 'package:flutter/material.dart';
 
+import '../../../data/local/dao/product_dao.dart';
 import '../unit/unit_controller.dart';
 import 'product_model.dart';
 
 class ProductController extends ChangeNotifier {
+  final ProductDao _productDao;
   final UnitController unitController;
+  bool _initialized = false;
+  bool _isLoading = false;
+  String? _errorMessage;
 
-  ProductController({required this.unitController});
+  ProductController({required this.unitController, ProductDao? productDao})
+    : _productDao = productDao ?? ProductDao() {
+    initialize();
+  }
 
   final List<Product> _products = [];
 
   List<Product> get products => List.unmodifiable(_products);
+  bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
+  bool get hasError => _errorMessage != null;
+  bool get isEmpty => !_isLoading && _products.isEmpty;
 
-  void addProduct(Product product) {
+  Future<void> initialize() async {
+    if (_initialized) return;
+    _initialized = true;
+    await loadProducts();
+  }
+
+  Future<void> loadProducts() async {
+    _setLoading(true);
+    _setError(null);
+
+    final result = await _productDao.getAll();
+    if (result.isFailure || result.data == null) {
+      _products.clear();
+      _setError(result.error ?? 'Failed to load products');
+      _setLoading(false);
+      return;
+    }
+
+    _products
+      ..clear()
+      ..addAll(result.data!);
+
+    _setLoading(false);
+    notifyListeners();
+  }
+
+  Future<void> refresh() async {
+    await loadProducts();
+  }
+
+  Future<void> addProduct(Product product) async {
     // Name must be unique
     final exists = _products.any(
       (p) => p.name.toLowerCase() == product.name.toLowerCase(),
@@ -27,21 +69,41 @@ class ProductController extends ChangeNotifier {
       throw Exception('Invalid unit selected');
     }
 
+    _setError(null);
+    final result = await _productDao.create(product);
+    if (result.isFailure) {
+      throw Exception(result.error ?? 'Failed to add product');
+    }
+
     _products.add(product);
+    _sortProducts();
     notifyListeners();
   }
 
-  void updateProduct(Product product) {
+  Future<void> updateProduct(Product product) async {
     final index = _products.indexWhere((p) => p.id == product.id);
     if (index == -1) {
       throw Exception('Product not found');
     }
 
+    _setError(null);
+    final result = await _productDao.update(product);
+    if (result.isFailure) {
+      throw Exception(result.error ?? 'Failed to update product');
+    }
+
     _products[index] = product;
+    _sortProducts();
     notifyListeners();
   }
 
-  void removeProduct(String id) {
+  Future<void> removeProduct(String id) async {
+    _setError(null);
+    final result = await _productDao.deactivate(id);
+    if (result.isFailure) {
+      throw Exception(result.error ?? 'Failed to remove product');
+    }
+
     _products.removeWhere((p) => p.id == id);
     notifyListeners();
   }
@@ -52,5 +114,21 @@ class ProductController extends ChangeNotifier {
     } catch (_) {
       return null;
     }
+  }
+
+  void _setLoading(bool value) {
+    _isLoading = value;
+    notifyListeners();
+  }
+
+  void _setError(String? message) {
+    _errorMessage = message;
+    notifyListeners();
+  }
+
+  void _sortProducts() {
+    _products.sort(
+      (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()),
+    );
   }
 }
