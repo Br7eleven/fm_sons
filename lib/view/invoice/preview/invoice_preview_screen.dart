@@ -150,13 +150,8 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
   }
 
   Future<Uint8List> _capturePreviewPng() async {
-    final pixelRatio = ui
-        .PlatformDispatcher
-        .instance
-        .views
-        .first
-        .devicePixelRatio
-        .clamp(2.0, 3.0);
+    // High pixel ratio for crisp PDF text (6.0 = 300 DPI equivalent for print quality)
+    const pixelRatio = 6.0;
 
     final renderObject = _previewBoundaryKey.currentContext?.findRenderObject();
     if (renderObject is! RenderRepaintBoundary) {

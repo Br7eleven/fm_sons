@@ -121,7 +121,7 @@ class TemplateTax3 extends InvoiceTemplate {
 
         /// Header Row
         Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
           decoration: BoxDecoration(
             color: const Color(0xFF8F8CD9),
             borderRadius: BorderRadius.circular(6),
@@ -129,7 +129,10 @@ class TemplateTax3 extends InvoiceTemplate {
           child: const Row(
             children: [
               Expanded(
-                child: Text('#', style: TextStyle(color: Colors.white)),
+                child: Padding(
+                  padding: EdgeInsets.only(left: 4),
+                  child: Text('#', style: TextStyle(color: Colors.white)),
+                ),
               ),
               Expanded(
                 flex: 4,
@@ -148,10 +151,13 @@ class TemplateTax3 extends InvoiceTemplate {
                 ),
               ),
               Expanded(
-                child: Text(
-                  'Amount',
-                  textAlign: TextAlign.right,
-                  style: TextStyle(color: Colors.white),
+                child: Padding(
+                  padding: EdgeInsets.only(right: 4),
+                  child: Text(
+                    'Amount',
+                    textAlign: TextAlign.right,
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
             ],
@@ -163,13 +169,18 @@ class TemplateTax3 extends InvoiceTemplate {
         /// Items
         ...previewItems.asMap().entries.map(
           (entry) => Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
             ),
             child: Row(
               children: [
-                Expanded(child: Text('${entry.key + 1}')),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Text('${entry.key + 1}'),
+                  ),
+                ),
                 Expanded(
                   flex: 4,
                   child: Text(
@@ -188,9 +199,12 @@ class TemplateTax3 extends InvoiceTemplate {
                 ),
                 Expanded(child: Text(formatMoney(entry.value.rate))),
                 Expanded(
-                  child: Text(
-                    formatMoney(entry.value.total),
-                    textAlign: TextAlign.right,
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Text(
+                      formatMoney(entry.value.total),
+                      textAlign: TextAlign.right,
+                    ),
                   ),
                 ),
               ],
