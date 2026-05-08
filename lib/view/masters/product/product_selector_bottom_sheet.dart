@@ -32,127 +32,137 @@ class _ProductSelectorBottomSheetState
       final query = _searchController.text.toLowerCase();
       return product.name.toLowerCase().contains(query);
     }).toList();
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 12,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            /// Drag Handle
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: FMSons.primary,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-
-            /// Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Select Product',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 12,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              /// Drag Handle
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: FMSons.primary,
+                  borderRadius: BorderRadius.circular(2),
                 ),
-                TextButton(
-                  onPressed: () async {
-                    await showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: FMSons.bgWhite,
-                      builder: (_) => const ProductFormScreen(),
-                    );
-                  },
-                  child: const Text(
-                    '+ Add Product',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+
+              /// Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Select Product',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      await showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) => const ProductFormScreen(),
+                      );
+                    },
+                    child: const Text(
+                      '+ Add Product',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              /// Search
+              TextField(
+                controller: _searchController,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: 'Search product',
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor: Theme.of(context).cardColor,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: Theme.of(context).dividerColor,
+                    ),
                   ),
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 12),
-
-            /// Search
-            TextField(
-              controller: _searchController,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: 'Search product',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
               ),
-            ),
 
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            /// Product List
-            if (productController.isLoading)
-              const Padding(
-                padding: EdgeInsets.all(24),
-                child: CircularProgressIndicator(),
-              )
-            else if (productController.hasError)
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Text(
-                      productController.errorMessage ??
-                          'Failed to load products',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: () => productController.refresh(),
-                      child: const Text('Retry'),
-                    ),
-                  ],
+              /// Product List
+              if (productController.isLoading)
+                const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: CircularProgressIndicator(),
+                )
+              else if (productController.hasError)
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      Text(
+                        productController.errorMessage ??
+                            'Failed to load products',
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: () => productController.refresh(),
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                )
+              else if (products.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    'No products found',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                )
+              else
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: products.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final product = products[index];
+                      return _ProductTile(
+                        product: product,
+                        onTap: () {
+                          Navigator.pop(context, product);
+                        },
+                      );
+                    },
+                  ),
                 ),
-              )
-            else if (products.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'No products found',
-                  style: TextStyle(color: Colors.grey),
-                ),
-              )
-            else
-              Flexible(
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  itemCount: products.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final product = products[index];
-                    return _ProductTile(
-                      product: product,
-                      onTap: () {
-                        Navigator.pop(context, product);
-                      },
-                    );
-                  },
-                ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -173,7 +183,7 @@ class _ProductTile extends StatelessWidget {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -191,9 +201,8 @@ class _ProductTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade200),
           ),
           child: Row(
             children: [
@@ -212,7 +221,9 @@ class _ProductTile extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       '${product.unit.name} • ${product.type.name}',
-                      style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(fontSize: 13),
                     ),
                   ],
                 ),
@@ -221,14 +232,21 @@ class _ProductTile extends StatelessWidget {
               /// Rate
               Text(
                 'PKR ${product.defaultRate.toStringAsFixed(2)}',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
 
               const SizedBox(width: 4),
 
               /// Edit Button
               IconButton(
-                icon: Icon(Icons.edit_outlined, size: 20, color: Colors.grey.shade600),
+                icon: Icon(
+                  Icons.edit_outlined,
+                  size: 20,
+                  color: Theme.of(context).iconTheme.color,
+                ),
                 onPressed: () => _openEditProduct(context),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),

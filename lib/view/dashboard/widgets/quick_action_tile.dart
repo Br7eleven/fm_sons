@@ -22,7 +22,7 @@ class QuickActionTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -30,10 +30,10 @@ class QuickActionTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.blue.shade50,
+                color: Theme.of(context).colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: Colors.blue),
+              child: Icon(icon, color: Theme.of(context).colorScheme.primary),
             ),
             const SizedBox(width: 16),
             Expanded(
@@ -48,7 +48,7 @@ class QuickActionTile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(subtitle, style: const TextStyle(color: Colors.grey)),
+                  Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
                 ],
               ),
             ),

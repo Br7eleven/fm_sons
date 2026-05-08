@@ -7,9 +7,10 @@ import 'tables/invoice_table.dart';
 import 'tables/product_table.dart';
 import 'tables/contract_table.dart';
 import 'tables/unit_table.dart';
+import 'tables/note_table.dart';
 
 class AppDatabase {
-  static const int schemaVersion = 2;
+  static const int schemaVersion = 3;
   static const String _dbName = 'fm_sons.db';
 
   static Database? _db;
@@ -56,6 +57,7 @@ class AppDatabase {
     await db.execute(ContractTable.createTable);
     await db.execute(InvoiceTable.createTable);
     await db.execute(InvoiceItemTable.createTable);
+    await db.execute(NoteTable.createTable);
   }
 
   static Future<void> _runMigrations(
@@ -67,8 +69,12 @@ class AppDatabase {
       await _migrateV1ToV2(db);
     }
 
+    if (oldVersion < 3) {
+      await _migrateV2ToV3(db);
+    }
+
     // Reserve future migration blocks:
-    // if (oldVersion < 3) { ... }
+    // if (oldVersion < 4) { ... }
     if (newVersion > schemaVersion) {
       // ignore: avoid_print
       print(
@@ -84,6 +90,10 @@ class AppDatabase {
     int newVersion,
   ) async {
     await _runMigrations(db, oldVersion, newVersion);
+  }
+
+  static Future<void> _migrateV2ToV3(Database db) async {
+    await db.execute(NoteTable.createTable);
   }
 
   static Future<void> _migrateV1ToV2(Database db) async {

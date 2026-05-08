@@ -8,23 +8,24 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.white,
       elevation: 0,
       titleSpacing: 0,
       title: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Row(
-          children: const [
-            AvatarWidget(),
-            SizedBox(width: 8),
+          children: [
+            const AvatarWidget(),
+            const SizedBox(width: 8),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Welcome back,',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontSize: 12),
                 ),
-                Text(
+                const Text(
                   'CEO FM Sons',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),

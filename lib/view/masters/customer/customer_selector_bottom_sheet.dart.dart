@@ -29,10 +29,10 @@ class _CustomerSelectorBottomSheetState
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      builder: (builderContext) => Container(
+        decoration: BoxDecoration(
+          color: Theme.of(builderContext).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: CustomerFormScreen(customer: customer),
       ),
@@ -94,10 +94,12 @@ class _CustomerSelectorBottomSheetState
                       context: context,
                       isScrollControlled: true,
                       backgroundColor: Colors.transparent,
-                      builder: (_) => Container(
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.vertical(
+                      builder: (builderContext) => Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            builderContext,
+                          ).scaffoldBackgroundColor,
+                          borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(20),
                           ),
                         ),
@@ -130,21 +132,20 @@ class _CustomerSelectorBottomSheetState
               onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
                 hintText: 'Search by name, phone, or address',
-                hintStyle: TextStyle(fontSize: 14, color: Colors.grey.shade500),
-                prefixIcon: Icon(Icons.search, color: Colors.grey.shade600),
+                prefixIcon: const Icon(Icons.search),
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: Theme.of(context).cardColor,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 12,
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(color: Theme.of(context).dividerColor),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
+                  borderSide: BorderSide(color: Theme.of(context).dividerColor),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -169,7 +170,7 @@ class _CustomerSelectorBottomSheetState
                     Icon(
                       Icons.error_outline,
                       size: 48,
-                      color: Colors.red.shade300,
+                      color: Theme.of(context).colorScheme.error,
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -206,13 +207,12 @@ class _CustomerSelectorBottomSheetState
                     Icon(
                       Icons.people_outline,
                       size: 64,
-                      color: Colors.grey.shade300,
+                      color: Theme.of(context).disabledColor,
                     ),
                     const SizedBox(height: 12),
-                    const Text(
+                    Text(
                       'No customers found',
-                      style: TextStyle(
-                        color: Colors.grey,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                       ),
@@ -220,10 +220,9 @@ class _CustomerSelectorBottomSheetState
                     const SizedBox(height: 4),
                     Text(
                       'Add your first customer to get started',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 13,
-                      ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.bodySmall?.copyWith(fontSize: 13),
                     ),
                   ],
                 ),
@@ -270,7 +269,7 @@ class _CustomerTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -292,12 +291,12 @@ class _CustomerTile extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E5EFF).withValues(alpha: 0.1),
+                  color: Theme.of(context).colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.person_outline,
-                  color: Color(0xFF1E5EFF),
+                  color: Theme.of(context).colorScheme.primary,
                   size: 22,
                 ),
               ),
@@ -318,10 +317,9 @@ class _CustomerTile extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         customer.phone!,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.grey.shade600,
-                        ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(fontSize: 13),
                       ),
                     ],
                     if (customer.address != null) ...[
@@ -330,10 +328,9 @@ class _CustomerTile extends StatelessWidget {
                         customer.address!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey.shade500,
-                        ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodySmall?.copyWith(fontSize: 12),
                       ),
                     ],
                   ],

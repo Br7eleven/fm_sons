@@ -14,9 +14,8 @@ class InvoiceHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -24,22 +23,25 @@ class InvoiceHeader extends StatelessWidget {
           /// Invoice No (Locked)
           Row(
             children: [
-              const Text(
+              Text(
                 'Invoice No',
-                style: TextStyle(fontSize: 13, color: Colors.grey),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontSize: 13),
               ),
               const Spacer(),
-              Icon(Icons.lock, size: 16, color: Colors.grey.shade600),
+              Icon(
+                Icons.lock,
+                size: 16,
+                color: Theme.of(context).iconTheme.color,
+              ),
             ],
           ),
           const SizedBox(height: 6),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade300),
-            ),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
             child: Text(
               controller.invoiceNumber,
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
@@ -49,9 +51,11 @@ class InvoiceHeader extends StatelessWidget {
           const SizedBox(height: 20),
 
           /// Invoice Date
-          const Text(
+          Text(
             'Invoice Date',
-            style: TextStyle(fontSize: 13, color: Colors.grey),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(fontSize: 13),
           ),
           const SizedBox(height: 6),
           InkWell(
@@ -72,7 +76,6 @@ class InvoiceHeader extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade300),
               ),
               child: Row(
                 children: [
@@ -85,7 +88,7 @@ class InvoiceHeader extends StatelessWidget {
                   Icon(
                     Icons.calendar_today_outlined,
                     size: 18,
-                    color: Colors.grey.shade600,
+                    color: Theme.of(context).iconTheme.color,
                   ),
                 ],
               ),

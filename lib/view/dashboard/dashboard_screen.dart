@@ -6,6 +6,7 @@ import 'package:fm_sons/view/dashboard/widgets/overview_card.dart';
 import 'package:fm_sons/view/dashboard/widgets/stat_card.dart';
 import 'package:fm_sons/view/dashboard/widgets/quick_actions_grid.dart';
 import '.././shared/bottom_nav.dart';
+import '.././shared/app_drawer.dart';
 
 import '../../data/local/dao/invoice_dao.dart';
 import '../invoice/invoice_history_tab.dart';
@@ -13,7 +14,9 @@ import '../masters/customer/clients_tab.dart';
 import '../settings/settings_tab.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  final int initialTab;
+
+  const DashboardScreen({super.key, this.initialTab = 0});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -28,7 +31,7 @@ class _DashboardScreenState extends State<DashboardScreen>
     decimalDigits: 0,
   );
 
-  int _currentIndex = 0;
+  late int _currentIndex;
   bool _isLoading = true;
   String? _loadError;
   int _totalInvoices = 0;
@@ -40,6 +43,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.initialTab;
     WidgetsBinding.instance.addObserver(this);
     _loadDashboardData();
   }
@@ -124,6 +128,19 @@ class _DashboardScreenState extends State<DashboardScreen>
     setState(() => _currentIndex = index);
   }
 
+  String _getCurrentRoute() {
+    switch (_currentIndex) {
+      case 1:
+        return 'invoices';
+      case 2:
+        return 'clients';
+      case 3:
+        return 'settings';
+      default:
+        return 'dashboard';
+    }
+  }
+
   PreferredSizeWidget _buildAppBar() {
     switch (_currentIndex) {
       case 1:
@@ -132,12 +149,11 @@ class _DashboardScreenState extends State<DashboardScreen>
         );
       case 2:
         return AppBar(
-          backgroundColor: Colors.white,
           elevation: 0,
           centerTitle: true,
           title: const Text(
             'Clients',
-            style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w800),
+            style: TextStyle(fontWeight: FontWeight.w800),
           ),
         );
       case 3:
@@ -176,8 +192,11 @@ class _DashboardScreenState extends State<DashboardScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FC),
       appBar: _buildAppBar(),
+      drawer: AppDrawer(
+        currentRoute: _getCurrentRoute(),
+        onTabChange: _handleTabChanged,
+      ),
       bottomNavigationBar: BottomNav(
         currentIndex: _currentIndex,
         onTap: _handleTabChanged,
@@ -241,7 +260,7 @@ class _DashboardOverviewTab extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 16),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.red.shade50,
+                color: Theme.of(context).colorScheme.errorContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -249,7 +268,9 @@ class _DashboardOverviewTab extends StatelessWidget {
                   Expanded(
                     child: Text(
                       loadError!,
-                      style: TextStyle(color: Colors.red.shade700),
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onErrorContainer,
+                      ),
                     ),
                   ),
                   TextButton(onPressed: onRefresh, child: const Text('Retry')),

@@ -12,9 +12,6 @@ class BottomNav extends StatelessWidget {
       currentIndex: currentIndex,
       onTap: onTap,
       type: BottomNavigationBarType.fixed,
-      selectedItemColor: Colors.blue,
-      unselectedItemColor: Colors.grey,
-      backgroundColor: Colors.white,
       items: const [
         BottomNavigationBarItem(
           icon: Icon(Icons.dashboard),
@@ -24,10 +21,7 @@ class BottomNav extends StatelessWidget {
           icon: Icon(Icons.receipt_long),
           label: 'Invoices',
         ),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.group),
-          label: 'Clients',
-        ),
+        BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Clients'),
         BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
       ],
     );

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:fm_sons/view/invoice/create_invoice_screen.dart';
-// import 'package:fm_sons/view/invoice/invoice_items_section.dart';
+import 'package:fm_sons/view/notes/notes_screen.dart';
 import 'quick_action_tile.dart';
 
 class QuickActionGrid extends StatelessWidget {
@@ -72,6 +72,21 @@ class QuickActionGrid extends StatelessWidget {
             ),
           ],
         ),
+
+        const SizedBox(height: 12),
+
+        // 🔹 Notes Action
+        _SmallActionTile(
+          icon: Icons.note_alt_outlined,
+          title: 'Notes',
+          subtitle: 'Quick notes & memos',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const NotesScreen()),
+            );
+          },
+        ),
       ],
     );
   }
@@ -99,19 +114,21 @@ class _SmallActionTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: Colors.blue),
+            Icon(icon, color: Theme.of(context).colorScheme.primary),
             const SizedBox(height: 10),
             Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
             Text(
               subtitle,
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontSize: 12),
             ),
           ],
         ),

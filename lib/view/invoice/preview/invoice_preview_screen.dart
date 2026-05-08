@@ -186,7 +186,6 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
     final invoice = context.watch<InvoiceController>();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F9),
       appBar: AppBar(
         leading: const CloseButton(),
         title: const Text('Preview'),
@@ -235,7 +234,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                   color: Colors.white,
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
@@ -324,6 +323,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
       case InvoiceThemeType.blueEstimate:
         return TemplateBlue(invoice: invoice);
 
+      // ignore: unreachable_switch_default
       default:
         return TemplateTax1(invoice: invoice);
     }

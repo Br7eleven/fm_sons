@@ -25,9 +25,8 @@ class BillableItemTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,10 +95,7 @@ class BillableItemTile extends StatelessWidget {
           /// Measurement row (govt style)
           Row(
             children: [
-              _InfoChip(
-                label: 'Qty',
-                value: '${item.quantity} $unitLabel',
-              ),
+              _InfoChip(label: 'Qty', value: '${item.quantity} $unitLabel'),
 
               const SizedBox(width: 12),
               _InfoChip(
@@ -145,17 +141,23 @@ class _InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.grey.shade100,
+        color: isDark
+            ? Theme.of(context).colorScheme.surfaceContainerHighest
+            : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
           Text(
             '$label: ',
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontSize: 13),
           ),
           Text(
             value,

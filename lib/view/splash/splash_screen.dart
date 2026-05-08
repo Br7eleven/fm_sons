@@ -1,8 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
-import 'package:fm_sons/view/auth/auth_screen.dart';
-// import 'package:fm_sons/view/dashboard/dashboard_screen.dart';
+import 'package:fm_sons/view/dashboard/dashboard_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -20,7 +19,7 @@ class _SplashScreenState extends State<SplashScreen> {
     Timer(const Duration(seconds: 3), () {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => AuthScreen()),
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
       );
     });
   }

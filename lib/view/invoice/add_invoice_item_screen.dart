@@ -83,7 +83,6 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
     final total = qty * rate;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FC),
       appBar: AppBar(
         centerTitle: true,
         title: Text(
@@ -131,7 +130,7 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
                         final product = await showModalBottomSheet<Product>(
                           context: context,
                           isScrollControlled: true,
-                          backgroundColor: FMSons.bgWhite,
+                          backgroundColor: Colors.transparent,
                           builder: (_) => const ProductSelectorBottomSheet(),
                         );
 
@@ -248,16 +247,17 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.grey.shade200),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Calculation',
-                            style: TextStyle(fontSize: 13, color: Colors.grey),
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(fontSize: 13),
                           ),
                           const SizedBox(height: 6),
                           Text(
@@ -289,7 +289,9 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton.icon(
-                  icon: Icon(widget.isEditing ? Icons.save_outlined : Icons.add),
+                  icon: Icon(
+                    widget.isEditing ? Icons.save_outlined : Icons.add,
+                  ),
                   label: Text(
                     widget.isEditing ? 'Save Item' : 'Add to Invoice',
                     style: const TextStyle(
@@ -369,13 +371,13 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade300),
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
+          border: Border.all(color: Theme.of(context).dividerColor, width: 1),
         ),
         child: Row(
           children: [
             Expanded(child: Text(value)),
-            Icon(Icons.expand_more, color: Colors.grey.shade600),
+            Icon(Icons.expand_more, color: Theme.of(context).iconTheme.color),
           ],
         ),
       ),
@@ -392,7 +394,10 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 13),
+        ),
         const SizedBox(height: 6),
         TextFormField(
           controller: controller,
@@ -402,8 +407,15 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
           decoration: InputDecoration(
             prefixText: prefix,
             filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            fillColor: Theme.of(context).cardColor,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Theme.of(context).dividerColor),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Theme.of(context).dividerColor),
+            ),
           ),
         ),
       ],

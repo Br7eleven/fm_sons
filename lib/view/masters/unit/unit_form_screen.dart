@@ -175,21 +175,18 @@ class _UnitFormScreenState extends State<UnitFormScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(height: 8),
           child,

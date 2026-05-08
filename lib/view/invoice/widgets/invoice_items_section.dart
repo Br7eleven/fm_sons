@@ -40,21 +40,22 @@ class InvoiceItemsSection extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.grey.shade200),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
+              children: [
+                const Text(
                   'No billable items added',
                   style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
                 ),
-                SizedBox(height: 6),
+                const SizedBox(height: 6),
                 Text(
                   'Add materials or work items with quantity, unit, and rate.',
-                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontSize: 13),
                 ),
               ],
             ),

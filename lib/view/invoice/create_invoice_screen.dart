@@ -22,43 +22,43 @@ class CreateInvoiceScreen extends StatelessWidget {
         // No need to clear draft when navigating away
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF7F9FC),
         appBar: AppBar(
           elevation: 0,
-          backgroundColor: Colors.white,
           leading: IconButton(
             onPressed: () {
               // Just navigate back, draft is preserved automatically
               Navigator.of(context).pop();
             },
-            icon: const Icon(Icons.close, color: Colors.black),
+            icon: const Icon(Icons.close),
           ),
           centerTitle: true,
           title: Text(
             invoiceController.isEditingInvoice ? 'Edit Invoice' : 'New Invoice',
-            style: const TextStyle(
-              color: Colors.black,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
           actions: [
             if (invoiceController.items.isNotEmpty ||
                 invoiceController.customerName != null)
               PopupMenuButton<String>(
-                icon: const Icon(Icons.more_vert, color: Colors.black),
+                icon: const Icon(Icons.more_vert),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 itemBuilder: (context) => [
-                  const PopupMenuItem(
+                  PopupMenuItem(
                     value: 'discard',
                     child: Row(
                       children: [
-                        Icon(Icons.delete_outline, color: Colors.red),
-                        SizedBox(width: 12),
+                        Icon(
+                          Icons.delete_outline,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                        const SizedBox(width: 12),
                         Text(
                           'Discard Draft',
-                          style: TextStyle(color: Colors.red),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
                         ),
                       ],
                     ),
@@ -78,16 +78,22 @@ class CreateInvoiceScreen extends StatelessWidget {
                         ),
                         actions: [
                           TextButton(
-                            onPressed: () => Navigator.pop(dialogContext, false),
+                            onPressed: () =>
+                                Navigator.pop(dialogContext, false),
                             child: const Text('Cancel'),
                           ),
-                          ElevatedButton(
-                            onPressed: () => Navigator.pop(dialogContext, true),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
+                          Builder(
+                            builder: (context) => ElevatedButton(
+                              onPressed: () =>
+                                  Navigator.pop(dialogContext, true),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Theme.of(
+                                  context,
+                                ).colorScheme.error,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Discard'),
                             ),
-                            child: const Text('Discard'),
                           ),
                         ],
                       ),
@@ -105,48 +111,51 @@ class CreateInvoiceScreen extends StatelessWidget {
           ],
         ),
 
-      /// MAIN LAYOUT
-      body: Column(
-        children: [
-          /// 🔹 Scrollable Content
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const InvoiceHeader(),
-                  const SizedBox(height: 24),
+        /// MAIN LAYOUT
+        body: Column(
+          children: [
+            /// 🔹 Scrollable Content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const InvoiceHeader(),
+                    const SizedBox(height: 24),
 
-                  /// Client Information
-                  const Text(
-                    'Client Information',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 12),
+                    /// Client Information
+                    const Text(
+                      'Client Information',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
 
-                  _ClientInfoSection(),
+                    _ClientInfoSection(),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  /// Billable Items
-                  const InvoiceItemsSection(),
+                    /// Billable Items
+                    const InvoiceItemsSection(),
 
-                  const SizedBox(height: 24),
+                    const SizedBox(height: 24),
 
-                  /// Notes
-                  const _InvoiceNotesSection(),
+                    /// Notes
+                    const _InvoiceNotesSection(),
 
-                  /// Space for fixed bottom bar
-                  // const SizedBox(height: 120),
-                ],
+                    /// Space for fixed bottom bar
+                    // const SizedBox(height: 120),
+                  ],
+                ),
               ),
             ),
-          ),
 
-          /// 🔹 Fixed Bottom Bar
-          const _InvoiceBottomBar(),
-        ],
+            /// 🔹 Fixed Bottom Bar
+            const _InvoiceBottomBar(),
+          ],
         ),
       ),
     );
@@ -188,16 +197,17 @@ class _ClientInfoSectionState extends State<_ClientInfoSection> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Customer Name',
-            style: TextStyle(fontSize: 13, color: Colors.grey),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(fontSize: 13),
           ),
           const SizedBox(height: 6),
 
@@ -207,15 +217,14 @@ class _ClientInfoSectionState extends State<_ClientInfoSection> {
             decoration: InputDecoration(
               hintText: 'Enter customer name',
               filled: true,
-              fillColor: Colors.white,
+              fillColor: Theme.of(context).scaffoldBackgroundColor,
               suffixIcon: IconButton(
                 icon: const Icon(Icons.arrow_drop_down),
                 onPressed: () async {
                   final customer = await showModalBottomSheet(
                     context: context,
                     isScrollControlled: true,
-                    backgroundColor: Colors.white,
-                    barrierColor: Colors.black26,
+                    backgroundColor: Theme.of(context).cardColor,
                     shape: const RoundedRectangleBorder(
                       borderRadius: BorderRadius.vertical(
                         top: Radius.circular(16),
@@ -255,7 +264,7 @@ class _InvoiceBottomBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -380,16 +389,17 @@ class _InvoiceNotesSectionState extends State<_InvoiceNotesSection> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Note',
-            style: TextStyle(fontSize: 13, color: Colors.grey),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(fontSize: 13),
           ),
           const SizedBox(height: 8),
           TextField(
@@ -399,7 +409,7 @@ class _InvoiceNotesSectionState extends State<_InvoiceNotesSection> {
             decoration: InputDecoration(
               hintText: 'Add note or description',
               filled: true,
-              fillColor: Colors.white,
+              fillColor: Theme.of(context).scaffoldBackgroundColor,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),

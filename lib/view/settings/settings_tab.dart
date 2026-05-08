@@ -16,16 +16,15 @@ class SettingsAppBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      backgroundColor: Colors.white,
       elevation: 0,
       centerTitle: true,
       leading: IconButton(
         onPressed: onBackTap,
-        icon: const Icon(Icons.arrow_back, color: Colors.black87),
+        icon: const Icon(Icons.arrow_back),
       ),
       title: const Text(
         'Settings',
-        style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w800),
+        style: TextStyle(fontWeight: FontWeight.w800),
       ),
     );
   }
@@ -272,7 +271,7 @@ class _SettingsTabState extends State<SettingsTab> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
@@ -314,15 +313,16 @@ class _SettingsTabState extends State<SettingsTab> {
                       const SizedBox(height: 6),
                       Text(
                         'Government Contractor',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.blueGrey.shade700,
-                        ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.bodyLarge?.copyWith(fontSize: 16),
                       ),
                       const SizedBox(height: 8),
-                      const Text(
+                      Text(
                         'Tap to edit profile',
-                        style: TextStyle(color: Colors.blue),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
                       ),
                     ],
                   ),
@@ -390,7 +390,9 @@ class _SettingsTabState extends State<SettingsTab> {
                             style: TextStyle(
                               color: isConnected
                                   ? Colors.green.shade700
-                                  : Colors.grey.shade600,
+                                  : Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.color,
                             ),
                           ),
                         ],
@@ -417,16 +419,18 @@ class _SettingsTabState extends State<SettingsTab> {
                 onTap: _isBackingUp ? null : _runBackup,
               ),
               const Divider(height: 1),
-              _SettingsTile(
-                icon: _isRestoring
-                    ? Icons.hourglass_top
-                    : Icons.settings_backup_restore,
-                title: _isRestoring ? 'Restoring...' : 'Restore from Backup',
-                subtitle: 'Download latest JSON and overwrite local data',
-                titleColor: Colors.red,
-                subtitleColor: Colors.red,
-                iconColor: Colors.red,
-                onTap: _isRestoring ? null : _runRestore,
+              Builder(
+                builder: (context) => _SettingsTile(
+                  icon: _isRestoring
+                      ? Icons.hourglass_top
+                      : Icons.settings_backup_restore,
+                  title: _isRestoring ? 'Restoring...' : 'Restore from Backup',
+                  subtitle: 'Download latest JSON and overwrite local data',
+                  titleColor: Theme.of(context).colorScheme.error,
+                  subtitleColor: Theme.of(context).colorScheme.error,
+                  iconColor: Theme.of(context).colorScheme.error,
+                  onTap: _isRestoring ? null : _runRestore,
+                ),
               ),
               if (isConnected) ...[
                 const Divider(height: 1),
@@ -434,9 +438,9 @@ class _SettingsTabState extends State<SettingsTab> {
                   icon: Icons.logout,
                   title: 'Log out Google account',
                   subtitle: 'Disconnect current Google Drive account',
-                  titleColor: Colors.red,
-                  subtitleColor: Colors.red,
-                  iconColor: Colors.red,
+                  titleColor: Theme.of(context).colorScheme.error,
+                  subtitleColor: Theme.of(context).colorScheme.error,
+                  iconColor: Theme.of(context).colorScheme.error,
                   onTap: _disconnectDrive,
                 ),
               ],
@@ -496,7 +500,7 @@ class _MenuCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -552,7 +556,9 @@ class _SettingsTile extends StatelessWidget {
       ),
       subtitle: Text(
         subtitle,
-        style: TextStyle(color: subtitleColor ?? Colors.blueGrey.shade500),
+        style: TextStyle(
+          color: subtitleColor ?? Theme.of(context).textTheme.bodySmall?.color,
+        ),
       ),
       trailing: Icon(
         active ? Icons.chevron_right : Icons.lock_outline,
@@ -586,10 +592,7 @@ class _StaticTile extends StatelessWidget {
         child: const Icon(Icons.info_outline, color: Colors.blue),
       ),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-      trailing: Text(
-        trailing,
-        style: TextStyle(color: Colors.blueGrey.shade600),
-      ),
+      trailing: Text(trailing, style: Theme.of(context).textTheme.bodyMedium),
     );
   }
 }
