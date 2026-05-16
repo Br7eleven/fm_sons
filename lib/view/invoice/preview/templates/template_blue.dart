@@ -13,29 +13,33 @@ class TemplateBlue extends InvoiceTemplate {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Company Name in Blue
-        const Text(
-          'FM Sons',
-          style: TextStyle(
+        Text(
+          InvoiceTemplate.companyOf(context).name,
+          style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1565C0), // Blue
+            color: Color(0xFF1565C0),
           ),
         ),
         const SizedBox(height: 4),
-        const Text(
-          'Government Contractor General Order Supplier',
-          style: TextStyle(fontSize: 10, color: Colors.black87),
+        Text(
+          InvoiceTemplate.companyOf(context).tagline,
+          style: const TextStyle(fontSize: 10, color: Colors.black87),
         ),
         const SizedBox(height: 2),
-        const Text(
-          'fmsons514@gmail.com',
-          style: TextStyle(fontSize: 10, color: Colors.black87),
+        Text(
+          InvoiceTemplate.companyOf(context).email,
+          style: const TextStyle(fontSize: 10, color: Colors.black87),
         ),
         const SizedBox(height: 2),
-        const Text(
-          'PHQ Hospital Road - Modern Glass Aluminium Decoration Center',
-          style: TextStyle(fontSize: 10, color: Colors.black87),
+        Text(
+          InvoiceTemplate.companyOf(context).address,
+          style: const TextStyle(fontSize: 10, color: Colors.black87),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          'Vendor No: ${InvoiceTemplate.companyOf(context).vendorNumber}',
+          style: const TextStyle(fontSize: 10, color: Colors.black87),
         ),
       ],
     );
@@ -51,7 +55,7 @@ class TemplateBlue extends InvoiceTemplate {
       padding: const EdgeInsets.symmetric(vertical: 20),
       child: Column(
         children: [
-          // Bill to and Ship to + Dates
+          // Bill To + Dates
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -69,48 +73,11 @@ class TemplateBlue extends InvoiceTemplate {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Container(
-                      height: 1,
-                      width: 80,
-                      color: const Color(0xFF1565C0),
-                    ),
+                    Container(height: 1, width: 80, color: const Color(0xFF1565C0)),
                     const SizedBox(height: 8),
                     Text(
                       customerDisplayName,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Ship To
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'SHIP TO',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF1565C0),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      height: 1,
-                      width: 80,
-                      color: const Color(0xFF1565C0),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      customerDisplayName,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
@@ -119,7 +86,7 @@ class TemplateBlue extends InvoiceTemplate {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  _dateRow('Estimate Date:', invoiceDateLabel),
+                  _dateRow('${documentTypeLabel[0]}${documentTypeLabel.substring(1).toLowerCase()} Date:', invoiceDateLabel),
                   const SizedBox(height: 8),
                   _dateRow('Valid For:', '14 days'),
                 ],
@@ -148,7 +115,7 @@ class TemplateBlue extends InvoiceTemplate {
               Expanded(
                 flex: 4,
                 child: Text(
-                  'DESCRIPTION',
+                  'ITEM NAME',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -159,6 +126,17 @@ class TemplateBlue extends InvoiceTemplate {
               Expanded(
                 child: Text(
                   'QTY',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  'UNIT',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 11,
@@ -217,6 +195,15 @@ class TemplateBlue extends InvoiceTemplate {
                     formatQuantity(item.quantity),
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 11),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    item.unit,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 11),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Expanded(
@@ -287,15 +274,10 @@ class TemplateBlue extends InvoiceTemplate {
               child: Column(
                 children: [
                   _totalRow('SUBTOTAL', formatMoney(subtotalAmount)),
-                  _totalRow('DISCOUNT', formatMoney(0)),
-                  _totalRow('SUBTOTAL LESS DISCOUNT', formatMoney(subtotalAmount)),
-                  _totalRow('TAX RATE', '0.00%'),
-                  _totalRow('TOTAL TAX', formatMoney(0)),
-                  _totalRow('SHIPPING/ HANDLING', formatMoney(0)),
                   const Divider(thickness: 2, color: Colors.black),
                   _totalRow(
-                    'Quote Total',
-                    '\$ ${formatMoney(grandTotalAmount)}',
+                    'TOTAL',
+                    formatMoney(grandTotalAmount),
                     isBold: true,
                   ),
                 ],
@@ -319,9 +301,9 @@ class TemplateBlue extends InvoiceTemplate {
       children: [
         const SizedBox(height: 16),
         // Amount in Words
-        const Text(
-          'Estimate Amount in Words',
-          style: TextStyle(
+        Text(
+          '${documentTypeLabel[0]}${documentTypeLabel.substring(1).toLowerCase()} Amount in Words',
+          style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w700,
             color: Color(0xFF1565C0),
@@ -376,12 +358,21 @@ class TemplateBlue extends InvoiceTemplate {
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
             Text(
-              'For: FM Sons Government Contractor Vendor Number 30140988',
-              style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+              'For: ${InvoiceTemplate.companyOf(context).name} ${InvoiceTemplate.companyOf(context).tagline} Vendor Number ${InvoiceTemplate.companyOf(context).vendorNumber}',
+              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
             ),
-            Text('Authorized Signatory', style: TextStyle(fontSize: 11)),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                buildSignature(context),
+                Container(width: 160, height: 1.5, color: Colors.black),
+                const SizedBox(height: 4),
+                const Text('Authorized Signatory', style: TextStyle(fontSize: 11)),
+              ],
+            ),
           ],
         ),
       ],

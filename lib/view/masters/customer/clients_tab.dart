@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 import 'package:fm_sons/data/local/dao/invoice_dao.dart';
 import 'package:fm_sons/view/masters/customer/customer_controller.dart';
@@ -22,11 +20,19 @@ class ClientsTab extends StatefulWidget {
 
 class _ClientsTabState extends State<ClientsTab> {
   final InvoiceDao _invoiceDao = InvoiceDao();
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     context.read<CustomerController>().initialize();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _showAddCustomerDialog() async {
@@ -107,7 +113,15 @@ class _ClientsTabState extends State<ClientsTab> {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<CustomerController>();
-    final customers = controller.customers;
+    final allCustomers = controller.customers;
+    final customers = _searchQuery.isEmpty
+        ? allCustomers
+        : allCustomers
+            .where((c) =>
+                c.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                (c.phone ?? '').contains(_searchQuery) ||
+                (c.address ?? '').toLowerCase().contains(_searchQuery.toLowerCase()))
+            .toList();
 
     return RefreshIndicator(
       onRefresh: controller.refresh,
@@ -126,8 +140,8 @@ class _ClientsTabState extends State<ClientsTab> {
                 icon: const Icon(Icons.add),
                 label: const Text('Add Client'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -139,9 +153,44 @@ class _ClientsTabState extends State<ClientsTab> {
               ),
             ],
           ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _searchController,
+            onChanged: (v) => setState(() => _searchQuery = v.trim()),
+            decoration: InputDecoration(
+              hintText: 'Search clients...',
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _searchQuery.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                    )
+                  : null,
+              filled: true,
+              fillColor: Theme.of(context).cardColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+          ),
           const SizedBox(height: 16),
           if (controller.isLoading)
             const Center(child: CircularProgressIndicator())
+          else if (customers.isEmpty && _searchQuery.isNotEmpty)
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'No clients match "$_searchQuery"',
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              ),
+            )
           else if (customers.isEmpty)
             Container(
               padding: const EdgeInsets.all(24),
@@ -162,15 +211,17 @@ class _ClientsTabState extends State<ClientsTab> {
                     style: TextStyle(color: Colors.grey, fontSize: 15),
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                    onPressed: _showAddCustomerDialog,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add Your First Client'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  Builder(
+                    builder: (context) => ElevatedButton.icon(
+                      onPressed: _showAddCustomerDialog,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add Your First Client'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                     ),
                   ),
@@ -199,12 +250,6 @@ class _ClientCard extends StatefulWidget {
 
 class _ClientCardState extends State<_ClientCard> {
   bool _isExpanded = false;
-  final NumberFormat _currencyFormat = NumberFormat.currency(
-    locale: 'en_IN',
-    symbol: 'PKR ',
-    decimalDigits: 0,
-  );
-  final DateFormat _dateFormat = DateFormat('dd MMM yyyy');
 
   Future<void> _editInvoice(InvoiceModel invoice) async {
     if (invoice.id == null) return;
@@ -233,54 +278,26 @@ class _ClientCardState extends State<_ClientCard> {
 
   Future<void> _previewInvoice(InvoiceModel invoice) async {
     if (invoice.id == null) return;
-    final controller = context.read<InvoiceController>();
-    final messenger = ScaffoldMessenger.of(context);
 
-    try {
-      await controller.loadInvoiceForEditing(invoice.id!);
-      if (!mounted) return;
-
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const InvoicePreviewScreen()),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text('Unable to preview invoice: $e')),
-      );
-    }
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => InvoicePreviewScreen(previewInvoiceId: invoice.id!),
+      ),
+    );
   }
 
   Future<void> _shareInvoice(InvoiceModel invoice) async {
-    final formattedDate = DateTime.tryParse(invoice.invoiceDate)?.toLocal();
-    final dateStr = formattedDate != null
-        ? _dateFormat.format(formattedDate)
-        : invoice.invoiceDate;
-    final formattedAmount = _currencyFormat.format(invoice.total);
-
-    final shareText =
-        '''
-📄 Invoice Details
-
-Invoice #: ${invoice.invoiceNumber}
-Client: ${invoice.clientName}
-Date: $dateStr
-Amount: $formattedAmount
-Status: ${invoice.status.toUpperCase()}
-
-Generated by FM Sons Billing App
-    '''
-            .trim();
-
-    try {
-      await Share.share(shareText, subject: 'Invoice ${invoice.invoiceNumber}');
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to share invoice: $e')));
-    }
+    if (invoice.id == null) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => InvoicePreviewScreen(
+          previewInvoiceId: invoice.id!,
+          autoShare: true,
+        ),
+      ),
+    );
   }
 
   Future<void> _editCustomer() async {
@@ -361,12 +378,12 @@ Generated by FM Sons Billing App
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
                       Icons.person_outline,
-                      color: Colors.blue.shade700,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -564,14 +581,18 @@ Generated by FM Sons Billing App
                   Row(
                     children: [
                       Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _editCustomer,
-                          icon: const Icon(Icons.edit_outlined),
-                          label: const Text('Edit'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                        child: Builder(
+                          builder: (context) => OutlinedButton.icon(
+                            onPressed: _editCustomer,
+                            icon: const Icon(Icons.edit_outlined),
+                            label: const Text('Edit'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Theme.of(context).colorScheme.primary,
+                              side: BorderSide(color: Theme.of(context).colorScheme.primary),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           ),
                         ),

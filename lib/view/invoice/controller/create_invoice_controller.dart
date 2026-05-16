@@ -37,15 +37,18 @@ class InvoiceController extends ChangeNotifier {
     InvoiceDao? invoiceDao,
     InvoiceItemDao? invoiceItemDao,
     CustomerDao? customerDao,
+    bool autoInitialize = true,
   }) : _invoiceDao = invoiceDao ?? InvoiceDao(),
        _invoiceItemDao = invoiceItemDao ?? InvoiceItemDao(),
        _customerDao = customerDao ?? CustomerDao() {
-    initialize();
+    if (autoInitialize) initialize();
   }
 
   bool _initialized = false;
   String amountInWords = "";
   String _notes = '';
+  String _templateId = 'taxTheme1';
+  String _documentType = 'invoice'; // 'invoice' or 'estimate'
   final List<InvoiceItem> _items = [];
   final List<InvoiceModel> _savedInvoices = [];
   bool _isLoading = false;
@@ -62,6 +65,21 @@ class InvoiceController extends ChangeNotifier {
   int? get editingInvoiceId => _editingInvoiceId;
   bool get isEditingInvoice => _editingInvoiceId != null;
   String get notes => _notes;
+  String get templateId => _templateId;
+  String get documentType => _documentType;
+  bool get isEstimate => _documentType == 'estimate';
+
+  void setTemplateId(String id) {
+    _templateId = id;
+    _saveDraft();
+    notifyListeners();
+  }
+
+  void setDocumentType(String type) {
+    _documentType = type;
+    _saveDraft();
+    notifyListeners();
+  }
 
   void updateInvoiceDate(DateTime date) {
     clearError();
@@ -227,6 +245,8 @@ class InvoiceController extends ChangeNotifier {
           DateTime.now();
       _customer = resolvedCustomer;
       _notes = '';
+      _templateId = invoice.template;
+      _documentType = invoice.documentType;
 
       _items
         ..clear()
@@ -303,6 +323,8 @@ class InvoiceController extends ChangeNotifier {
         tax: 0,
         total: totalAmount,
         status: existingInvoice?.status ?? status,
+        template: _templateId,
+        documentType: _documentType,
         createdAt: existingInvoice?.createdAt ?? now,
         updatedAt: now,
       );
@@ -352,6 +374,8 @@ class InvoiceController extends ChangeNotifier {
     _invoiceDate = DateTime.now();
     amountInWords = '';
     _notes = '';
+    _templateId = 'taxTheme1';
+    _documentType = 'invoice';
     _activeInvoiceId = null;
     _editingInvoiceId = null;
     await _loadNextInvoiceNumber();
@@ -450,9 +474,10 @@ class InvoiceController extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final data = {
-        'invoiceNumber': _invoiceNumber,
         'invoiceDate': _invoiceDate.toUtc().toIso8601String(),
         'notes': _notes,
+        'templateId': _templateId,
+        'documentType': _documentType,
         'customer': _customer?.toMap(),
         'items': _items.map((it) => {
           'productId': it.productId,
@@ -475,12 +500,15 @@ class InvoiceController extends ChangeNotifier {
       final raw = prefs.getString(_draftKey);
       if (raw == null) return;
       final map = jsonDecode(raw) as Map<String, dynamic>;
-      _invoiceNumber = map['invoiceNumber'] ?? _invoiceNumber;
+      // invoiceNumber is intentionally NOT restored from draft —
+      // it is always computed fresh by _loadNextInvoiceNumber() on init.
       final dateStr = map['invoiceDate'] as String?;
       if (dateStr != null) {
         _invoiceDate = DateTime.tryParse(dateStr)?.toLocal() ?? _invoiceDate;
       }
       _notes = map['notes'] ?? _notes;
+      _templateId = map['templateId'] as String? ?? _templateId;
+      _documentType = map['documentType'] as String? ?? _documentType;
       final customerMap = map['customer'] as Map<String, dynamic>?;
       if (customerMap != null) {
         _customer = Customer.fromMap(Map<String, dynamic>.from(customerMap));

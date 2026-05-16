@@ -20,19 +20,19 @@ class TemplateModern extends InvoiceTemplate {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
+        children: [
           Text(
-            'FM Sons',
-            style: TextStyle(
+            InvoiceTemplate.companyOf(context).name,
+            style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
               color: Colors.white,
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Text(
-            'Construction & Supplies',
-            style: TextStyle(fontSize: 13, color: Colors.white70),
+            InvoiceTemplate.companyOf(context).tagline,
+            style: const TextStyle(fontSize: 13, color: Colors.white70),
           ),
         ],
       ),
@@ -240,6 +240,24 @@ class TemplateModern extends InvoiceTemplate {
           const Text(
             'Thank you for your business!',
             style: TextStyle(fontSize: 13),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  buildSignature(context),
+                  Container(width: 160, height: 1, color: Colors.black54),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Authorized Signatory',
+                    style: TextStyle(fontSize: 11),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),

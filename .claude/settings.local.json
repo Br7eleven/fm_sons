@@ -5,5 +5,9 @@
       "Bash(dart format *)",
       "Bash(flutter analyze *)"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "ruflo"
+  ],
+  "enableAllProjectMcpServers": true
 }

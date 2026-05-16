@@ -10,7 +10,7 @@ import 'tables/unit_table.dart';
 import 'tables/note_table.dart';
 
 class AppDatabase {
-  static const int schemaVersion = 3;
+  static const int schemaVersion = 5;
   static const String _dbName = 'fm_sons.db';
 
   static Database? _db;
@@ -73,8 +73,13 @@ class AppDatabase {
       await _migrateV2ToV3(db);
     }
 
-    // Reserve future migration blocks:
-    // if (oldVersion < 4) { ... }
+    if (oldVersion < 4) {
+      await _migrateV3ToV4(db);
+    }
+
+    if (oldVersion < 5) {
+      await _migrateV4ToV5(db);
+    }
     if (newVersion > schemaVersion) {
       // ignore: avoid_print
       print(
@@ -94,6 +99,30 @@ class AppDatabase {
 
   static Future<void> _migrateV2ToV3(Database db) async {
     await db.execute(NoteTable.createTable);
+  }
+
+  static Future<void> _migrateV4ToV5(Database db) async {
+    final cols = await db.rawQuery(
+      "PRAGMA table_info(${InvoiceTable.tableName})",
+    );
+    final hasDocType = cols.any((c) => c['name'] == 'document_type');
+    if (!hasDocType) {
+      await db.execute(
+        "ALTER TABLE ${InvoiceTable.tableName} ADD COLUMN document_type TEXT NOT NULL DEFAULT 'invoice'",
+      );
+    }
+  }
+
+  static Future<void> _migrateV3ToV4(Database db) async {
+    final cols = await db.rawQuery(
+      "PRAGMA table_info(${InvoiceTable.tableName})",
+    );
+    final hasTemplate = cols.any((c) => c['name'] == 'template');
+    if (!hasTemplate) {
+      await db.execute(
+        "ALTER TABLE ${InvoiceTable.tableName} ADD COLUMN template TEXT NOT NULL DEFAULT 'taxTheme1'",
+      );
+    }
   }
 
   static Future<void> _migrateV1ToV2(Database db) async {

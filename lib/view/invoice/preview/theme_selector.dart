@@ -3,6 +3,19 @@ import 'package:flutter/material.dart';
 /// Enum for available invoice themes
 enum InvoiceThemeType { taxTheme1, taxTheme3, orangeEstimate, blueEstimate }
 
+InvoiceThemeType invoiceThemeFromId(String id) {
+  switch (id) {
+    case 'taxTheme3':
+      return InvoiceThemeType.taxTheme3;
+    case 'orangeEstimate':
+      return InvoiceThemeType.orangeEstimate;
+    case 'blueEstimate':
+      return InvoiceThemeType.blueEstimate;
+    default:
+      return InvoiceThemeType.taxTheme1;
+  }
+}
+
 class ThemeSelector extends StatelessWidget {
   final InvoiceThemeType selectedTheme;
   final ValueChanged<InvoiceThemeType> onChanged;

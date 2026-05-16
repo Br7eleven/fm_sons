@@ -50,6 +50,8 @@ dependencies:
   pdf: ^3.11.1
   printing: ^5.14.2
   share_plus: ^10.1.2
+  image_picker: ^1.1.2
+  url_launcher: ^6.3.0
 
 dev_dependencies:
   flutter_test:
@@ -79,6 +81,8 @@ flutter:
       - assets/
       - assets/images/
       - assets/icons/
+      - assets/letterheads/
+      - assets/logos/Android Image/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

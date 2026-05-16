@@ -11,6 +11,7 @@ import '.././shared/app_drawer.dart';
 import '../../data/local/dao/invoice_dao.dart';
 import '../invoice/invoice_history_tab.dart';
 import '../masters/customer/clients_tab.dart';
+import '../notes/notes_screen.dart';
 import '../settings/settings_tab.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -125,6 +126,20 @@ class _DashboardScreenState extends State<DashboardScreen>
   String _formatCurrency(num value) => _currencyFormat.format(value);
 
   void _handleTabChanged(int index) {
+    if (index == 2) {
+      Navigator.of(context).push(
+        PageRouteBuilder(
+          pageBuilder: (_, _, _) => const NotesScreen(),
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+        ),
+      ).then((result) {
+        if (result is int && mounted) {
+          setState(() => _currentIndex = result);
+        }
+      });
+      return;
+    }
     setState(() => _currentIndex = index);
   }
 
@@ -132,10 +147,6 @@ class _DashboardScreenState extends State<DashboardScreen>
     switch (_currentIndex) {
       case 1:
         return 'invoices';
-      case 2:
-        return 'clients';
-      case 3:
-        return 'settings';
       default:
         return 'dashboard';
     }
@@ -145,24 +156,29 @@ class _DashboardScreenState extends State<DashboardScreen>
     switch (_currentIndex) {
       case 1:
         return InvoiceHistoryAppBar(
-          onSettingsTap: () => setState(() => _currentIndex = 3),
-        );
-      case 2:
-        return AppBar(
-          elevation: 0,
-          centerTitle: true,
-          title: const Text(
-            'Clients',
-            style: TextStyle(fontWeight: FontWeight.w800),
-          ),
-        );
-      case 3:
-        return SettingsAppBar(
-          onBackTap: () => setState(() => _currentIndex = 0),
+          onSettingsTap: () => _navigateToSettings(),
         );
       default:
         return const DashboardAppBar();
     }
+  }
+
+  void _navigateToSettings() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          appBar: AppBar(
+            title: const Text(
+              'Settings',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+            centerTitle: true,
+            elevation: 0,
+          ),
+          body: const SettingsTab(),
+        ),
+      ),
+    );
   }
 
   Widget _buildBody() {
@@ -179,12 +195,26 @@ class _DashboardScreenState extends State<DashboardScreen>
           todayInvoices: _todayInvoices,
           onNewInvoiceTap: _openCreateInvoiceFlow,
           onOpenInvoicesTap: () => setState(() => _currentIndex = 1),
-          onOpenClientsTap: () => setState(() => _currentIndex = 2),
+          onOpenClientsTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => Scaffold(
+                  appBar: AppBar(
+                    title: const Text(
+                      'Clients',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                    centerTitle: true,
+                    elevation: 0,
+                  ),
+                  body: const ClientsTab(),
+                ),
+              ),
+            );
+          },
           onRefresh: _loadDashboardData,
         ),
         const InvoiceHistoryTab(),
-        const ClientsTab(),
-        const SettingsTab(),
       ],
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:fm_sons/view/invoice/preview/invoice_preview_screen.dart';
+import 'package:fm_sons/view/invoice/preview/theme_selector.dart';
 import 'package:fm_sons/view/masters/customer/customer_selector_bottom_sheet.dart.dart';
 import 'package:provider/provider.dart';
 
@@ -224,12 +225,7 @@ class _ClientInfoSectionState extends State<_ClientInfoSection> {
                   final customer = await showModalBottomSheet(
                     context: context,
                     isScrollControlled: true,
-                    backgroundColor: Theme.of(context).cardColor,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(16),
-                      ),
-                    ),
+                    backgroundColor: Colors.transparent,
                     builder: (_) => const CustomerSelectorBottomSheet(),
                   );
 
@@ -254,12 +250,77 @@ class _ClientInfoSectionState extends State<_ClientInfoSection> {
 /*                         FIXED BOTTOM SUMMARY BAR                             */
 /* -------------------------------------------------------------------------- */
 
-class _InvoiceBottomBar extends StatelessWidget {
+class _InvoiceBottomBar extends StatefulWidget {
   const _InvoiceBottomBar();
+
+  @override
+  State<_InvoiceBottomBar> createState() => _InvoiceBottomBarState();
+}
+
+class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
+  bool _isSaving = false;
+
+  static const _templateColors = {
+    InvoiceThemeType.taxTheme1: Color(0xFF6C63FF),
+    InvoiceThemeType.taxTheme3: Color(0xFF0D47A1),
+    InvoiceThemeType.orangeEstimate: Color(0xFFFF5722),
+    InvoiceThemeType.blueEstimate: Color(0xFF1976D2),
+  };
+
+  static const _templateLabels = {
+    InvoiceThemeType.taxTheme1: 'Tax 1',
+    InvoiceThemeType.taxTheme3: 'Tax 3',
+    InvoiceThemeType.orangeEstimate: 'Orange',
+    InvoiceThemeType.blueEstimate: 'Blue',
+  };
+
+  bool _validate(InvoiceController controller) {
+    if (controller.items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Add at least one item')),
+      );
+      return false;
+    }
+    if ((controller.customerName ?? '').trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Customer name is required')),
+      );
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _saveInvoice(InvoiceController controller) async {
+    if (_isSaving || !_validate(controller)) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    final wasEditing = controller.isEditingInvoice;
+
+    setState(() => _isSaving = true);
+    try {
+      final id = await controller.saveCurrentInvoice();
+      if (!mounted) return;
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            wasEditing ? 'Invoice updated (ID: $id)' : 'Invoice saved (ID: $id)',
+          ),
+        ),
+      );
+      navigator.pop();
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<InvoiceController>();
+    final selectedTheme = invoiceThemeFromId(controller.templateId);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
@@ -293,61 +354,138 @@ class _InvoiceBottomBar extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
-          /// Preview Button
-          SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1E5EFF),
-                foregroundColor: FMSons.bgWhite,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
+          /// Template selector
+          Row(
+            children: [
+              const Text(
+                'Template:',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: InvoiceThemeType.values.map((type) {
+                      final color = _templateColors[type]!;
+                      final label = _templateLabels[type]!;
+                      final isSelected = type == selectedTheme;
+                      return GestureDetector(
+                        onTap: () => context
+                            .read<InvoiceController>()
+                            .setTemplateId(type.name),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          margin: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? color
+                                : color.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: color,
+                              width: isSelected ? 0 : 1,
+                            ),
+                          ),
+                          child: Text(
+                            label,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: isSelected ? Colors.white : color,
+                            ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ),
               ),
-              onPressed: () {
-                if (controller.isLoading) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please wait...')),
-                  );
-                  return;
-                }
+            ],
+          ),
+          const SizedBox(height: 12),
 
-                if (controller.items.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Add at least one item')),
-                  );
-                  return;
-                }
-
-                if ((controller.customerName ?? '').trim().isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Customer name is required')),
-                  );
-                  return;
-                }
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const InvoicePreviewScreen(),
+          /// Action buttons row
+          Row(
+            children: [
+              /// Preview button
+              Expanded(
+                child: SizedBox(
+                  height: 52,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFF1E5EFF)),
+                      foregroundColor: const Color(0xFF1E5EFF),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    onPressed: controller.isLoading
+                        ? null
+                        : () {
+                            if (!_validate(controller)) return;
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const InvoicePreviewScreen(),
+                              ),
+                            );
+                          },
+                    icon: const Icon(Icons.visibility_outlined, size: 18),
+                    label: const Text(
+                      'Preview',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                );
-              },
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Preview Invoice',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                  SizedBox(width: 8),
-                  Icon(Icons.arrow_forward),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(width: 12),
+
+              /// Save button
+              Expanded(
+                child: SizedBox(
+                  height: 52,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1E5EFF),
+                      foregroundColor: FMSons.bgWhite,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    onPressed: _isSaving || controller.isLoading
+                        ? null
+                        : () => _saveInvoice(controller),
+                    icon: _isSaving
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.save_outlined, size: 18),
+                    label: Text(
+                      controller.isEditingInvoice ? 'Update' : 'Save',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

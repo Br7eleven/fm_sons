@@ -21,8 +21,10 @@ class BottomNav extends StatelessWidget {
           icon: Icon(Icons.receipt_long),
           label: 'Invoices',
         ),
-        BottomNavigationBarItem(icon: Icon(Icons.group), label: 'Clients'),
-        BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+        BottomNavigationBarItem(
+          icon: Icon(Icons.note_alt_outlined),
+          label: 'Notes',
+        ),
       ],
     );
   }

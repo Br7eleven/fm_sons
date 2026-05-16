@@ -1,12 +1,26 @@
 import 'dart:convert';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../local/app_database.dart';
 import '../local/tables/contract_table.dart';
 import '../local/tables/customer_table.dart';
 import '../local/tables/invoice_item_table.dart';
 import '../local/tables/invoice_table.dart';
+import '../local/tables/note_table.dart';
 import '../local/tables/product_table.dart';
 import '../local/tables/unit_table.dart';
+
+// SharedPreferences keys that belong to company profile
+const _cpKeys = [
+  'cp_name',
+  'cp_tagline',
+  'cp_email',
+  'cp_phone',
+  'cp_address',
+  'cp_vendor_number',
+  'cp_logo_path',
+];
 
 class BackupJsonPayloadService {
   static const int payloadVersion = 1;
@@ -18,6 +32,7 @@ class BackupJsonPayloadService {
     ContractTable.tableName,
     InvoiceTable.tableName,
     InvoiceItemTable.tableName,
+    NoteTable.tableName,
   ];
 
   static const List<String> _deleteOrder = [
@@ -27,6 +42,7 @@ class BackupJsonPayloadService {
     ContractTable.tableName,
     CustomerTable.tableName,
     UnitTable.tableName,
+    NoteTable.tableName,
   ];
 
   static const Map<String, List<String>> _tableColumns = {
@@ -83,6 +99,8 @@ class BackupJsonPayloadService {
       'tax',
       'total',
       'status',
+      'template',
+      'document_type',
       'created_at',
       'updated_at',
     ],
@@ -98,14 +116,24 @@ class BackupJsonPayloadService {
       'amount',
       'sort_order',
     ],
+    NoteTable.tableName: [
+      'id',
+      'title',
+      'body',
+      'created_at',
+      'updated_at',
+    ],
   };
 
   Future<String> buildPayloadJson() async {
     final db = await AppDatabase.database;
+    final prefs = await SharedPreferences.getInstance();
+
     final payload = <String, dynamic>{
       'version': payloadVersion,
       'generated_at': DateTime.now().toUtc().toIso8601String(),
       'tables': <String, dynamic>{},
+      'company_profile': <String, dynamic>{},
     };
 
     final tablesMap = payload['tables'] as Map<String, dynamic>;
@@ -116,6 +144,12 @@ class BackupJsonPayloadService {
       tablesMap[tableName] = rows
           .map((row) => _normalizeRow(row, columns))
           .toList(growable: false);
+    }
+
+    final cpMap = payload['company_profile'] as Map<String, dynamic>;
+    for (final key in _cpKeys) {
+      final value = prefs.getString(key);
+      if (value != null) cpMap[key] = value;
     }
 
     return jsonEncode(payload);
@@ -130,6 +164,18 @@ class BackupJsonPayloadService {
     final tables = decoded['tables'];
     if (tables is! Map<String, dynamic>) {
       throw const FormatException('Backup payload is missing "tables" object');
+    }
+
+    // Restore company profile from SharedPreferences (best-effort, non-fatal)
+    final cpData = decoded['company_profile'];
+    if (cpData is Map) {
+      final prefs = await SharedPreferences.getInstance();
+      for (final key in _cpKeys) {
+        final value = cpData[key];
+        if (value is String) {
+          await prefs.setString(key, value);
+        }
+      }
     }
 
     final db = await AppDatabase.database;
@@ -165,6 +211,7 @@ class BackupJsonPayloadService {
       await _syncAutoIncrementSequence(txn, ContractTable.tableName);
       await _syncAutoIncrementSequence(txn, InvoiceTable.tableName);
       await _syncAutoIncrementSequence(txn, InvoiceItemTable.tableName);
+      await _syncAutoIncrementSequence(txn, NoteTable.tableName);
     });
   }
 

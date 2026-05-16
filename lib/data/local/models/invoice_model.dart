@@ -11,6 +11,8 @@ class InvoiceModel {
   final double tax;
   final double total;
   final String status;
+  final String template;
+  final String documentType;
   final String createdAt;
   final String updatedAt;
 
@@ -27,6 +29,8 @@ class InvoiceModel {
     this.tax = 0,
     required this.total,
     required this.status,
+    this.template = 'taxTheme1',
+    this.documentType = 'invoice',
     required this.createdAt,
     required this.updatedAt,
   });
@@ -45,6 +49,8 @@ class InvoiceModel {
       'tax': tax,
       'total': total,
       'status': status,
+      'template': template,
+      'document_type': documentType,
       'created_at': createdAt,
       'updated_at': updatedAt,
     };
@@ -64,6 +70,8 @@ class InvoiceModel {
       tax: map['tax'],
       total: map['total'],
       status: map['status'],
+      template: map['template'] as String? ?? 'taxTheme1',
+      documentType: map['document_type'] as String? ?? 'invoice',
       createdAt: map['created_at'],
       updatedAt: map['updated_at'] ?? map['created_at'],
     );

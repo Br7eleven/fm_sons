@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:provider/provider.dart';
 
 import 'customer_controller.dart';
@@ -69,7 +68,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
                   height: 4,
                   margin: const EdgeInsets.only(bottom: 16),
                   decoration: BoxDecoration(
-                    color: FMSons.primary,
+                    color: Theme.of(context).dividerColor,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -79,10 +78,10 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
               Center(
                 child: Text(
                   isEdit ? 'Edit Customer' : 'Add Customer',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: FMSons.textPrimary,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
               ),
@@ -90,10 +89,10 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
               const SizedBox(height: 24),
 
               /// Customer Name
-              _label('Customer Name'),
+              _label(context, 'Customer Name'),
               TextFormField(
                 controller: _nameController,
-                decoration: _inputDecoration('Enter customer name'),
+                decoration: _inputDecoration(context, 'Enter customer name'),
                 validator: (v) {
                   final text = (v ?? '').trim();
                   if (text.isEmpty) return 'Required';
@@ -105,10 +104,10 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
               const SizedBox(height: 16),
 
               /// Phone
-              _label('Phone (optional)'),
+              _label(context, 'Phone (optional)'),
               TextFormField(
                 controller: _phoneController,
-                decoration: _inputDecoration('Phone number'),
+                decoration: _inputDecoration(context, 'Phone number'),
                 keyboardType: TextInputType.phone,
                 validator: (v) {
                   final text = (v ?? '').trim();
@@ -126,11 +125,11 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
               const SizedBox(height: 16),
 
               /// Address
-              _label('Address (optional)'),
+              _label(context, 'Address (optional)'),
               TextFormField(
                 controller: _addressController,
                 maxLines: 3,
-                decoration: _inputDecoration('Enter customer address'),
+                decoration: _inputDecoration(context, 'Enter customer address'),
               ),
 
               const SizedBox(height: 24),
@@ -141,11 +140,11 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
                 height: 52,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E5EFF),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    foregroundColor: FMSons.bgWhite,
                   ),
                   onPressed: _isSubmitting
                       ? null
@@ -201,7 +200,7 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: FMSons.bgWhite,
+                            color: Colors.white,
                           ),
                         )
                       : Text(
@@ -224,29 +223,33 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
   /*                                  HELPERS                                   */
   /* -------------------------------------------------------------------------- */
 
-  Widget _label(String text) {
+  Widget _label(BuildContext context, String text) {
     return Text(
       text,
-      style: const TextStyle(fontSize: 13, color: FMSons.textPrimary),
+      style: TextStyle(
+        fontSize: 13,
+        color: Theme.of(context).textTheme.bodyMedium?.color,
+      ),
     );
   }
 
-  InputDecoration _inputDecoration(String hint) {
+  InputDecoration _inputDecoration(BuildContext context, String hint) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InputDecoration(
       hintText: hint,
       filled: true,
-      fillColor: Colors.white,
+      fillColor: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFF5F7FA),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: Theme.of(context).dividerColor),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: BorderSide(color: Colors.grey.shade300),
+        borderSide: BorderSide(color: Theme.of(context).dividerColor),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0xFF1E5EFF)),
+        borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
       ),
     );
   }

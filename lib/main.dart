@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:flutter/services.dart';
 import 'package:fm_sons/view/masters/customer/customer_controller.dart';
 import 'package:provider/provider.dart';
 import 'package:fm_sons/view/auth/auth_screen.dart';
@@ -9,10 +11,20 @@ import 'package:fm_sons/view/invoice/create_invoice_screen.dart';
 import 'package:fm_sons/view/invoice/controller/create_invoice_controller.dart';
 import 'view/masters/product/product_controller.dart';
 import 'view/notes/note_controller.dart';
+import 'view/settings/company_profile_controller.dart';
 import 'view/settings/theme_controller.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Request the platform to render as fast as possible (hints OS scheduler).
+  // On Android this feeds through to Choreographer and lets 120Hz VSync fire.
+  timeDilation = 1.0;
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
   runApp(
     MultiProvider(
       providers: [
@@ -25,6 +37,7 @@ void main() {
         ),
         ChangeNotifierProvider(create: (_) => CustomerController()),
         ChangeNotifierProvider(create: (_) => NoteController()),
+        ChangeNotifierProvider(create: (_) => CompanyProfileController()),
       ],
       child: const MyApp(),
     ),

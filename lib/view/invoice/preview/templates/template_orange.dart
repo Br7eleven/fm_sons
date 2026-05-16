@@ -28,24 +28,24 @@ class TemplateOrange extends InvoiceTemplate {
             // Company info
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
-                  'FM Sons',
-                  style: TextStyle(
+                  InvoiceTemplate.companyOf(context).name,
+                  style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: 2),
-                Text('fmsons514@gmail.com', style: TextStyle(fontSize: 11)),
-                Text('PHQ Hospital Road', style: TextStyle(fontSize: 11)),
-                Text('Modern Glass Aluminium Decoration Center', style: TextStyle(fontSize: 11)),
+                const SizedBox(height: 2),
+                Text(InvoiceTemplate.companyOf(context).email, style: const TextStyle(fontSize: 11)),
+                Text(InvoiceTemplate.companyOf(context).address, style: const TextStyle(fontSize: 11)),
+                Text('Vendor No: ${InvoiceTemplate.companyOf(context).vendorNumber}', style: const TextStyle(fontSize: 11)),
               ],
             ),
-            // ESTIMATE title
-            const Text(
-              'ESTIMATE',
-              style: TextStyle(
+            // Document type title
+            Text(
+              documentTypeLabel,
+              style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 2,
@@ -76,73 +76,26 @@ class TemplateOrange extends InvoiceTemplate {
                 children: [
                   _infoRow('DATE', invoiceDateLabel),
                   const SizedBox(height: 8),
-                  _infoRow('ESTIMATE NO.', invoice.invoiceNumber),
+                  _infoRow('$documentTypeLabel NO.', invoice.invoiceNumber),
                 ],
               ),
             ],
           ),
           const SizedBox(height: 24),
-          // Bill to and Ship to
-          Row(
+          // Bill To
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Bill To
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'BILL TO',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      height: 1,
-                      width: 120,
-                      color: Colors.black,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      customerDisplayName,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
+              const Text(
+                'BILL TO',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
               ),
-              // Ship To
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'SHIP TO',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      height: 1,
-                      width: 120,
-                      color: Colors.black,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      customerDisplayName,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
+              const SizedBox(height: 8),
+              Container(height: 1, width: 120, color: Colors.black),
+              const SizedBox(height: 8),
+              Text(
+                customerDisplayName,
+                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -168,7 +121,7 @@ class TemplateOrange extends InvoiceTemplate {
               Expanded(
                 flex: 4,
                 child: Text(
-                  'DESCRIPTION',
+                  'ITEM NAME',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -179,6 +132,17 @@ class TemplateOrange extends InvoiceTemplate {
               Expanded(
                 child: Text(
                   'QTY',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  'UNIT',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 11,
@@ -237,6 +201,15 @@ class TemplateOrange extends InvoiceTemplate {
                     formatQuantity(item.quantity),
                     textAlign: TextAlign.center,
                     style: const TextStyle(fontSize: 11),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    item.unit,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 11),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Expanded(
@@ -327,15 +300,10 @@ class TemplateOrange extends InvoiceTemplate {
               child: Column(
                 children: [
                   _totalRow('SUBTOTAL', formatMoney(subtotalAmount)),
-                  _totalRow('DISCOUNT', formatMoney(0)),
-                  _totalRow('SUBTOTAL LESS DISCOUNT', formatMoney(subtotalAmount)),
-                  _totalRow('TAX RATE', '0.00%'),
-                  _totalRow('TOTAL TAX', formatMoney(0)),
-                  _totalRow('SHIPPING/HANDLING', formatMoney(0)),
                   const Divider(thickness: 2, color: Colors.black),
                   _totalRow(
-                    'Quote Total',
-                    '\$ ${formatMoney(grandTotalAmount)}',
+                    'TOTAL',
+                    formatMoney(grandTotalAmount),
                     isBold: true,
                   ),
                 ],
@@ -355,7 +323,25 @@ class TemplateOrange extends InvoiceTemplate {
   Widget buildFooter(BuildContext context) {
     return Column(
       children: [
-        const SizedBox(height: 16),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                buildSignature(context),
+                Container(width: 160, height: 1.5, color: Colors.black),
+                const SizedBox(height: 4),
+                const Text(
+                  'Authorized Signatory',
+                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
         // Orange bottom bar
         Container(
           width: double.infinity,

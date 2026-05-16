@@ -4,6 +4,7 @@ import 'note_controller.dart';
 import '../../data/local/models/note_model.dart';
 import 'note_detail_screen.dart';
 import '../shared/app_drawer.dart';
+import '../shared/bottom_nav.dart';
 
 class NotesScreen extends StatefulWidget {
   const NotesScreen({super.key});
@@ -35,6 +36,13 @@ class _NotesScreenState extends State<NotesScreen> {
         centerTitle: true,
       ),
       drawer: const AppDrawer(currentRoute: 'notes'),
+      bottomNavigationBar: BottomNav(
+        currentIndex: 2,
+        onTap: (index) {
+          if (index == 2) return;
+          Navigator.of(context).pop(index);
+        },
+      ),
       body: Column(
         children: [
           /// Search Bar
@@ -246,6 +254,14 @@ class _EmptyState extends StatelessWidget {
                 onPressed: onAdd,
                 icon: const Icon(Icons.add),
                 label: const Text('Create Note'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
               ),
             ],
           ],
@@ -299,6 +315,14 @@ class _ErrorState extends StatelessWidget {
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),
               label: const Text('Retry'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
             ),
           ],
         ),

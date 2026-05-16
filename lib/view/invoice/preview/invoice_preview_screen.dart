@@ -16,17 +16,84 @@ import '../controller/create_invoice_controller.dart';
 import 'theme_selector.dart';
 
 class InvoicePreviewScreen extends StatefulWidget {
-  const InvoicePreviewScreen({super.key});
+  /// When set, creates a scoped read-only controller for this invoice ID.
+  /// The shared [InvoiceController] is never touched in that case.
+  final int? previewInvoiceId;
+
+  /// When true (requires [previewInvoiceId]), renders the template then
+  /// immediately triggers the PDF share sheet and pops on completion.
+  final bool autoShare;
+
+  const InvoicePreviewScreen({
+    super.key,
+    this.previewInvoiceId,
+    this.autoShare = false,
+  });
 
   @override
   State<InvoicePreviewScreen> createState() => _InvoicePreviewScreenState();
 }
 
 class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
-  InvoiceThemeType _selectedTheme = InvoiceThemeType.taxTheme1;
+  late InvoiceThemeType _selectedTheme;
   final GlobalKey _previewBoundaryKey = GlobalKey();
   bool _isGeneratingPdf = false;
-  bool _isSavingInvoice = false;
+
+  // Non-null only when opened from history/clients (read-only scoped view).
+  InvoiceController? _scopedController;
+  bool _scopedLoading = false;
+  String? _scopedError;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.previewInvoiceId != null) {
+      _loadScoped(widget.previewInvoiceId!);
+    } else {
+      final controller = context.read<InvoiceController>();
+      _selectedTheme = invoiceThemeFromId(controller.templateId);
+    }
+  }
+
+  Future<void> _loadScoped(int id) async {
+    setState(() => _scopedLoading = true);
+    try {
+      final ctrl = InvoiceController(autoInitialize: false);
+      await ctrl.loadInvoiceForEditing(id);
+      if (!mounted) {
+        ctrl.dispose();
+        return;
+      }
+      setState(() {
+        _scopedController = ctrl;
+        _selectedTheme = invoiceThemeFromId(ctrl.templateId);
+        _scopedLoading = false;
+      });
+      // autoShare: wait for template to be painted, then share PDF and pop.
+      if (widget.autoShare) {
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          if (!mounted) return;
+          // Extra frame to ensure RepaintBoundary has fully painted.
+          await WidgetsBinding.instance.endOfFrame;
+          if (!mounted) return;
+          await _handlePdfAction(ctrl, printOnly: false);
+          if (mounted) Navigator.of(context).pop();
+        });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _scopedError = 'Failed to load invoice: $e';
+        _scopedLoading = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scopedController?.dispose();
+    super.dispose();
+  }
 
   Future<void> _handlePdfAction(
     InvoiceController invoice, {
@@ -65,7 +132,6 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
       final previewPng = await _capturePreviewPng();
       return _buildImagePdfBytes(previewPng);
     } catch (_) {
-      // Fallback keeps print/pdf working even if preview capture is temporarily unavailable.
       return _buildDataPdfBytes(invoice);
     }
   }
@@ -183,7 +249,27 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final invoice = context.watch<InvoiceController>();
+    // Use scoped controller for read-only history previews; shared for create-flow.
+    final InvoiceController invoice;
+    if (_scopedController != null) {
+      invoice = _scopedController!;
+    } else {
+      invoice = context.watch<InvoiceController>();
+    }
+
+    if (_scopedLoading) {
+      return Scaffold(
+        appBar: AppBar(leading: const CloseButton(), title: const Text('Preview'), centerTitle: true),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_scopedError != null) {
+      return Scaffold(
+        appBar: AppBar(leading: const CloseButton(), title: const Text('Preview'), centerTitle: true),
+        body: Center(child: Text(_scopedError!, style: const TextStyle(color: Colors.red))),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -212,117 +298,38 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
         ],
       ),
 
-      body: Column(
-        children: [
-          /// 🔹 Theme Selector
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: ThemeSelector(
-              selectedTheme: _selectedTheme,
-              onChanged: (theme) {
-                setState(() => _selectedTheme = theme);
-              },
-            ),
-          ),
-
-          /// 🔹 Invoice Preview
-          Expanded(
-            child: Center(
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: RepaintBoundary(
-                  key: _previewBoundaryKey,
-                  child: _buildInvoiceByTheme(invoice),
-                ),
+      body: Center(
+        child: Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
-            ),
+            ],
           ),
-
-          /// 🔹 Bottom Action
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: ElevatedButton(
-                onPressed: _isSavingInvoice
-                    ? null
-                    : () async {
-                        final messenger = ScaffoldMessenger.of(context);
-                        final navigator = Navigator.of(context);
-                        final wasEditing = invoice.isEditingInvoice;
-
-                        setState(() => _isSavingInvoice = true);
-
-                        try {
-                          final id = await invoice.saveCurrentInvoice();
-                          if (!mounted) return;
-                          messenger.showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                wasEditing
-                                    ? 'Invoice updated (ID: $id)'
-                                    : 'Invoice saved (ID: $id)',
-                              ),
-                            ),
-                          );
-                          navigator.pop();
-                          navigator.pop();
-                        } catch (e) {
-                          if (!mounted) return;
-                          messenger.showSnackBar(
-                            SnackBar(content: Text(e.toString())),
-                          );
-                        } finally {
-                          if (mounted) {
-                            setState(() => _isSavingInvoice = false);
-                          }
-                        }
-                      },
-                child: _isSavingInvoice
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(
-                        invoice.isEditingInvoice
-                            ? 'Update & Close'
-                            : 'Save & Close',
-                      ),
-              ),
-            ),
+          child: RepaintBoundary(
+            key: _previewBoundaryKey,
+            child: _buildInvoiceByTheme(invoice),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  /// Switch invoice template based on selected theme
   Widget _buildInvoiceByTheme(InvoiceController invoice) {
     switch (_selectedTheme) {
       case InvoiceThemeType.taxTheme1:
         return TemplateTax1(invoice: invoice);
-
       case InvoiceThemeType.taxTheme3:
         return TemplateTax3(invoice: invoice);
-
       case InvoiceThemeType.orangeEstimate:
         return TemplateOrange(invoice: invoice);
-
       case InvoiceThemeType.blueEstimate:
         return TemplateBlue(invoice: invoice);
-
       // ignore: unreachable_switch_default
       default:
         return TemplateTax1(invoice: invoice);

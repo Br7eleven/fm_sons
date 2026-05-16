@@ -1,7 +1,15 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../dashboard/dashboard_screen.dart';
+import '../letterheads/letterheads_screen.dart';
+import '../masters/customer/clients_tab.dart';
 import '../notes/notes_screen.dart';
+import '../settings/about_screen.dart';
+import '../settings/company_profile_controller.dart';
+import '../settings/company_profile_screen.dart';
+import '../settings/settings_tab.dart';
 import '../settings/theme_controller.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -13,120 +21,147 @@ class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Drawer(
-      child: Container(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              /// Drawer Header
-              _DrawerHeader(),
-              const SizedBox(height: 8),
-
-              /// Navigation Items
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  children: [
-                    _DrawerItem(
-                      icon: Icons.home_outlined,
-                      title: 'Dashboard',
-                      subtitle: 'Overview & stats',
-                      isActive: currentRoute == 'dashboard',
-                      onTap: () {
-                        _handleNavigation(context, 0);
-                      },
-                    ),
-                    const SizedBox(height: 4),
-                    _DrawerItem(
-                      icon: Icons.business_outlined,
-                      title: 'FM Sons Profile',
-                      subtitle: 'Business settings',
-                      isActive: currentRoute == 'profile',
-                      onTap: () {
-                        Navigator.pop(context);
-                        _showComingSoon(context, 'FM Sons Profile');
-                      },
-                    ),
-                    const SizedBox(height: 4),
-                    _DrawerItem(
-                      icon: Icons.people_outline,
-                      title: 'Clients',
-                      subtitle: 'Manage customers',
-                      isActive: currentRoute == 'clients',
-                      onTap: () {
-                        _handleNavigation(context, 2);
-                      },
-                    ),
-                    const SizedBox(height: 4),
-                    _DrawerItem(
-                      icon: Icons.note_alt_outlined,
-                      title: 'Notes',
-                      subtitle: 'Quick notes & memos',
-                      isActive: currentRoute == 'notes',
-                      onTap: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const NotesScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 4),
-                    _DrawerItem(
-                      icon: Icons.settings_outlined,
-                      title: 'Settings',
-                      subtitle: 'App preferences',
-                      isActive: currentRoute == 'settings',
-                      onTap: () {
-                        _handleNavigation(context, 3);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-
-              /// Theme Switcher
-              const _ThemeSwitcher(),
-
-              /// App Version Footer
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                child: Text(
-                  'FM Sons v1.0.2',
-                  style: TextStyle(
-                    color: Colors.blueGrey.shade400,
-                    fontSize: 12,
+      child: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _DrawerHeader(),
+            const SizedBox(height: 4),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                children: [
+                  _DrawerItem(
+                    icon: Icons.home_outlined,
+                    title: 'Dashboard',
+                    isActive: currentRoute == 'dashboard',
+                    onTap: () => _handleNavigation(context, 0),
                   ),
-                ),
+                  _DrawerItem(
+                    icon: Icons.people_outline,
+                    title: 'Clients',
+                    isActive: currentRoute == 'clients',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => Scaffold(
+                            appBar: AppBar(
+                              title: const Text(
+                                'Clients',
+                                style: TextStyle(fontWeight: FontWeight.w800),
+                              ),
+                              centerTitle: true,
+                              elevation: 0,
+                            ),
+                            body: const ClientsTab(),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  _DrawerItem(
+                    icon: Icons.note_alt_outlined,
+                    title: 'Notes',
+                    isActive: currentRoute == 'notes',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const NotesScreen()),
+                      );
+                    },
+                  ),
+                  _DrawerItem(
+                    icon: Icons.article_outlined,
+                    title: 'Letterheads',
+                    isActive: currentRoute == 'letterheads',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const LetterheadsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  _DrawerItem(
+                    icon: Icons.settings_outlined,
+                    title: 'Settings',
+                    isActive: currentRoute == 'settings',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => Scaffold(
+                            appBar: AppBar(
+                              title: const Text(
+                                'Settings',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                              centerTitle: true,
+                              elevation: 0,
+                            ),
+                            body: const SettingsTab(),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  _DrawerItem(
+                    icon: Icons.info_outline,
+                    title: 'About',
+                    isActive: currentRoute == 'about',
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AboutScreen()),
+                      );
+                    },
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+            const Divider(height: 1),
+            const _ThemeSwitcher(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'FM Sons v1.0.2',
+                    style: TextStyle(color: Colors.blueGrey.shade400, fontSize: 11),
+                  ),
+                  const Text(
+                    'BR7 Technologies & Co.',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF00CFFF),
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('$feature is coming soon')));
-  }
-
   void _handleNavigation(BuildContext context, int tabIndex) {
-    Navigator.pop(context); // Close drawer first
-
-    // Check if we're already on the dashboard
+    Navigator.pop(context);
     final isOnDashboard =
         context.findAncestorWidgetOfExactType<DashboardScreen>() != null;
-
     if (isOnDashboard && onTabChange != null) {
-      // We're on dashboard, use the callback to change tabs
       onTabChange!(tabIndex);
     } else if (!isOnDashboard) {
-      // Navigate to dashboard with specific tab
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
@@ -146,72 +181,102 @@ class AppDrawer extends StatelessWidget {
 class _DrawerHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      margin: const EdgeInsets.all(12),
+    final name = context.select<CompanyProfileController, String>((p) => p.name);
+    final tagline = context.select<CompanyProfileController, String>((p) => p.tagline);
+    final logoPath = context.select<CompanyProfileController, String?>((p) => p.logoPath);
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.pop(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CompanyProfileScreen()),
+        );
+      },
+      child: Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      margin: const EdgeInsets.fromLTRB(8, 8, 8, 0),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1E3A8A).withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          /// App Icon/Logo
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.receipt_long,
-                color: Color(0xFF1E3A8A),
-                size: 32,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-
-          /// App Name
-          const Expanded(
+          _LogoAvatar(logoPath: logoPath, name: name),
+          const SizedBox(width: 12),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'FM Sons',
-                  style: TextStyle(
+                  name,
+                  style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 22,
+                    fontSize: 16,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 4),
                 Text(
-                  'Billing App',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  tagline.isNotEmpty ? tagline : 'Billing App',
+                  style: const TextStyle(color: Colors.white70, fontSize: 11),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
         ],
       ),
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                            LOGO AVATAR                                     */
+/* -------------------------------------------------------------------------- */
+
+class _LogoAvatar extends StatelessWidget {
+  final String? logoPath;
+  final String name;
+
+  const _LogoAvatar({required this.logoPath, required this.name});
+
+  String _initials() {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) return 'FM';
+    if (parts.length == 1) return parts[0].substring(0, parts[0].length.clamp(1, 2)).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: logoPath != null
+          ? Image.file(File(logoPath!), fit: BoxFit.cover)
+          : Center(
+              child: Text(
+                _initials(),
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1E3A8A),
+                ),
+              ),
+            ),
     );
   }
 }
@@ -223,80 +288,42 @@ class _DrawerHeader extends StatelessWidget {
 class _DrawerItem extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String subtitle;
   final bool isActive;
   final VoidCallback onTap;
 
   const _DrawerItem({
     required this.icon,
     required this.title,
-    required this.subtitle,
     required this.isActive,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = const Color(0xFF1E3A8A);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isActive
-            ? const Color(0xFF1E3A8A).withValues(alpha: 0.08)
-            : (isDark ? const Color(0xFF1E1E1E) : Colors.white),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isActive
-              ? const Color(0xFF1E3A8A).withValues(alpha: 0.3)
-              : (isDark ? Colors.grey.shade800 : Colors.grey.shade200),
-          width: isActive ? 2 : 1,
+    return ListTile(
+      onTap: onTap,
+      dense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      tileColor: isActive ? color.withValues(alpha: 0.08) : Colors.transparent,
+      leading: Icon(
+        icon,
+        size: 20,
+        color: isActive ? color : Theme.of(context).iconTheme.color?.withValues(alpha: 0.7),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+          color: isActive ? color : Theme.of(context).textTheme.bodyLarge?.color,
         ),
       ),
-      child: ListTile(
-        onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        leading: Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: isActive
-                ? const Color(0xFF1E3A8A)
-                : (isDark ? Colors.grey.shade800 : Colors.grey.shade100),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            icon,
-            color: isActive
-                ? Colors.white
-                : (isDark ? Colors.grey.shade400 : Colors.grey.shade700),
-            size: 22,
-          ),
-        ),
-        title: Text(
-          title,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w700,
-            color: isActive
-                ? const Color(0xFF1E3A8A)
-                : Theme.of(context).textTheme.bodyLarge?.color,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: TextStyle(
-            fontSize: 12,
-            color: isActive
-                ? const Color(0xFF1E3A8A).withValues(alpha: 0.7)
-                : Colors.grey.shade600,
-          ),
-        ),
-        trailing: Icon(
-          Icons.chevron_right,
-          color: isActive ? const Color(0xFF1E3A8A) : Colors.grey.shade400,
-          size: 20,
-        ),
-      ),
+      trailing: isActive
+          ? Icon(Icons.circle, size: 8, color: color)
+          : null,
     );
   }
 }
@@ -312,69 +339,71 @@ class _ThemeSwitcher extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeController = context.watch<ThemeController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = const Color(0xFF1E3A8A);
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+      child: Row(
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.palette_outlined,
-                size: 18,
-                color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'Theme',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.grey.shade300 : Colors.grey.shade800,
-                ),
-              ),
-            ],
+          Icon(
+            Icons.palette_outlined,
+            size: 16,
+            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _ThemeOption(
+          const SizedBox(width: 8),
+          Text(
+            'Theme',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+            ),
+          ),
+          const Spacer(),
+          Container(
+            height: 32,
+            decoration: BoxDecoration(
+              color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isDark ? Colors.grey.shade800 : Colors.grey.shade300,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _ThemeSegment(
                   icon: Icons.light_mode_outlined,
-                  label: 'Light',
+                  tooltip: 'Light',
                   isSelected: themeController.isLightMode,
+                  isFirst: true,
+                  isLast: false,
                   onTap: () => themeController.setTheme(ThemeMode.light),
+                  color: color,
+                  isDark: isDark,
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _ThemeOption(
+                _ThemeSegment(
                   icon: Icons.dark_mode_outlined,
-                  label: 'Dark',
+                  tooltip: 'Dark',
                   isSelected: themeController.isDarkMode,
+                  isFirst: false,
+                  isLast: false,
                   onTap: () => themeController.setTheme(ThemeMode.dark),
+                  color: color,
+                  isDark: isDark,
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: _ThemeOption(
+                _ThemeSegment(
                   icon: Icons.brightness_auto_outlined,
-                  label: 'System',
+                  tooltip: 'System',
                   isSelected: themeController.isSystemMode,
+                  isFirst: false,
+                  isLast: true,
                   onTap: () => themeController.setTheme(ThemeMode.system),
+                  color: color,
+                  isDark: isDark,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -382,65 +411,50 @@ class _ThemeSwitcher extends StatelessWidget {
   }
 }
 
-/* -------------------------------------------------------------------------- */
-/*                            THEME OPTION                                    */
-/* -------------------------------------------------------------------------- */
-
-class _ThemeOption extends StatelessWidget {
+class _ThemeSegment extends StatelessWidget {
   final IconData icon;
-  final String label;
+  final String tooltip;
   final bool isSelected;
+  final bool isFirst;
+  final bool isLast;
   final VoidCallback onTap;
+  final Color color;
+  final bool isDark;
 
-  const _ThemeOption({
+  const _ThemeSegment({
     required this.icon,
-    required this.label,
+    required this.tooltip,
     required this.isSelected,
+    required this.isFirst,
+    required this.isLast,
     required this.onTap,
+    required this.color,
+    required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFF1E3A8A).withValues(alpha: isDark ? 0.3 : 0.12)
-              : (isDark ? Colors.grey.shade900 : Colors.grey.shade100),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isSelected
-                ? const Color(0xFF1E3A8A)
-                : (isDark ? Colors.grey.shade800 : Colors.grey.shade300),
-            width: isSelected ? 2 : 1,
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 36,
+          height: 32,
+          decoration: BoxDecoration(
+            color: isSelected ? color : Colors.transparent,
+            borderRadius: BorderRadius.horizontal(
+              left: isFirst ? const Radius.circular(7) : Radius.zero,
+              right: isLast ? const Radius.circular(7) : Radius.zero,
+            ),
           ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: isSelected
-                  ? const Color(0xFF1E3A8A)
-                  : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-                color: isSelected
-                    ? const Color(0xFF1E3A8A)
-                    : (isDark ? Colors.grey.shade400 : Colors.grey.shade700),
-              ),
-            ),
-          ],
+          child: Icon(
+            icon,
+            size: 16,
+            color: isSelected
+                ? Colors.white
+                : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+          ),
         ),
       ),
     );

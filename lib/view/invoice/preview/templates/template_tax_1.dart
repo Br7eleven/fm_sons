@@ -27,20 +27,20 @@ class TemplateTax1 extends InvoiceTemplate {
           padding: const EdgeInsets.symmetric(horizontal: 30),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.end,
-            children: const [
-              Icon(Icons.email, color: Colors.white, size: 16),
-              SizedBox(width: 4),
+            children: [
+              const Icon(Icons.email, color: Colors.white, size: 16),
+              const SizedBox(width: 4),
               Text(
-                ' | fmsons514@gmail.com',
-                style: TextStyle(color: Colors.white, fontSize: 14),
+                ' | ${InvoiceTemplate.companyOf(context).email}',
+                style: const TextStyle(color: Colors.white, fontSize: 14),
               ),
-              SizedBox(width: 20),
-              Icon(Icons.location_on, color: Colors.white, size: 14),
-              SizedBox(width: 4),
+              const SizedBox(width: 20),
+              const Icon(Icons.location_on, color: Colors.white, size: 14),
+              const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  '| PHQ Hospital Road modern glass aluminium decoration center',
-                  style: TextStyle(color: Colors.white, fontSize: 14),
+                  '| ${InvoiceTemplate.companyOf(context).address}',
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -65,14 +65,17 @@ class TemplateTax1 extends InvoiceTemplate {
                   bottomRight: Radius.circular(60),
                 ),
               ),
-              padding: const EdgeInsets.only(left: 20, top: 12),
-              child: const Text(
-                'FM Sons Government Contractor General\nOrder Supplier Vendor Number 30140988',
-                style: TextStyle(
+              padding: const EdgeInsets.only(left: 20, top: 10, right: 16),
+              child: Text(
+                '${InvoiceTemplate.companyOf(context).name} ${InvoiceTemplate.companyOf(context).tagline}\nVendor Number ${InvoiceTemplate.companyOf(context).vendorNumber}',
+                style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 18,
+                  fontSize: 13,
                   fontWeight: FontWeight.w500,
+                  height: 1.4,
                 ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
               ),
             ),
           ],
@@ -114,12 +117,12 @@ class TemplateTax1 extends InvoiceTemplate {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              const Text(
-                'Invoice',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w500),
+              Text(
+                documentTypeLabel[0] + documentTypeLabel.substring(1).toLowerCase(),
+                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
-              _metaRow('Invoice No.:', invoice.invoiceNumber),
+              _metaRow('${documentTypeLabel[0]}${documentTypeLabel.substring(1).toLowerCase()} No.:', invoice.invoiceNumber),
               _metaRow('Date:', invoiceDateLabel),
             ],
           ),
@@ -299,9 +302,9 @@ class TemplateTax1 extends InvoiceTemplate {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Invoice Amount In Words',
-                style: TextStyle(
+              Text(
+                '${documentTypeLabel[0]}${documentTypeLabel.substring(1).toLowerCase()} Amount In Words',
+                style: const TextStyle(
                   color: brandRed,
                   fontWeight: FontWeight.bold,
                   fontSize: 11,
@@ -374,11 +377,11 @@ class TemplateTax1 extends InvoiceTemplate {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Divider(color: Colors.black, thickness: 1),
-        const Text(
-          'For: Fm sons Government Contractor General Order Supplier Vendor Number 30140988',
-          style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+        Text(
+          'For: ${InvoiceTemplate.companyOf(context).name} ${InvoiceTemplate.companyOf(context).tagline} Vendor Number ${InvoiceTemplate.companyOf(context).vendorNumber}',
+          style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 50), // Gap for signature
+        buildSignature(context),
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [

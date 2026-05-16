@@ -19,33 +19,37 @@ class TemplateTax3 extends InvoiceTemplate {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: const [
+            children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'FM Sons',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    InvoiceTemplate.companyOf(context).name,
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
-                    'Government Contractor General Order Supplier',
-                    style: TextStyle(fontSize: 10, color: Colors.grey),
+                    InvoiceTemplate.companyOf(context).tagline,
+                    style: const TextStyle(fontSize: 10, color: Colors.grey),
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text(
-                    'Email: fmsons514@gmail.com',
-                    style: TextStyle(fontSize: 12, color: Colors.grey),
+                    'Email: ${InvoiceTemplate.companyOf(context).email}',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
                   ),
                   Text(
-                    'PHQ Hospital Road - Modern Glass Aluminium Decoration Center',
-                    style: TextStyle(fontSize: 10, color: Colors.grey),
+                    InvoiceTemplate.companyOf(context).address,
+                    style: const TextStyle(fontSize: 10, color: Colors.grey),
+                  ),
+                  Text(
+                    'Vendor No: ${InvoiceTemplate.companyOf(context).vendorNumber}',
+                    style: const TextStyle(fontSize: 10, color: Colors.grey),
                   ),
                 ],
               ),
               Text(
-                'Estimate',
-                style: TextStyle(
+                documentTypeLabel,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF8F8CD9),
@@ -243,8 +247,8 @@ class TemplateTax3 extends InvoiceTemplate {
         child: Container(
           width: 220,
           decoration: BoxDecoration(
-            color: const Color(0xFF8F8CD9),
-            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: const Color(0xFF8F8CD9), width: 1),
+            borderRadius: BorderRadius.circular(4),
           ),
           child: Column(
             children: [
@@ -301,12 +305,19 @@ class TemplateTax3 extends InvoiceTemplate {
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
               Text(
-                'For: FM Sons Government Contractor Vendor Number 30140988',
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                'For: ${InvoiceTemplate.companyOf(context).name} ${InvoiceTemplate.companyOf(context).tagline} Vendor Number ${InvoiceTemplate.companyOf(context).vendorNumber}',
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
               ),
-              Text('Authorized Signatory', style: TextStyle(fontSize: 12)),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  buildSignature(context),
+                  const Text('Authorized Signatory', style: TextStyle(fontSize: 12)),
+                ],
+              ),
             ],
           ),
         ],
@@ -328,21 +339,20 @@ class TemplateTax3 extends InvoiceTemplate {
   Widget _totalRow(String label, double value) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.white24)),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
       ),
       child: Row(
         children: [
           Expanded(
             child: Text(
               label,
-              style: const TextStyle(color: Colors.white, fontSize: 12),
+              style: const TextStyle(fontSize: 12),
             ),
           ),
           Text(
             formatMoney(value),
             style: const TextStyle(
-              color: Colors.white,
               fontWeight: FontWeight.w600,
               fontSize: 12,
             ),

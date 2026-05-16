@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:provider/provider.dart';
 
 import 'customer_controller.dart';
@@ -58,9 +57,9 @@ class _CustomerSelectorBottomSheetState
           16,
           MediaQuery.of(context).viewInsets.bottom + 16,
         ),
-        decoration: const BoxDecoration(
-          color: FMSons.bgLight,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -71,7 +70,7 @@ class _CustomerSelectorBottomSheetState
               height: 4,
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
-                color: FMSons.primary,
+                color: Theme.of(context).dividerColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -80,12 +79,12 @@ class _CustomerSelectorBottomSheetState
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Select Customer',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
-                    color: FMSons.textPrimary,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
                 TextButton.icon(
@@ -177,8 +176,8 @@ class _CustomerSelectorBottomSheetState
                       customerController.errorMessage ??
                           'Failed to load customers',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: FMSons.textPrimary,
+                      style: TextStyle(
+                        color: Theme.of(context).textTheme.bodyMedium?.color,
                         fontSize: 15,
                       ),
                     ),
@@ -307,10 +306,10 @@ class _CustomerTile extends StatelessWidget {
                   children: [
                     Text(
                       customer.name,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: FMSons.textPrimary,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
                     ),
                     if (customer.phone != null) ...[
@@ -358,7 +357,7 @@ class _AddTypedCustomerTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: const Color(0xFF1E5EFF).withValues(alpha: 0.3),

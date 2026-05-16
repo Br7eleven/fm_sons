@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/backup/backup_manager.dart';
+import 'company_profile_controller.dart';
+import 'company_profile_screen.dart';
 import '../../data/backup/backup_models.dart';
 import '../../data/backup/google_drive_service.dart';
 import '../../data/backup/restore_manager.dart';
@@ -228,12 +230,6 @@ class _SettingsTabState extends State<SettingsTab> {
     }
   }
 
-  void _showComingSoon(String title) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('$title is coming soon')));
-  }
-
   String _connectionLabel() {
     final email = _driveService.signedInAccountEmail;
     final name = _driveService.signedInAccountName;
@@ -262,94 +258,87 @@ class _SettingsTabState extends State<SettingsTab> {
   @override
   Widget build(BuildContext context) {
     final isConnected = _driveService.isSignedIn;
+    final cp = context.watch<CompanyProfileController>();
 
     return RefreshIndicator(
       onRefresh: _refreshBackupMetadata,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 78,
-                  height: 78,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3EEDB),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.business,
-                      color: Color(0xFFB08D45),
-                      size: 34,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'FM Sons',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Government Contractor',
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyLarge?.copyWith(fontSize: 16),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Tap to edit profile',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.chevron_right, color: Colors.grey),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
           _SectionTitle(title: 'GENERAL'),
           const SizedBox(height: 12),
-          _MenuCard(
-            children: [
-              _SettingsTile(
-                icon: Icons.apartment_outlined,
-                title: 'Company Details',
-                subtitle: 'Tax ID, Address, Contact',
-                onTap: () => _showComingSoon('Company Details'),
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CompanyProfileScreen()),
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-              const Divider(height: 1),
-              _SettingsTile(
-                icon: Icons.description_outlined,
-                title: 'Invoice Templates',
-                subtitle: 'Layouts, Branding',
-                onTap: () => _showComingSoon('Invoice Templates'),
+              child: Row(
+                children: [
+                  Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF3EEDB),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.business,
+                        color: Color(0xFFB08D45),
+                        size: 28,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          cp.name,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          cp.tagline,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(fontSize: 12),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (cp.email.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            cp.email,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(fontSize: 11),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right, color: Colors.grey),
+                ],
               ),
-            ],
+            ),
           ),
           const SizedBox(height: 24),
           _SectionTitle(title: 'CLOUD & DATA'),
@@ -380,7 +369,7 @@ class _SettingsTabState extends State<SettingsTab> {
                           const Text(
                             'Google Drive',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 14,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
@@ -552,11 +541,16 @@ class _SettingsTile extends StatelessWidget {
       ),
       title: Text(
         title,
-        style: TextStyle(fontWeight: FontWeight.w700, color: titleColor),
+        style: TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w700,
+          color: titleColor,
+        ),
       ),
       subtitle: Text(
         subtitle,
         style: TextStyle(
+          fontSize: 12,
           color: subtitleColor ?? Theme.of(context).textTheme.bodySmall?.color,
         ),
       ),
@@ -591,8 +585,14 @@ class _StaticTile extends StatelessWidget {
         ),
         child: const Icon(Icons.info_outline, color: Colors.blue),
       ),
-      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-      trailing: Text(trailing, style: Theme.of(context).textTheme.bodyMedium),
+      title: Text(
+        title,
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+      ),
+      trailing: Text(
+        trailing,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 13),
+      ),
     );
   }
 }

@@ -50,6 +50,30 @@ class InvoiceHeader extends StatelessWidget {
 
           const SizedBox(height: 20),
 
+          /// Document Type
+          Text(
+            'Document Type',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 13),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _TypeChip(
+                label: 'Invoice',
+                selected: !controller.isEstimate,
+                onTap: () => controller.setDocumentType('invoice'),
+              ),
+              const SizedBox(width: 10),
+              _TypeChip(
+                label: 'Estimate',
+                selected: controller.isEstimate,
+                onTap: () => controller.setDocumentType('estimate'),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+
           /// Invoice Date
           Text(
             'Invoice Date',
@@ -95,6 +119,43 @@ class InvoiceHeader extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TypeChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _TypeChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const color = Color(0xFF1E3A8A);
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? color : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: selected ? Colors.white : color,
+          ),
+        ),
       ),
     );
   }

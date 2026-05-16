@@ -96,10 +96,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                 Center(
                   child: Text(
                     isEdit ? 'Edit Product' : 'Add Product',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: FMSons.textPrimary,
+                      color: Theme.of(context).textTheme.titleLarge?.color,
                     ),
                   ),
                 ),
