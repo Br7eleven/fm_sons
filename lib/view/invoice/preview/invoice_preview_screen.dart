@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:fm_sons/view/invoice/preview/templates/template_blue.dart';
+import 'package:fm_sons/view/invoice/preview/templates/template_govt.dart';
 import 'package:fm_sons/view/invoice/preview/templates/template_orange.dart';
 import 'package:fm_sons/view/invoice/preview/templates/template_tax_1.dart';
 import 'package:fm_sons/view/invoice/preview/templates/template_tax_3.dart';
@@ -39,6 +41,10 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
   final GlobalKey _previewBoundaryKey = GlobalKey();
   bool _isGeneratingPdf = false;
 
+  // Zoom hint
+  bool _showZoomHint = true;
+  Timer? _zoomHintTimer;
+
   // Non-null only when opened from history/clients (read-only scoped view).
   InvoiceController? _scopedController;
   bool _scopedLoading = false;
@@ -53,6 +59,10 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
       final controller = context.read<InvoiceController>();
       _selectedTheme = invoiceThemeFromId(controller.templateId);
     }
+    // Hide the zoom hint after 2.5 seconds.
+    _zoomHintTimer = Timer(const Duration(milliseconds: 2500), () {
+      if (mounted) setState(() => _showZoomHint = false);
+    });
   }
 
   Future<void> _loadScoped(int id) async {
@@ -91,6 +101,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
 
   @override
   void dispose() {
+    _zoomHintTimer?.cancel();
     _scopedController?.dispose();
     super.dispose();
   }
@@ -216,28 +227,21 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
   }
 
   Future<Uint8List> _capturePreviewPng() async {
-    // High pixel ratio for crisp PDF text (6.0 = 300 DPI equivalent for print quality)
+    // 6.0 pixel ratio = ~300 DPI for A4 (794px * 6 = ~4764px wide).
     const pixelRatio = 6.0;
 
-    final renderObject = _previewBoundaryKey.currentContext?.findRenderObject();
-    if (renderObject is! RenderRepaintBoundary) {
-      throw StateError('Preview render boundary not found');
-    }
+    // Wait up to 5 frames for the RepaintBoundary to finish painting.
+    for (var attempt = 0; attempt < 5; attempt++) {
+      await WidgetsBinding.instance.endOfFrame;
 
-    for (var attempt = 0; attempt < 3; attempt++) {
-      if (renderObject.debugNeedsPaint || renderObject.size.isEmpty) {
-        await WidgetsBinding.instance.endOfFrame;
-        continue;
-      }
+      final renderObject = _previewBoundaryKey.currentContext?.findRenderObject();
+      if (renderObject is! RenderRepaintBoundary) continue;
+      if (renderObject.debugNeedsPaint || renderObject.size.isEmpty) continue;
 
-      final image = await renderObject.toImage(
-        pixelRatio: pixelRatio.toDouble(),
-      );
+      final image = await renderObject.toImage(pixelRatio: pixelRatio);
       try {
         final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-        if (byteData == null) {
-          throw StateError('Failed to encode preview image');
-        }
+        if (byteData == null) throw StateError('Failed to encode preview image');
         return byteData.buffer.asUint8List();
       } finally {
         image.dispose();
@@ -298,24 +302,67 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
         ],
       ),
 
-      body: Center(
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+      body: Stack(
+        children: [
+          InteractiveViewer(
+            minScale: 0.5,
+            maxScale: 5.0,
+            boundaryMargin: const EdgeInsets.all(double.infinity),
+            child: Center(
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                // FittedBox scales the fixed 794x1123 canvas to fit the screen.
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: RepaintBoundary(
+                    key: _previewBoundaryKey,
+                    child: _buildInvoiceByTheme(invoice),
+                  ),
+                ),
               ),
-            ],
+            ),
           ),
-          child: RepaintBoundary(
-            key: _previewBoundaryKey,
-            child: _buildInvoiceByTheme(invoice),
+          // Fade-out zoom hint
+          Positioned(
+            bottom: 24,
+            left: 0,
+            right: 0,
+            child: AnimatedOpacity(
+              opacity: _showZoomHint ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 600),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.black54,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.pinch, color: Colors.white, size: 16),
+                      SizedBox(width: 6),
+                      Text(
+                        'Pinch to zoom',
+                        style: TextStyle(color: Colors.white, fontSize: 13),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -330,6 +377,8 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
         return TemplateOrange(invoice: invoice);
       case InvoiceThemeType.blueEstimate:
         return TemplateBlue(invoice: invoice);
+      case InvoiceThemeType.govtTemplate:
+        return TemplateGovt(invoice: invoice);
       // ignore: unreachable_switch_default
       default:
         return TemplateTax1(invoice: invoice);

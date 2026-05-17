@@ -17,7 +17,7 @@ class TemplateOrange extends InvoiceTemplate {
         Container(
           width: double.infinity,
           height: 20,
-          color: const Color(0xFFFF5722), // Orange
+          color: const Color(0xFF1A7A1A), // Orange
         ),
         const SizedBox(height: 24),
         // Company info and ESTIMATE title
@@ -65,38 +65,39 @@ class TemplateOrange extends InvoiceTemplate {
   Widget buildInvoiceInfo(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
-      child: Column(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Date and Estimate No
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  _infoRow('DATE', invoiceDateLabel),
-                  const SizedBox(height: 8),
-                  _infoRow('$documentTypeLabel NO.', invoice.invoiceNumber),
-                ],
-              ),
-            ],
+          // Left: Bill To
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'BILL TO',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1A7A1A),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(height: 1, width: 120, color: const Color(0xFF1A7A1A)),
+                const SizedBox(height: 8),
+                Text(
+                  customerDisplayName,
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 24),
-          // Bill To
+          // Right: Date and Invoice No
           Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              const Text(
-                'BILL TO',
-                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
-              ),
+              _infoRow('DATE', invoiceDateLabel),
               const SizedBox(height: 8),
-              Container(height: 1, width: 120, color: Colors.black),
-              const SizedBox(height: 8),
-              Text(
-                customerDisplayName,
-                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-              ),
+              _infoRow('$documentTypeLabel NO.', invoice.invoiceNumber),
             ],
           ),
         ],
@@ -115,7 +116,7 @@ class TemplateOrange extends InvoiceTemplate {
         // Orange header
         Container(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-          color: const Color(0xFFFF5722),
+          color: const Color(0xFF1A7A1A),
           child: const Row(
             children: [
               Expanded(
@@ -346,7 +347,7 @@ class TemplateOrange extends InvoiceTemplate {
         Container(
           width: double.infinity,
           height: 20,
-          color: const Color(0xFFFF5722),
+          color: const Color(0xFF1A7A1A),
         ),
       ],
     );

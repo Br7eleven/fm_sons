@@ -265,13 +265,15 @@ class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
     InvoiceThemeType.taxTheme3: Color(0xFF0D47A1),
     InvoiceThemeType.orangeEstimate: Color(0xFFFF5722),
     InvoiceThemeType.blueEstimate: Color(0xFF1976D2),
+    InvoiceThemeType.govtTemplate: Color(0xFF1A7A1A),
   };
 
   static const _templateLabels = {
     InvoiceThemeType.taxTheme1: 'Tax 1',
     InvoiceThemeType.taxTheme3: 'Tax 3',
-    InvoiceThemeType.orangeEstimate: 'Orange',
+    InvoiceThemeType.orangeEstimate: 'Green',
     InvoiceThemeType.blueEstimate: 'Blue',
+    InvoiceThemeType.govtTemplate: 'Govt',
   };
 
   bool _validate(InvoiceController controller) {

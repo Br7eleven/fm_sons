@@ -92,42 +92,39 @@ abstract class InvoiceTemplate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FittedBox(
-      fit: BoxFit.contain,
-      child: DefaultTextStyle(
-        style: const TextStyle(color: Color(0xFF1A1A1A), fontFamily: ''),
-        child: IconTheme(
-          data: const IconThemeData(color: Color(0xFF1A1A1A)),
-          child: Container(
-            width: 794,
-            height: 1123,
-            decoration: const BoxDecoration(color: Colors.white),
-            padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 40),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                buildHeader(context),
-                const SizedBox(height: 20),
+    return DefaultTextStyle(
+      style: const TextStyle(color: Color(0xFF1A1A1A), fontFamily: ''),
+      child: IconTheme(
+        data: const IconThemeData(color: Color(0xFF1A1A1A)),
+        child: Container(
+          width: 794,
+          height: 1123,
+          decoration: const BoxDecoration(color: Colors.white),
+          padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              buildHeader(context),
+              const SizedBox(height: 20),
 
-                buildInvoiceInfo(context),
-                const SizedBox(height: 15),
+              buildInvoiceInfo(context),
+              const SizedBox(height: 15),
 
-                Expanded(
-                  child: SingleChildScrollView(
-                    physics: const NeverScrollableScrollPhysics(),
-                    clipBehavior: Clip.hardEdge,
-                    child: buildItems(context),
-                  ),
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const NeverScrollableScrollPhysics(),
+                  clipBehavior: Clip.hardEdge,
+                  child: buildItems(context),
                 ),
+              ),
 
-                const Divider(thickness: 1, color: Colors.black26),
-                const SizedBox(height: 10),
-                buildTotals(context),
+              const Divider(thickness: 1, color: Colors.black26),
+              const SizedBox(height: 10),
+              buildTotals(context),
 
-                const SizedBox(height: 30),
-                buildFooter(context),
-              ],
-            ),
+              const SizedBox(height: 30),
+              buildFooter(context),
+            ],
           ),
         ),
       ),
