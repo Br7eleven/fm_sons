@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fm_sons/data/local/dao/customer_dao.dart';
 import 'package:fm_sons/data/local/dao/invoice_dao.dart';
@@ -47,6 +48,10 @@ class InvoiceController extends ChangeNotifier {
   bool _initialized = false;
   String amountInWords = "";
   String _notes = '';
+  String? _attachedImagePath;
+  String? _attachedDocPath;
+  double _receivedAmount = 0;
+  double _manualTotal = 0;
   String _templateId = 'taxTheme1';
   String _documentType = 'invoice'; // 'invoice' or 'estimate'
   final List<InvoiceItem> _items = [];
@@ -65,6 +70,8 @@ class InvoiceController extends ChangeNotifier {
   int? get editingInvoiceId => _editingInvoiceId;
   bool get isEditingInvoice => _editingInvoiceId != null;
   String get notes => _notes;
+  String? get attachedImagePath => _attachedImagePath;
+  String? get attachedDocPath => _attachedDocPath;
   String get templateId => _templateId;
   String get documentType => _documentType;
   bool get isEstimate => _documentType == 'estimate';
@@ -90,6 +97,34 @@ class InvoiceController extends ChangeNotifier {
 
   void setNotes(String value) {
     _notes = value;
+    _saveDraft();
+    notifyListeners();
+  }
+
+  Future<void> pickImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final file = await picker.pickImage(source: source, imageQuality: 80);
+    if (file != null) {
+      _attachedImagePath = file.path;
+      _saveDraft();
+      notifyListeners();
+    }
+  }
+
+  void clearAttachedImage() {
+    _attachedImagePath = null;
+    _saveDraft();
+    notifyListeners();
+  }
+
+  void setAttachedDoc(String path) {
+    _attachedDocPath = path;
+    _saveDraft();
+    notifyListeners();
+  }
+
+  void clearAttachedDoc() {
+    _attachedDocPath = null;
     _saveDraft();
     notifyListeners();
   }
@@ -185,7 +220,25 @@ class InvoiceController extends ChangeNotifier {
   }
 
   double get totalAmount {
-    return _items.fold(0, (sum, item) => sum + item.total);
+    if (_items.isNotEmpty) {
+      return _items.fold(0, (sum, item) => sum + item.total);
+    }
+    return _manualTotal;
+  }
+
+  void setManualTotal(double value) {
+    _manualTotal = value < 0 ? 0 : value;
+    _saveDraft();
+    notifyListeners();
+  }
+
+  double get receivedAmount => _receivedAmount;
+  double get balanceDue => totalAmount - _receivedAmount;
+
+  void setReceivedAmount(double value) {
+    _receivedAmount = value < 0 ? 0 : value;
+    _saveDraft();
+    notifyListeners();
   }
 
   Customer? _customer;
@@ -245,6 +298,8 @@ class InvoiceController extends ChangeNotifier {
           DateTime.now();
       _customer = resolvedCustomer;
       _notes = '';
+      _attachedImagePath = invoice.attachedImage;
+      _attachedDocPath = invoice.attachedDoc;
       _templateId = invoice.template;
       _documentType = invoice.documentType;
 
@@ -274,10 +329,6 @@ class InvoiceController extends ChangeNotifier {
   }
 
   Future<int> saveCurrentInvoice({String status = 'pending'}) async {
-    if (_items.isEmpty) {
-      throw Exception('Add at least one item');
-    }
-
     final name = customerName?.trim() ?? '';
     if (name.isEmpty) {
       throw Exception('Customer name is required');
@@ -325,6 +376,8 @@ class InvoiceController extends ChangeNotifier {
         status: existingInvoice?.status ?? status,
         template: _templateId,
         documentType: _documentType,
+        attachedImage: _attachedImagePath,
+        attachedDoc: _attachedDocPath,
         createdAt: existingInvoice?.createdAt ?? now,
         updatedAt: now,
       );
@@ -374,6 +427,8 @@ class InvoiceController extends ChangeNotifier {
     _invoiceDate = DateTime.now();
     amountInWords = '';
     _notes = '';
+    _attachedImagePath = null;
+    _attachedDocPath = null;
     _templateId = 'taxTheme1';
     _documentType = 'invoice';
     _activeInvoiceId = null;
@@ -476,6 +531,8 @@ class InvoiceController extends ChangeNotifier {
       final data = {
         'invoiceDate': _invoiceDate.toUtc().toIso8601String(),
         'notes': _notes,
+        'attachedImagePath': _attachedImagePath,
+        'attachedDocPath': _attachedDocPath,
         'templateId': _templateId,
         'documentType': _documentType,
         'customer': _customer?.toMap(),
@@ -507,6 +564,8 @@ class InvoiceController extends ChangeNotifier {
         _invoiceDate = DateTime.tryParse(dateStr)?.toLocal() ?? _invoiceDate;
       }
       _notes = map['notes'] ?? _notes;
+      _attachedImagePath = map['attachedImagePath'] as String?;
+      _attachedDocPath = map['attachedDocPath'] as String?;
       _templateId = map['templateId'] as String? ?? _templateId;
       _documentType = map['documentType'] as String? ?? _documentType;
       final customerMap = map['customer'] as Map<String, dynamic>?;

@@ -39,7 +39,8 @@ class InvoicePreviewScreen extends StatefulWidget {
 class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
   late InvoiceThemeType _selectedTheme;
   final GlobalKey _previewBoundaryKey = GlobalKey();
-  bool _isGeneratingPdf = false;
+  bool _isPrinting = false;
+  bool _isSharingPdf = false;
 
   // Zoom hint
   bool _showZoomHint = true;
@@ -110,9 +111,16 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
     InvoiceController invoice, {
     required bool printOnly,
   }) async {
-    if (_isGeneratingPdf) return;
+    if (printOnly && _isPrinting) return;
+    if (!printOnly && _isSharingPdf) return;
 
-    setState(() => _isGeneratingPdf = true);
+    setState(() {
+      if (printOnly) {
+        _isPrinting = true;
+      } else {
+        _isSharingPdf = true;
+      }
+    });
     try {
       final bytes = await _buildPdfBytes(invoice);
       final fileName = '${invoice.invoiceNumber}.pdf';
@@ -128,12 +136,16 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
           ? 'PDF feature needs a full app restart. Hot reload is not enough after plugin changes.'
           : 'Unable to generate PDF from preview. Please try again.';
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) {
-        setState(() => _isGeneratingPdf = false);
+        setState(() {
+          if (printOnly) {
+            _isPrinting = false;
+          } else {
+            _isSharingPdf = false;
+          }
+        });
       }
     }
   }
@@ -282,20 +294,26 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.print),
-            onPressed: _isGeneratingPdf
+            icon: _isPrinting
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.print),
+            onPressed: _isPrinting
                 ? null
                 : () => _handlePdfAction(invoice, printOnly: true),
           ),
           IconButton(
-            icon: _isGeneratingPdf
+            icon: _isSharingPdf
                 ? const SizedBox(
                     width: 18,
                     height: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.picture_as_pdf),
-            onPressed: _isGeneratingPdf
+            onPressed: _isSharingPdf
                 ? null
                 : () => _handlePdfAction(invoice, printOnly: false),
           ),

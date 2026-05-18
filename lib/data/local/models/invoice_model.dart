@@ -13,6 +13,8 @@ class InvoiceModel {
   final String status;
   final String template;
   final String documentType;
+  final String? attachedImage;
+  final String? attachedDoc;
   final String createdAt;
   final String updatedAt;
 
@@ -31,6 +33,8 @@ class InvoiceModel {
     required this.status,
     this.template = 'taxTheme1',
     this.documentType = 'invoice',
+    this.attachedImage,
+    this.attachedDoc,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -51,6 +55,8 @@ class InvoiceModel {
       'status': status,
       'template': template,
       'document_type': documentType,
+      'attached_image': attachedImage,
+      'attached_doc': attachedDoc,
       'created_at': createdAt,
       'updated_at': updatedAt,
     };
@@ -72,6 +78,8 @@ class InvoiceModel {
       status: map['status'],
       template: map['template'] as String? ?? 'taxTheme1',
       documentType: map['document_type'] as String? ?? 'invoice',
+      attachedImage: map['attached_image'] as String?,
+      attachedDoc: map['attached_doc'] as String?,
       createdAt: map['created_at'],
       updatedAt: map['updated_at'] ?? map['created_at'],
     );

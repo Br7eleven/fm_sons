@@ -18,6 +18,8 @@ class InvoiceTable {
     status TEXT NOT NULL,
     template TEXT NOT NULL DEFAULT 'taxTheme1',
     document_type TEXT NOT NULL DEFAULT 'invoice',
+    attached_image TEXT,
+    attached_doc TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     FOREIGN KEY (customer_id) REFERENCES customers(id)

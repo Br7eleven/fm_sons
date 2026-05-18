@@ -10,7 +10,7 @@ import 'tables/unit_table.dart';
 import 'tables/note_table.dart';
 
 class AppDatabase {
-  static const int schemaVersion = 5;
+  static const int schemaVersion = 7;
   static const String _dbName = 'fm_sons.db';
 
   static Database? _db;
@@ -80,6 +80,12 @@ class AppDatabase {
     if (oldVersion < 5) {
       await _migrateV4ToV5(db);
     }
+    if (oldVersion < 6) {
+      await _migrateV5ToV6(db);
+    }
+    if (oldVersion < 7) {
+      await _migrateV6ToV7(db);
+    }
     if (newVersion > schemaVersion) {
       // ignore: avoid_print
       print(
@@ -99,6 +105,30 @@ class AppDatabase {
 
   static Future<void> _migrateV2ToV3(Database db) async {
     await db.execute(NoteTable.createTable);
+  }
+
+  static Future<void> _migrateV6ToV7(Database db) async {
+    final cols = await db.rawQuery(
+      "PRAGMA table_info(${InvoiceTable.tableName})",
+    );
+    final hasAttachedDoc = cols.any((c) => c['name'] == 'attached_doc');
+    if (!hasAttachedDoc) {
+      await db.execute(
+        "ALTER TABLE ${InvoiceTable.tableName} ADD COLUMN attached_doc TEXT",
+      );
+    }
+  }
+
+  static Future<void> _migrateV5ToV6(Database db) async {
+    final cols = await db.rawQuery(
+      "PRAGMA table_info(${InvoiceTable.tableName})",
+    );
+    final hasAttachedImage = cols.any((c) => c['name'] == 'attached_image');
+    if (!hasAttachedImage) {
+      await db.execute(
+        "ALTER TABLE ${InvoiceTable.tableName} ADD COLUMN attached_image TEXT",
+      );
+    }
   }
 
   static Future<void> _migrateV4ToV5(Database db) async {
