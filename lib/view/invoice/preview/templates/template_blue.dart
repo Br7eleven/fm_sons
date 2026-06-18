@@ -280,6 +280,8 @@ class TemplateBlue extends InvoiceTemplate {
                     formatMoney(grandTotalAmount),
                     isBold: true,
                   ),
+                  if (!isEstimate) _totalRow('RECEIVED', formatMoney(receivedAmount)),
+                  if (!isEstimate) _totalRow('BALANCE', formatMoney(balanceDue)),
                 ],
               ),
             ),
@@ -331,30 +333,58 @@ class TemplateBlue extends InvoiceTemplate {
         ),
         const SizedBox(height: 12),
         // Terms & Conditions
-        const Text(
-          'Terms And Conditions',
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1565C0),
+        if (hasTermsCondition) ...[
+          const SizedBox(height: 4),
+          Text(
+            termsConditionTitle,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1565C0),
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Container(
-          height: 1,
-          width: 120,
-          color: const Color(0xFF1565C0),
-        ),
-        const SizedBox(height: 8),
-        const Text(
-          '1. Goods once sold will not be returned.',
-          style: TextStyle(fontSize: 10, color: Colors.black87),
-        ),
-        const SizedBox(height: 4),
-        const Text(
-          '2. Thank you for doing business with us.',
-          style: TextStyle(fontSize: 10, color: Colors.black87),
-        ),
+          const SizedBox(height: 4),
+          Text(termsConditionDescription,
+              style:
+                  const TextStyle(fontSize: 10, color: Colors.black87)),
+          if (customNotes != null) ...[
+            const SizedBox(height: 8),
+            const Text('Notes',
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1565C0))),
+            const SizedBox(height: 4),
+            Text(customNotes!,
+                style: const TextStyle(
+                    fontSize: 10, color: Colors.black87)),
+          ],
+        ] else ...[
+          const Text(
+            'Terms And Conditions',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1565C0),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Container(
+            height: 1,
+            width: 120,
+            color: const Color(0xFF1565C0),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            '1. Goods once sold will not be returned.',
+            style: TextStyle(fontSize: 10, color: Colors.black87),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            '2. Thank you for doing business with us.',
+            style: TextStyle(fontSize: 10, color: Colors.black87),
+          ),
+        ],
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

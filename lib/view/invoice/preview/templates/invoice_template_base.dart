@@ -53,6 +53,24 @@ abstract class InvoiceTemplate extends StatelessWidget {
 
   String get documentTypeLabel =>
       invoice.isEstimate ? 'ESTIMATE' : 'INVOICE';
+
+  bool get isEstimate => invoice.isEstimate;
+
+  bool get hasTermsCondition => invoice.selectedTermsCondition != null;
+
+  String get termsConditionTitle =>
+      invoice.selectedTermsCondition?.title ?? '';
+
+  String get termsConditionDescription =>
+      invoice.selectedTermsCondition?.description ?? '';
+
+  String? get customNotes =>
+      invoice.customNotes.isNotEmpty ? invoice.customNotes : null;
+
+  double get receivedAmount => invoice.receivedAmount;
+
+  double get balanceDue => invoice.balanceDue;
+
   double get taxAmount => 0;
   double get grandTotalAmount => subtotalAmount + taxAmount;
 

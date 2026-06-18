@@ -16,15 +16,20 @@ class InvoiceTable {
     tax REAL NOT NULL DEFAULT 0,
     total REAL NOT NULL,
     status TEXT NOT NULL,
+    payment_status TEXT NOT NULL DEFAULT 'unpaid',
     template TEXT NOT NULL DEFAULT 'taxTheme1',
     document_type TEXT NOT NULL DEFAULT 'invoice',
     attached_image TEXT,
     attached_doc TEXT,
+    terms_id INTEGER,
+    custom_notes TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     FOREIGN KEY (customer_id) REFERENCES customers(id)
       ON DELETE SET NULL,
     FOREIGN KEY (contract_id) REFERENCES contracts(id)
+      ON DELETE SET NULL,
+    FOREIGN KEY (terms_id) REFERENCES terms_conditions(id)
       ON DELETE SET NULL
   );
   ''';

@@ -8,9 +8,10 @@ import 'tables/product_table.dart';
 import 'tables/contract_table.dart';
 import 'tables/unit_table.dart';
 import 'tables/note_table.dart';
+import 'tables/terms_conditions_table.dart';
 
 class AppDatabase {
-  static const int schemaVersion = 7;
+  static const int schemaVersion = 9;
   static const String _dbName = 'fm_sons.db';
 
   static Database? _db;
@@ -58,6 +59,7 @@ class AppDatabase {
     await db.execute(InvoiceTable.createTable);
     await db.execute(InvoiceItemTable.createTable);
     await db.execute(NoteTable.createTable);
+    await db.execute(TermsConditionTable.createTable);
   }
 
   static Future<void> _runMigrations(
@@ -85,6 +87,12 @@ class AppDatabase {
     }
     if (oldVersion < 7) {
       await _migrateV6ToV7(db);
+    }
+    if (oldVersion < 8) {
+      await _migrateV7ToV8(db);
+    }
+    if (oldVersion < 9) {
+      await _migrateV8ToV9(db);
     }
     if (newVersion > schemaVersion) {
       // ignore: avoid_print
@@ -115,6 +123,40 @@ class AppDatabase {
     if (!hasAttachedDoc) {
       await db.execute(
         "ALTER TABLE ${InvoiceTable.tableName} ADD COLUMN attached_doc TEXT",
+      );
+    }
+  }
+
+  static Future<void> _migrateV7ToV8(Database db) async {
+    final cols = await db.rawQuery(
+      "PRAGMA table_info(${InvoiceTable.tableName})",
+    );
+    final hasPaymentStatus = cols.any((c) => c['name'] == 'payment_status');
+    if (!hasPaymentStatus) {
+      await db.execute(
+        "ALTER TABLE ${InvoiceTable.tableName} ADD COLUMN payment_status TEXT NOT NULL DEFAULT 'unpaid'",
+      );
+    }
+  }
+
+  static Future<void> _migrateV8ToV9(Database db) async {
+    // Create terms_conditions table
+    await db.execute(TermsConditionTable.createTable);
+
+    // Add terms_id to invoices
+    final cols = await db.rawQuery(
+      "PRAGMA table_info(${InvoiceTable.tableName})",
+    );
+    final hasTermsId = cols.any((c) => c['name'] == 'terms_id');
+    if (!hasTermsId) {
+      await db.execute(
+        "ALTER TABLE ${InvoiceTable.tableName} ADD COLUMN terms_id INTEGER REFERENCES terms_conditions(id) ON DELETE SET NULL",
+      );
+    }
+    final hasCustomNotes = cols.any((c) => c['name'] == 'custom_notes');
+    if (!hasCustomNotes) {
+      await db.execute(
+        "ALTER TABLE ${InvoiceTable.tableName} ADD COLUMN custom_notes TEXT",
       );
     }
   }

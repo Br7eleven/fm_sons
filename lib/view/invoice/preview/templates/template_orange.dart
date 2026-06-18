@@ -279,19 +279,40 @@ class TemplateOrange extends InvoiceTemplate {
                     style: const TextStyle(fontSize: 10, color: Colors.black87),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'Terms And Conditions',
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    '1. Goods once sold will not be returned.',
-                    style: TextStyle(fontSize: 10),
-                  ),
-                  const Text(
-                    '2. Thank you for doing business with us.',
-                    style: TextStyle(fontSize: 10),
-                  ),
+                  if (hasTermsCondition) ...[
+                    Text(
+                      termsConditionTitle,
+                      style: const TextStyle(
+                          fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(termsConditionDescription,
+                        style: const TextStyle(fontSize: 10)),
+                    if (customNotes != null) ...[
+                      const SizedBox(height: 8),
+                      const Text('Notes',
+                          style: TextStyle(
+                              fontSize: 11, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text(customNotes!,
+                          style: const TextStyle(fontSize: 10)),
+                    ],
+                  ] else ...[
+                    const Text(
+                      'Terms And Conditions',
+                      style: TextStyle(
+                          fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      '1. Goods once sold will not be returned.',
+                      style: TextStyle(fontSize: 10),
+                    ),
+                    const Text(
+                      '2. Thank you for doing business with us.',
+                      style: TextStyle(fontSize: 10),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -307,6 +328,8 @@ class TemplateOrange extends InvoiceTemplate {
                     formatMoney(grandTotalAmount),
                     isBold: true,
                   ),
+                  if (!isEstimate) _totalRow('RECEIVED', formatMoney(receivedAmount)),
+                  if (!isEstimate) _totalRow('BALANCE', formatMoney(balanceDue)),
                 ],
               ),
             ),

@@ -11,10 +11,13 @@ class InvoiceModel {
   final double tax;
   final double total;
   final String status;
+  final String paymentStatus;
   final String template;
   final String documentType;
   final String? attachedImage;
   final String? attachedDoc;
+  final int? termsId;
+  final String? customNotes;
   final String createdAt;
   final String updatedAt;
 
@@ -31,10 +34,13 @@ class InvoiceModel {
     this.tax = 0,
     required this.total,
     required this.status,
+    this.paymentStatus = 'unpaid',
     this.template = 'taxTheme1',
     this.documentType = 'invoice',
     this.attachedImage,
     this.attachedDoc,
+    this.termsId,
+    this.customNotes,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -53,10 +59,13 @@ class InvoiceModel {
       'tax': tax,
       'total': total,
       'status': status,
+      'payment_status': paymentStatus,
       'template': template,
       'document_type': documentType,
       'attached_image': attachedImage,
       'attached_doc': attachedDoc,
+      'terms_id': termsId,
+      'custom_notes': customNotes,
       'created_at': createdAt,
       'updated_at': updatedAt,
     };
@@ -76,10 +85,13 @@ class InvoiceModel {
       tax: map['tax'],
       total: map['total'],
       status: map['status'],
+      paymentStatus: map['payment_status'] as String? ?? 'unpaid',
       template: map['template'] as String? ?? 'taxTheme1',
       documentType: map['document_type'] as String? ?? 'invoice',
       attachedImage: map['attached_image'] as String?,
       attachedDoc: map['attached_doc'] as String?,
+      termsId: map['terms_id'] as int?,
+      customNotes: map['custom_notes'] as String?,
       createdAt: map['created_at'],
       updatedAt: map['updated_at'] ?? map['created_at'],
     );

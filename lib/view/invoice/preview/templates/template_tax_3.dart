@@ -254,6 +254,8 @@ class TemplateTax3 extends InvoiceTemplate {
             children: [
               _totalRow('Sub Total', subtotalAmount),
               _totalRow('Total', grandTotalAmount),
+              if (!isEstimate) _totalRow('Received', receivedAmount),
+              if (!isEstimate) _totalRow('Balance', balanceDue),
             ],
           ),
         ),
@@ -289,19 +291,38 @@ class TemplateTax3 extends InvoiceTemplate {
           const SizedBox(height: 4),
           Text(amountInWordsLabel, style: const TextStyle(fontSize: 11)),
           const SizedBox(height: 14),
-          const Text(
-            'Terms And Conditions',
-            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            '1. Goods once sold will not be returned.',
-            style: TextStyle(fontSize: 11),
-          ),
-          const Text(
-            '2. Thank you for doing business with us.',
-            style: TextStyle(fontSize: 11),
-          ),
+          if (hasTermsCondition) ...[
+            Text(
+              termsConditionTitle,
+              style:
+                  const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+            ),
+            const SizedBox(height: 4),
+            Text(termsConditionDescription,
+                style: const TextStyle(fontSize: 11)),
+            if (customNotes != null) ...[
+              const SizedBox(height: 8),
+              const Text('Notes',
+                  style:
+                      TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+              const SizedBox(height: 4),
+              Text(customNotes!, style: const TextStyle(fontSize: 11)),
+            ],
+          ] else ...[
+            const Text(
+              'Terms And Conditions',
+              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              '1. Goods once sold will not be returned.',
+              style: TextStyle(fontSize: 11),
+            ),
+            const Text(
+              '2. Thank you for doing business with us.',
+              style: TextStyle(fontSize: 11),
+            ),
+          ],
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

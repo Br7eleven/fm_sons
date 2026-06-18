@@ -5,8 +5,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fm_sons/data/local/dao/customer_dao.dart';
 import 'package:fm_sons/data/local/dao/invoice_dao.dart';
 import 'package:fm_sons/data/local/dao/invoice_item_dao.dart';
+import 'package:fm_sons/data/local/dao/terms_condition_dao.dart';
 import 'package:fm_sons/data/local/models/invoice_item_model.dart';
 import 'package:fm_sons/data/local/models/invoice_model.dart';
+import 'package:fm_sons/data/local/models/terms_condition_model.dart';
 import 'package:fm_sons/view/masters/customer/customer_model.dart';
 
 class InvoiceItem {
@@ -54,6 +56,12 @@ class InvoiceController extends ChangeNotifier {
   double _manualTotal = 0;
   String _templateId = 'taxTheme1';
   String _documentType = 'invoice'; // 'invoice' or 'estimate'
+  String _paymentStatus = 'unpaid'; // 'paid' or 'unpaid'
+  final TermsConditionDao _termsConditionDao = TermsConditionDao();
+  int? _selectedTermsId;
+  String _customNotes = '';
+  List<TermsCondition> _availableTerms = [];
+  TermsCondition? _selectedTermsCondition;
   final List<InvoiceItem> _items = [];
   final List<InvoiceModel> _savedInvoices = [];
   bool _isLoading = false;
@@ -75,6 +83,34 @@ class InvoiceController extends ChangeNotifier {
   String get templateId => _templateId;
   String get documentType => _documentType;
   bool get isEstimate => _documentType == 'estimate';
+  TermsCondition? get selectedTermsCondition => _selectedTermsCondition;
+  int? get selectedTermsId => _selectedTermsId;
+  List<TermsCondition> get availableTerms => _availableTerms;
+  String get customNotes => _customNotes;
+
+  Future<void> loadAvailableTerms() async {
+    final type = _documentType;
+    _availableTerms = await _termsConditionDao.getByType(type);
+    if (_selectedTermsId != null) {
+      _selectedTermsCondition = await _termsConditionDao.getById(_selectedTermsId!);
+    }
+    notifyListeners();
+  }
+
+  void setSelectedTerms(TermsCondition? tc) {
+    _selectedTermsId = tc?.id;
+    _selectedTermsCondition = tc;
+    // Pre-fill custom notes with T&C description for per-invoice editing
+    _customNotes = tc?.description ?? '';
+    _saveDraft();
+    notifyListeners();
+  }
+
+  void setCustomNotes(String value) {
+    _customNotes = value;
+    _saveDraft();
+    notifyListeners();
+  }
 
   void setTemplateId(String id) {
     _templateId = id;
@@ -82,10 +118,30 @@ class InvoiceController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setDocumentType(String type) {
-    _documentType = type;
+  String get paymentStatus => _paymentStatus;
+
+  void setPaymentStatus(String status) {
+    _paymentStatus = status;
+    if (status == 'paid') {
+      _receivedAmount = totalAmount;
+    } else {
+      _receivedAmount = 0;
+    }
     _saveDraft();
     notifyListeners();
+  }
+
+  void setDocumentType(String type) {
+    _documentType = type;
+    // Clear selected T&C if not applicable to new type, then reload list
+    if (_selectedTermsCondition != null &&
+        !_selectedTermsCondition!.applicableFor.contains(type)) {
+      _selectedTermsId = null;
+      _selectedTermsCondition = null;
+    }
+    notifyListeners();
+    _saveDraft();
+    loadAvailableTerms();
   }
 
   void updateInvoiceDate(DateTime date) {
@@ -144,6 +200,7 @@ class InvoiceController extends ChangeNotifier {
     await _loadNextInvoiceNumber();
     await loadSavedInvoices();
     await _restoreDraft();
+    await loadAvailableTerms();
   }
 
   Future<void> _loadNextInvoiceNumber() async {
@@ -302,6 +359,12 @@ class InvoiceController extends ChangeNotifier {
       _attachedDocPath = invoice.attachedDoc;
       _templateId = invoice.template;
       _documentType = invoice.documentType;
+      _paymentStatus = invoice.paymentStatus;
+      _selectedTermsId = invoice.termsId;
+      _customNotes = invoice.customNotes ?? '';
+      _selectedTermsCondition = invoice.termsId != null
+          ? await _termsConditionDao.getById(invoice.termsId!)
+          : null;
 
       _items
         ..clear()
@@ -374,10 +437,13 @@ class InvoiceController extends ChangeNotifier {
         tax: 0,
         total: totalAmount,
         status: existingInvoice?.status ?? status,
+        paymentStatus: _paymentStatus,
         template: _templateId,
         documentType: _documentType,
         attachedImage: _attachedImagePath,
         attachedDoc: _attachedDocPath,
+        termsId: _selectedTermsId,
+        customNotes: _customNotes.isNotEmpty ? _customNotes : null,
         createdAt: existingInvoice?.createdAt ?? now,
         updatedAt: now,
       );
@@ -431,6 +497,12 @@ class InvoiceController extends ChangeNotifier {
     _attachedDocPath = null;
     _templateId = 'taxTheme1';
     _documentType = 'invoice';
+    _paymentStatus = 'unpaid';
+    _receivedAmount = 0;
+    _selectedTermsId = null;
+    _selectedTermsCondition = null;
+    _customNotes = '';
+    _availableTerms = [];
     _activeInvoiceId = null;
     _editingInvoiceId = null;
     await _loadNextInvoiceNumber();
@@ -535,6 +607,10 @@ class InvoiceController extends ChangeNotifier {
         'attachedDocPath': _attachedDocPath,
         'templateId': _templateId,
         'documentType': _documentType,
+        'paymentStatus': _paymentStatus,
+        'receivedAmount': _receivedAmount,
+        'selectedTermsId': _selectedTermsId,
+        'customNotes': _customNotes,
         'customer': _customer?.toMap(),
         'items': _items.map((it) => {
           'productId': it.productId,
@@ -568,6 +644,10 @@ class InvoiceController extends ChangeNotifier {
       _attachedDocPath = map['attachedDocPath'] as String?;
       _templateId = map['templateId'] as String? ?? _templateId;
       _documentType = map['documentType'] as String? ?? _documentType;
+      _paymentStatus = map['paymentStatus'] as String? ?? _paymentStatus;
+      _receivedAmount = (map['receivedAmount'] as num?)?.toDouble() ?? _receivedAmount;
+      _selectedTermsId = map['selectedTermsId'] as int?;
+      _customNotes = map['customNotes'] as String? ?? '';
       final customerMap = map['customer'] as Map<String, dynamic>?;
       if (customerMap != null) {
         _customer = Customer.fromMap(Map<String, dynamic>.from(customerMap));

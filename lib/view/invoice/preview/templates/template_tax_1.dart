@@ -241,8 +241,10 @@ class TemplateTax1 extends InvoiceTemplate {
                     formatMoney(grandTotalAmount),
                     isRed: true,
                   ),
-                  _totalTableRow('Received', formatMoney(0)),
-                  _totalTableRow('Balance', formatMoney(grandTotalAmount)),
+                  if (!isEstimate)
+                    _totalTableRow('Received', formatMoney(receivedAmount)),
+                  if (!isEstimate)
+                    _totalTableRow('Balance', formatMoney(balanceDue)),
                 ],
               ),
             ),
@@ -335,22 +337,51 @@ class TemplateTax1 extends InvoiceTemplate {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 15),
-              const Text(
-                'Terms And Conditions',
-                style: TextStyle(
-                  color: brandRed,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 11,
+              if (hasTermsCondition) ...[
+                Text(
+                  termsConditionTitle,
+                  style: const TextStyle(
+                    color: brandRed,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
                 ),
-              ),
-              const Text(
-                '1. Goods once sold will not be returned.',
-                style: TextStyle(fontSize: 10),
-              ),
-              const Text(
-                '2. Thank you for doing business with us.',
-                style: TextStyle(fontSize: 10),
-              ),
+                const SizedBox(height: 4),
+                Text(
+                  termsConditionDescription,
+                  style: const TextStyle(fontSize: 10),
+                ),
+                if (customNotes != null) ...[
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Notes',
+                    style: TextStyle(
+                      color: brandRed,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(customNotes!, style: const TextStyle(fontSize: 10)),
+                ],
+              ] else ...[
+                const Text(
+                  'Terms And Conditions',
+                  style: TextStyle(
+                    color: brandRed,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
+                ),
+                const Text(
+                  '1. Goods once sold will not be returned.',
+                  style: TextStyle(fontSize: 10),
+                ),
+                const Text(
+                  '2. Thank you for doing business with us.',
+                  style: TextStyle(fontSize: 10),
+                ),
+              ],
             ],
           ),
         ),

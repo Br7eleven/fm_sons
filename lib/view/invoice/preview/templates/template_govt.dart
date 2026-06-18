@@ -325,12 +325,32 @@ class TemplateGovt extends InvoiceTemplate {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      invoice.notes.trim().isEmpty
-                          ? 'Thank you for doing business with us.'
-                          : invoice.notes.trim(),
-                      style: const TextStyle(fontSize: 11),
-                    ),
+                    if (hasTermsCondition) ...[
+                      Text(
+                        termsConditionTitle,
+                        style: const TextStyle(
+                            fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(termsConditionDescription,
+                          style: const TextStyle(fontSize: 11)),
+                      if (customNotes != null) ...[
+                        const SizedBox(height: 8),
+                        const Text('Notes',
+                            style: TextStyle(
+                                fontSize: 11, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 2),
+                        Text(customNotes!,
+                            style: const TextStyle(fontSize: 11)),
+                      ],
+                    ] else ...[
+                      Text(
+                        invoice.notes.trim().isEmpty
+                            ? 'Thank you for doing business with us.'
+                            : invoice.notes.trim(),
+                        style: const TextStyle(fontSize: 11),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -352,8 +372,8 @@ class TemplateGovt extends InvoiceTemplate {
                   children: [
                     _amountRow('Sub Total', subtotalAmount),
                     _amountRow('Total', grandTotalAmount, bold: true),
-                    _amountRow('Received', 0),
-                    _amountRow('Balance', grandTotalAmount),
+                    if (!isEstimate) _amountRow('Received', receivedAmount),
+                    if (!isEstimate) _amountRow('Balance', balanceDue),
                   ],
                 ),
               ),

@@ -182,20 +182,36 @@ class TemplateModern extends InvoiceTemplate {
               color: Colors.grey.shade100,
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                const Text(
-                  'Total',
-                  style: TextStyle(fontWeight: FontWeight.w600),
+                Row(
+                  children: [
+                    const Text(
+                      'Total',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(width: 16),
+                    Text(
+                      formatMoney(grandTotalAmount),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                Text(
-                  formatMoney(grandTotalAmount),
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                if (!isEstimate) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Received: ${formatMoney(receivedAmount)}',
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
                   ),
-                ),
+                  Text(
+                    'Balance: ${formatMoney(balanceDue)}',
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  ),
+                ],
               ],
             ),
           ),
@@ -236,6 +252,25 @@ class TemplateModern extends InvoiceTemplate {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
+          if (hasTermsCondition) ...[
+            const SizedBox(height: 8),
+            Text(
+              termsConditionTitle,
+              style: const TextStyle(
+                  fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 4),
+            Text(termsConditionDescription,
+                style: const TextStyle(fontSize: 12)),
+          ],
+          if (customNotes != null) ...[
+            const SizedBox(height: 8),
+            const Text('Notes',
+                style: TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 4),
+            Text(customNotes!, style: const TextStyle(fontSize: 12)),
+          ],
           const SizedBox(height: 4),
           const Text(
             'Thank you for your business!',

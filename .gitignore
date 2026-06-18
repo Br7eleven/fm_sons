@@ -32,6 +32,11 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+.claude-flow/
+.claude-flow-cache/ 
+.claude/
+google-services.json
+CLAUDE.md
 
 # Symbolication related
 app.*.symbols

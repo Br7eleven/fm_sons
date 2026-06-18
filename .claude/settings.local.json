@@ -6,8 +6,11 @@
       "Bash(flutter analyze *)"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
-    "ruflo"
+    "stitch"
   ],
-  "enableAllProjectMcpServers": true
+  "disabledMcpjsonServers": [
+    "ruflo"
+  ]
 }

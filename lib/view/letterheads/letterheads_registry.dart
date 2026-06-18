@@ -2,17 +2,24 @@ class Letterhead {
   final String id;
   final String name;
   final String subtitle;
-  final String assetPath;
+  // null = coded Flutter widget letterhead; non-null = PDF asset path
+  final String? assetPath;
 
   const Letterhead({
     required this.id,
     required this.name,
     required this.subtitle,
-    required this.assetPath,
+    this.assetPath,
   });
 }
 
 const List<Letterhead> kLetterheads = [
+  Letterhead(
+    id: 'govt',
+    name: 'FM Sons',
+    subtitle: 'Government Contractor General Order Supplier',
+    // no assetPath = coded letterhead
+  ),
   Letterhead(
     id: 'abbas',
     name: 'ABBAS',

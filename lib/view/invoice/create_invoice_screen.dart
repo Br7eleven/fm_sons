@@ -10,7 +10,10 @@ import 'package:fm_sons/view/masters/customer/customer_model.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
+import 'package:fm_sons/data/local/models/terms_condition_model.dart';
+
 import 'controller/create_invoice_controller.dart';
+import 'terms_condition_editor_screen.dart';
 import 'widgets/invoice_header.dart';
 import 'widgets/invoice_items_section.dart';
 
@@ -32,12 +35,15 @@ class CreateInvoiceScreen extends StatelessWidget {
             onPressed: () => Navigator.of(context).pop(),
             icon: const Icon(Icons.arrow_back),
           ),
-          title: const Text('Sale', style: TextStyle(fontWeight: FontWeight.w600)),
+          title: const Text(
+            'Sale',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
           centerTitle: false,
           actions: [
-            // Credit / Cash toggle
-            _CreditCashToggle(),
-            const SizedBox(width: 8),
+            // Credit / Cash toggle — only for invoices
+            if (!invoiceController.isEstimate) _CreditCashToggle(),
+            if (!invoiceController.isEstimate) const SizedBox(width: 8),
             // Settings / more
             if (invoiceController.items.isNotEmpty ||
                 invoiceController.customerName != null)
@@ -51,13 +57,16 @@ class CreateInvoiceScreen extends StatelessWidget {
                     value: 'discard',
                     child: Row(
                       children: [
-                        Icon(Icons.delete_outline,
-                            color: Theme.of(context).colorScheme.error),
+                        Icon(
+                          Icons.delete_outline,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
                         const SizedBox(width: 12),
                         Text(
                           'Discard Draft',
                           style: TextStyle(
-                              color: Theme.of(context).colorScheme.error),
+                            color: Theme.of(context).colorScheme.error,
+                          ),
                         ),
                       ],
                     ),
@@ -69,10 +78,12 @@ class CreateInvoiceScreen extends StatelessWidget {
                       context: context,
                       builder: (ctx) => AlertDialog(
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16)),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                         title: const Text('Discard Draft?'),
                         content: const Text(
-                            'All unsaved changes will be lost.'),
+                          'All unsaved changes will be lost.',
+                        ),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(ctx, false),
@@ -82,8 +93,9 @@ class CreateInvoiceScreen extends StatelessWidget {
                             builder: (ctx2) => ElevatedButton(
                               onPressed: () => Navigator.pop(ctx, true),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    Theme.of(ctx2).colorScheme.error,
+                                backgroundColor: Theme.of(
+                                  ctx2,
+                                ).colorScheme.error,
                                 foregroundColor: Colors.white,
                               ),
                               child: const Text('Discard'),
@@ -100,10 +112,7 @@ class CreateInvoiceScreen extends StatelessWidget {
                 },
               )
             else
-              const SizedBox(
-                width: 48,
-                child: Icon(Icons.settings_outlined),
-              ),
+              const SizedBox(width: 48, child: Icon(Icons.settings_outlined)),
             const SizedBox(width: 4),
           ],
         ),
@@ -123,6 +132,11 @@ class CreateInvoiceScreen extends StatelessWidget {
                     // ── Customer field ──
                     _CustomerField(),
 
+                    const SizedBox(height: 10),
+
+                    // ── Invoice / Estimate toggle ──
+                    _DocTypeToggle(),
+
                     const SizedBox(height: 8),
 
                     // ── Add Items ──
@@ -138,6 +152,11 @@ class CreateInvoiceScreen extends StatelessWidget {
 
                     // ── Note + Image + Document (shown only when total > 0) ──
                     _ConditionalExtrasSection(),
+
+                    const SizedBox(height: 8),
+
+                    // ── Terms & Conditions + Custom Notes ──
+                    const _TermsAndNotesSection(),
 
                     const SizedBox(height: 16),
                   ],
@@ -162,7 +181,7 @@ class _CreditCashToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<InvoiceController>();
-    final isCredit = !controller.isEstimate; // reuse estimate flag for credit/cash
+    final isCredit = controller.paymentStatus == 'unpaid';
 
     return Container(
       height: 32,
@@ -177,13 +196,62 @@ class _CreditCashToggle extends StatelessWidget {
             label: 'Credit',
             selected: isCredit,
             selectedColor: const Color(0xFF1E5EFF),
-            onTap: () => controller.setDocumentType('invoice'),
+            onTap: () => controller.setPaymentStatus('unpaid'),
           ),
           _ToggleChip(
             label: 'Cash',
             selected: !isCredit,
             selectedColor: Colors.grey.shade700,
-            onTap: () => controller.setDocumentType('estimate'),
+            onTap: () => controller.setPaymentStatus('paid'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                       INVOICE / ESTIMATE TOGGLE                             */
+/* -------------------------------------------------------------------------- */
+
+class _DocTypeToggle extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final controller = context.watch<InvoiceController>();
+    final isInvoice = !controller.isEstimate;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          const Text(
+            'Type',
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _ToggleChip(
+                  label: 'Invoice',
+                  selected: isInvoice,
+                  selectedColor: const Color(0xFF1E5EFF),
+                  onTap: () => controller.setDocumentType('invoice'),
+                ),
+                _ToggleChip(
+                  label: 'Estimate',
+                  selected: !isInvoice,
+                  selectedColor: const Color(0xFF1E5EFF),
+                  onTap: () => controller.setDocumentType('estimate'),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -262,15 +330,18 @@ class _CustomerField extends StatelessWidget {
               fillColor: Theme.of(context).cardColor,
               suffixIcon: const Icon(Icons.arrow_drop_down),
               border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: Colors.grey.shade300),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide:
-                    const BorderSide(color: Color(0xFF1E5EFF), width: 1.5),
+                borderSide: const BorderSide(
+                  color: Color(0xFF1E5EFF),
+                  width: 1.5,
+                ),
               ),
             ),
           );
@@ -295,23 +366,34 @@ class _CustomerField extends StatelessWidget {
                       onTap: () => onSelected(customer),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                         child: Row(
                           children: [
-                            Icon(Icons.person_outline,
-                                size: 18, color: Colors.grey.shade600),
+                            Icon(
+                              Icons.person_outline,
+                              size: 18,
+                              color: Colors.grey.shade600,
+                            ),
                             const SizedBox(width: 10),
                             Expanded(
-                              child: Text(customer.name,
-                                  style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500)),
+                              child: Text(
+                                customer.name,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                             ),
                             if (customer.phone != null)
-                              Text(customer.phone!,
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey.shade500)),
+                              Text(
+                                customer.phone!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade500,
+                                ),
+                              ),
                           ],
                         ),
                       ),
@@ -351,7 +433,9 @@ class _TotalsSectionState extends State<_TotalsSection> {
       text: ctrl.totalAmount > 0 ? ctrl.totalAmount.toStringAsFixed(0) : '',
     );
     _receivedCtrl = TextEditingController(
-      text: ctrl.receivedAmount > 0 ? ctrl.receivedAmount.toStringAsFixed(0) : '',
+      text: ctrl.receivedAmount > 0
+          ? ctrl.receivedAmount.toStringAsFixed(0)
+          : '',
     );
   }
 
@@ -378,6 +462,14 @@ class _TotalsSectionState extends State<_TotalsSection> {
       }
     }
 
+    // Sync received field from controller state (toggle may change it)
+    final receivedText = controller.receivedAmount > 0
+        ? controller.receivedAmount.toStringAsFixed(0)
+        : '';
+    if (_receivedCtrl.text != receivedText) {
+      _receivedCtrl.text = receivedText;
+    }
+
     return Container(
       color: Theme.of(context).cardColor,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -387,14 +479,19 @@ class _TotalsSectionState extends State<_TotalsSection> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Text('Total Amount',
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
+              const Text(
+                'Total Amount',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+              ),
               const SizedBox(width: 8),
-              Text('Rs',
-                  style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade700)),
+              Text(
+                'Rs',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade700,
+                ),
+              ),
               const SizedBox(width: 4),
               Expanded(
                 child: TextField(
@@ -402,25 +499,34 @@ class _TotalsSectionState extends State<_TotalsSection> {
                   keyboardType: TextInputType.number,
                   textAlign: TextAlign.right,
                   style: const TextStyle(
-                      fontSize: 17, fontWeight: FontWeight.bold),
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                  ),
                   readOnly: hasItems,
                   decoration: InputDecoration(
                     isDense: true,
-                    contentPadding:
-                        const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 4,
+                      horizontal: 0,
+                    ),
                     border: InputBorder.none,
                     hintText: '─ ─ ─ ─ ─ ─',
                     hintStyle: TextStyle(
-                        color: Colors.grey.shade400,
-                        fontSize: 15,
-                        letterSpacing: 2),
+                      color: Colors.grey.shade400,
+                      fontSize: 15,
+                      letterSpacing: 2,
+                    ),
                     enabledBorder: UnderlineInputBorder(
                       borderSide: BorderSide(
-                          color: Colors.blue.shade300, width: 1),
+                        color: Colors.blue.shade300,
+                        width: 1,
+                      ),
                     ),
                     focusedBorder: UnderlineInputBorder(
                       borderSide: BorderSide(
-                          color: Colors.blue.shade600, width: 1.5),
+                        color: Colors.blue.shade600,
+                        width: 1.5,
+                      ),
                     ),
                   ),
                   onChanged: (v) {
@@ -440,90 +546,141 @@ class _TotalsSectionState extends State<_TotalsSection> {
             child: showExtras
                 ? Column(
                     children: [
-                      const SizedBox(height: 10),
-                      // Received row
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Container(
-                            width: 20,
-                            height: 20,
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                  color: const Color(0xFF1E5EFF), width: 1.5),
-                              borderRadius: BorderRadius.circular(4),
+                      // Received row — only on Credit (unpaid) and not Estimate
+                      if (!controller.isEstimate &&
+                          controller.paymentStatus == 'unpaid') ...[
+                        const SizedBox(height: 10),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                if (controller.receivedAmount > 0) {
+                                  controller.setReceivedAmount(0);
+                                } else {
+                                  controller.setReceivedAmount(total);
+                                }
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 180),
+                                width: 20,
+                                height: 20,
+                                decoration: BoxDecoration(
+                                  color: controller.receivedAmount > 0
+                                      ? const Color(0xFF1E5EFF)
+                                      : Colors.transparent,
+                                  border: Border.all(
+                                    color: const Color(0xFF1E5EFF),
+                                    width: 1.5,
+                                  ),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: controller.receivedAmount > 0
+                                    ? const Icon(
+                                        Icons.check,
+                                        size: 14,
+                                        color: Colors.white,
+                                      )
+                                    : null,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 10),
-                          const Text('Received',
+                            const SizedBox(width: 10),
+                            const Text(
+                              'Received',
                               style: TextStyle(
-                                  fontSize: 15, fontWeight: FontWeight.w500)),
-                          const SizedBox(width: 8),
-                          Text('Rs',
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Rs',
                               style: TextStyle(
-                                  fontSize: 14, color: Colors.grey.shade600)),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: TextField(
-                              controller: _receivedCtrl,
-                              keyboardType: const TextInputType.numberWithOptions(
-                                  decimal: true),
-                              textAlign: TextAlign.right,
-                              style: const TextStyle(fontSize: 15),
-                              decoration: InputDecoration(
-                                isDense: true,
-                                contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 4, horizontal: 0),
-                                border: InputBorder.none,
-                                hintText: '─ ─ ─ ─ ─ ─',
-                                hintStyle: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: TextField(
+                                controller: _receivedCtrl,
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                      decimal: true,
+                                    ),
+                                textAlign: TextAlign.right,
+                                style: const TextStyle(fontSize: 15),
+                                decoration: InputDecoration(
+                                  isDense: true,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 4,
+                                    horizontal: 0,
+                                  ),
+                                  border: InputBorder.none,
+                                  hintText: '─ ─ ─ ─ ─ ─',
+                                  hintStyle: TextStyle(
                                     color: Colors.grey.shade400,
                                     fontSize: 15,
-                                    letterSpacing: 2),
-                                enabledBorder: UnderlineInputBorder(
-                                  borderSide: BorderSide(
+                                    letterSpacing: 2,
+                                  ),
+                                  enabledBorder: UnderlineInputBorder(
+                                    borderSide: BorderSide(
                                       color: Colors.blue.shade300,
                                       width: 1,
-                                      style: BorderStyle.solid),
+                                      style: BorderStyle.solid,
+                                    ),
+                                  ),
+                                  focusedBorder: UnderlineInputBorder(
+                                    borderSide: BorderSide(
+                                      color: Colors.blue.shade600,
+                                      width: 1.5,
+                                    ),
+                                  ),
                                 ),
-                                focusedBorder: UnderlineInputBorder(
-                                  borderSide: BorderSide(
-                                      color: Colors.blue.shade600, width: 1.5),
-                                ),
+                                onChanged: (v) {
+                                  controller.setReceivedAmount(
+                                    double.tryParse(v) ?? 0,
+                                  );
+                                },
                               ),
-                              onChanged: (v) {
-                                controller
-                                    .setReceivedAmount(double.tryParse(v) ?? 0);
-                              },
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Divider(color: Colors.grey.shade200, height: 1),
-                      const SizedBox(height: 10),
-                      // Balance Due row
-                      Row(
-                        children: [
-                          const Text('Balance Due',
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Divider(color: Colors.grey.shade200, height: 1),
+                        const SizedBox(height: 10),
+                      ],
+                      // Balance Due row — only for invoices
+                      if (!controller.isEstimate)
+                        Row(
+                          children: [
+                            const Text(
+                              'Balance Due',
                               style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF1E5EFF))),
-                          const Spacer(),
-                          Text('Rs',
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1E5EFF),
+                              ),
+                            ),
+                            const Spacer(),
+                            Text(
+                              'Rs',
                               style: TextStyle(
-                                  fontSize: 14, color: Colors.grey.shade600)),
-                          const SizedBox(width: 8),
-                          Text(
-                            balance.toStringAsFixed(2),
-                            style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              balance.toStringAsFixed(2),
+                              style: const TextStyle(
                                 fontSize: 17,
                                 fontWeight: FontWeight.bold,
-                                color: Color(0xFF1E5EFF)),
-                          ),
-                        ],
-                      ),
+                                color: Color(0xFF1E5EFF),
+                              ),
+                            ),
+                          ],
+                        ),
                     ],
                   )
                 : const SizedBox.shrink(),
@@ -538,11 +695,424 @@ class _TotalsSectionState extends State<_TotalsSection> {
 /*                     CONDITIONAL EXTRAS (notes + doc)                       */
 /* -------------------------------------------------------------------------- */
 
+/* -------------------------------------------------------------------------- */
+/*                     TERMS & CONDITIONS + CUSTOM NOTES                       */
+/* -------------------------------------------------------------------------- */
+
+class _TermsAndNotesSection extends StatefulWidget {
+  const _TermsAndNotesSection();
+
+  @override
+  State<_TermsAndNotesSection> createState() => _TermsAndNotesSectionState();
+}
+
+class _TermsAndNotesSectionState extends State<_TermsAndNotesSection> {
+  bool _isOpen = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = context.watch<InvoiceController>();
+    final total = controller.totalAmount;
+    final show = total > 0;
+    final selected = controller.selectedTermsCondition;
+
+    if (!show) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 16),
+
+          // ── Collapsible header: Terms & condition ──
+          GestureDetector(
+            onTap: () => setState(() => _isOpen = !_isOpen),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Text(
+                        'Terms & conditions',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: _isOpen
+                              ? const Color(0xFF1E5EFF)
+                              : Colors.grey.shade700,
+                        ),
+                      ),
+                      if (selected != null) ...[
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            '— ${selected.title}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                AnimatedRotation(
+                  turns: _isOpen ? 0.5 : 0,
+                  duration: const Duration(milliseconds: 180),
+                  child: Icon(
+                    Icons.keyboard_arrow_down,
+                    size: 20,
+                    color: _isOpen
+                        ? const Color(0xFF1E5EFF)
+                        : Colors.grey.shade500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          // ── Collapsible body ──
+          AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeInOut,
+            alignment: Alignment.topCenter,
+            child: _isOpen
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // T&C field row
+                      GestureDetector(
+                        onTap: () => setState(() => _isOpen = !_isOpen),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardColor,
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(12),
+                              topRight: Radius.circular(12),
+                            ),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: selected != null
+                                    ? Row(
+                                        children: [
+                                          Flexible(
+                                            child: Text(
+                                              selected.title,
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: const Color(
+                                                0xFF1E5EFF,
+                                              ).withValues(alpha: 0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                            child: Text(
+                                              selected.applicableFor.contains(
+                                                    'invoice',
+                                                  )
+                                                  ? selected.applicableFor
+                                                            .contains(
+                                                              'estimate',
+                                                            )
+                                                        ? 'Both'
+                                                        : 'Invoice'
+                                                  : 'Estimate',
+                                              style: const TextStyle(
+                                                fontSize: 10,
+                                                color: Color(0xFF1E5EFF),
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : Text(
+                                        'Select T&C',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.grey.shade500,
+                                        ),
+                                      ),
+                              ),
+                              Icon(
+                                Icons.arrow_drop_down,
+                                color: Colors.grey.shade500,
+                                size: 22,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      // Inline dropdown
+                      _buildDropdown(controller),
+
+                      const SizedBox(height: 12),
+
+                      // Custom Notes textarea
+                      _CustomNotesField(),
+                    ],
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdown(InvoiceController controller) {
+    final terms = controller.availableTerms;
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        border: Border(
+          left: BorderSide(color: Colors.grey.shade300),
+          right: BorderSide(color: Colors.grey.shade300),
+          bottom: BorderSide(color: Colors.grey.shade300),
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(12),
+          bottomRight: Radius.circular(12),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // "+ Add terms & condition" at top
+          InkWell(
+            onTap: () async {
+              setState(() => _isOpen = false);
+              final created = await Navigator.push<TermsCondition>(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const TermsConditionEditorScreen(),
+                ),
+              );
+              if (created != null && mounted) {
+                controller.setSelectedTerms(created);
+                controller.loadAvailableTerms();
+              }
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.add_circle_outline,
+                    color: Color(0xFF1E5EFF),
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    '+ Add terms & condition',
+                    style: TextStyle(
+                      color: Color(0xFF1E5EFF),
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (controller.selectedTermsId != null)
+                    GestureDetector(
+                      onTap: () {
+                        controller.setSelectedTerms(null);
+                        setState(() => _isOpen = false);
+                      },
+                      child: Text(
+                        'Clear',
+                        style: TextStyle(
+                          color: Colors.red.shade400,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          Divider(height: 1, color: Colors.grey.shade200),
+
+          if (terms.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text(
+                'No terms & conditions available.',
+                style: TextStyle(color: Colors.grey, fontSize: 13),
+              ),
+            )
+          else
+            ...terms.map(
+              (tc) => InkWell(
+                onTap: () {
+                  controller.setSelectedTerms(tc);
+                  setState(() => _isOpen = false);
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: Colors.grey.shade100),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              tc.title,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                                fontSize: 13,
+                              ),
+                            ),
+                            if (tc.description.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                tc.description,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E5EFF).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          tc.applicableFor.contains('invoice')
+                              ? tc.applicableFor.contains('estimate')
+                                    ? 'Both'
+                                    : 'Invoice'
+                              : 'Estimate',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: Color(0xFF1E5EFF),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                          CUSTOM NOTES TEXTAREA                              */
+/* -------------------------------------------------------------------------- */
+
+class _CustomNotesField extends StatefulWidget {
+  @override
+  State<_CustomNotesField> createState() => _CustomNotesFieldState();
+}
+
+class _CustomNotesFieldState extends State<_CustomNotesField> {
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(
+      text: context.read<InvoiceController>().customNotes,
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = context.watch<InvoiceController>();
+    // Sync text when controller changes (e.g. T&C selection pre-fills description)
+    if (_ctrl.text != controller.customNotes) {
+      _ctrl.text = controller.customNotes;
+    }
+    return Container(
+      height: 80,
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: TextField(
+        controller: _ctrl,
+        maxLines: null,
+        expands: true,
+        onChanged: context.read<InvoiceController>().setCustomNotes,
+        decoration: InputDecoration(
+          hintText: 'Additional notes / description',
+          hintStyle: TextStyle(color: Colors.grey.shade400),
+          border: InputBorder.none,
+          isDense: true,
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*                     CONDITIONAL EXTRAS (notes + doc)                       */
+/* -------------------------------------------------------------------------- */
+
 class _ConditionalExtrasSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final total = context.select<InvoiceController, double>(
-        (c) => c.totalAmount);
+      (c) => c.totalAmount,
+    );
     final show = total > 0;
 
     return AnimatedSize(
@@ -579,8 +1149,9 @@ class _InvoiceNotesSectionState extends State<_InvoiceNotesSection> {
   @override
   void initState() {
     super.initState();
-    _notesController =
-        TextEditingController(text: context.read<InvoiceController>().notes);
+    _notesController = TextEditingController(
+      text: context.read<InvoiceController>().notes,
+    );
   }
 
   @override
@@ -696,12 +1267,19 @@ class _InvoiceNotesSectionState extends State<_InvoiceNotesSection> {
                   : Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.add_photo_alternate_outlined,
-                            size: 26, color: Colors.grey.shade500),
+                        Icon(
+                          Icons.add_photo_alternate_outlined,
+                          size: 26,
+                          color: Colors.grey.shade500,
+                        ),
                         const SizedBox(height: 4),
-                        Text('Photo',
-                            style: TextStyle(
-                                fontSize: 11, color: Colors.grey.shade500)),
+                        Text(
+                          'Photo',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade500,
+                          ),
+                        ),
                       ],
                     ),
             ),
@@ -722,7 +1300,17 @@ class _DocumentSection extends StatelessWidget {
   Future<void> _pick(BuildContext context, InvoiceController controller) async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'jpg', 'jpeg', 'png'],
+      allowedExtensions: [
+        'pdf',
+        'doc',
+        'docx',
+        'xls',
+        'xlsx',
+        'txt',
+        'jpg',
+        'jpeg',
+        'png',
+      ],
     );
     if (result != null && result.files.single.path != null) {
       controller.setAttachedDoc(result.files.single.path!);
@@ -770,18 +1358,27 @@ class _DocumentSection extends StatelessWidget {
           child: docPath != null
               ? Row(
                   children: [
-                    Icon(_docIcon(fileName ?? ''),
-                        size: 22, color: const Color(0xFF1E5EFF)),
+                    Icon(
+                      _docIcon(fileName ?? ''),
+                      size: 22,
+                      color: const Color(0xFF1E5EFF),
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         fileName ?? 'Attached Document',
                         style: const TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.w500),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const Icon(Icons.chevron_right, size: 18, color: Colors.grey),
+                    const Icon(
+                      Icons.chevron_right,
+                      size: 18,
+                      color: Colors.grey,
+                    ),
                   ],
                 )
               : Row(
@@ -794,8 +1391,11 @@ class _DocumentSection extends StatelessWidget {
                         color: Color(0xFF1E5EFF),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.attach_file,
-                          size: 14, color: Colors.white),
+                      child: const Icon(
+                        Icons.attach_file,
+                        size: 14,
+                        color: Colors.white,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     RichText(
@@ -881,9 +1481,10 @@ class _DocViewerDialog extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600),
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   IconButton(
@@ -914,7 +1515,9 @@ class _DocViewerDialog extends StatelessWidget {
                           Text(
                             _fileName,
                             style: const TextStyle(
-                                color: Colors.white70, fontSize: 16),
+                              color: Colors.white70,
+                              fontSize: 16,
+                            ),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 24),
@@ -928,9 +1531,12 @@ class _DocViewerDialog extends StatelessWidget {
                               backgroundColor: const Color(0xFF1E5EFF),
                               foregroundColor: Colors.white,
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 12),
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
                               shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12)),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           ),
                         ],
@@ -1024,8 +1630,10 @@ class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
 
   // Items are optional — invoice can be saved with just a customer and amount
 
-  Future<void> _saveInvoice(InvoiceController controller,
-      {bool andNew = false}) async {
+  Future<void> _saveInvoice(
+    InvoiceController controller, {
+    bool andNew = false,
+  }) async {
     if (_isSaving || _isSavingNew || !_validate(controller)) return;
 
     final messenger = ScaffoldMessenger.of(context);
@@ -1033,18 +1641,26 @@ class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
     final wasEditing = controller.isEditingInvoice;
 
     setState(() {
-      if (andNew) { _isSavingNew = true; } else { _isSaving = true; }
+      if (andNew) {
+        _isSavingNew = true;
+      } else {
+        _isSaving = true;
+      }
     });
     try {
       final id = await controller.saveCurrentInvoice();
       if (!mounted) return;
       // Refresh customer list so newly-typed names appear in future dropdowns
       context.read<CustomerController>().refresh();
-      messenger.showSnackBar(SnackBar(
-        content: Text(wasEditing
-            ? 'Invoice updated (ID: $id)'
-            : 'Invoice saved (ID: $id)'),
-      ));
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            wasEditing
+                ? 'Invoice updated (ID: $id)'
+                : 'Invoice saved (ID: $id)',
+          ),
+        ),
+      );
       if (andNew) {
         await controller.resetDraft();
       } else {
@@ -1095,19 +1711,23 @@ class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
                 final label = _templateLabels[type]!;
                 final isSelected = type == selectedTheme;
                 return GestureDetector(
-                  onTap: () => context
-                      .read<InvoiceController>()
-                      .setTemplateId(type.name),
+                  onTap: () => context.read<InvoiceController>().setTemplateId(
+                    type.name,
+                  ),
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 180),
                     margin: const EdgeInsets.only(right: 8),
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 6),
+                      horizontal: 14,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: isSelected ? color : color.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                          color: color, width: isSelected ? 0 : 1),
+                        color: color,
+                        width: isSelected ? 0 : 1,
+                      ),
                     ),
                     child: Text(
                       label,
@@ -1139,7 +1759,8 @@ class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
                         side: BorderSide(color: Colors.grey.shade400),
                         foregroundColor: Colors.grey.shade700,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       onPressed: busy
                           ? null
@@ -1150,9 +1771,13 @@ class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
                               height: 16,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Save & New',
+                          : const Text(
+                              'Save & New',
                               style: TextStyle(
-                                  fontSize: 14, fontWeight: FontWeight.w600)),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
                 ),
@@ -1169,22 +1794,26 @@ class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
                         backgroundColor: const Color(0xFF1E5EFF),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      onPressed: busy
-                          ? null
-                          : () => _saveInvoice(controller),
+                      onPressed: busy ? null : () => _saveInvoice(controller),
                       child: _isSaving
                           ? const SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white),
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
                           : Text(
                               controller.isEditingInvoice ? 'Update' : 'Save',
                               style: const TextStyle(
-                                  fontSize: 15, fontWeight: FontWeight.w600)),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
                 ),
@@ -1201,7 +1830,8 @@ class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
                       foregroundColor: Colors.grey.shade700,
                       padding: EdgeInsets.zero,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     onPressed: busy
                         ? null
@@ -1259,8 +1889,11 @@ class _ImageViewerDialog extends StatelessWidget {
                   const SizedBox(width: 48),
                   const Text(
                     'Attached Photo',
-                    style: TextStyle(color: Colors.white, fontSize: 16,
-                        fontWeight: FontWeight.w600),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.white),
@@ -1347,9 +1980,14 @@ class _ActionButton extends StatelessWidget {
             child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(height: 6),
-          Text(label,
-              style: TextStyle(color: color, fontSize: 12,
-                  fontWeight: FontWeight.w500)),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ],
       ),
     );
