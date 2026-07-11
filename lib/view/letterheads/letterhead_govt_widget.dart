@@ -98,12 +98,12 @@ class LetterheadGovtWidget extends StatelessWidget {
           _fullWidthFieldBox('Subject:'),
           const SizedBox(height: 20),
           // Lined writing area
-          Expanded(
-            child: CustomPaint(
-              size: const Size(double.infinity, double.infinity),
-              painter: _LinedPaper(),
-            ),
-          ),
+          // Expanded(
+          //   child: CustomPaint(
+          //     size: const Size(double.infinity, double.infinity),
+          //     painter: _LinedPaper(),
+          //   ),
+          // ),
         ],
       ),
     );
@@ -184,7 +184,9 @@ class LetterheadGovtWidget extends StatelessWidget {
           width: 160,
           height: 48,
           decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: Color(0xFF999999), width: 1)),
+            border: Border(
+              bottom: BorderSide(color: Color(0xFF999999), width: 1),
+            ),
           ),
         ),
         const SizedBox(height: 4),
@@ -225,21 +227,21 @@ class LetterheadGovtWidget extends StatelessWidget {
   }
 }
 
-class _LinedPaper extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFFDDDDDD)
-      ..strokeWidth = 0.8;
+// class _LinedPaper extends CustomPainter {
+//   @override
+//   void paint(Canvas canvas, Size size) {
+//     final paint = Paint()
+//       ..color = const Color(0xFFDDDDDD)
+//       ..strokeWidth = 0.8;
 
-    const lineSpacing = 28.0;
-    double y = lineSpacing;
-    while (y < size.height) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-      y += lineSpacing;
-    }
-  }
+//     const lineSpacing = 28.0;
+//     double y = lineSpacing;
+//     while (y < size.height) {
+//       canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+//       y += lineSpacing;
+//     }
+//   }
 
-  @override
-  bool shouldRepaint(_LinedPaper _) => false;
-}
+//   @override
+//   bool shouldRepaint(_LinedPaper _) => false;
+// }

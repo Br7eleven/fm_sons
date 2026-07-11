@@ -15,6 +15,7 @@ class InvoiceTable {
     subtotal REAL NOT NULL,
     tax REAL NOT NULL DEFAULT 0,
     total REAL NOT NULL,
+    received_amount REAL NOT NULL DEFAULT 0,
     status TEXT NOT NULL,
     payment_status TEXT NOT NULL DEFAULT 'unpaid',
     template TEXT NOT NULL DEFAULT 'taxTheme1',

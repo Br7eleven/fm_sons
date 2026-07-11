@@ -25,7 +25,10 @@ class TemplateTax3 extends InvoiceTemplate {
                 children: [
                   Text(
                     InvoiceTemplate.companyOf(context).name,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -81,7 +84,7 @@ class TemplateTax3 extends InvoiceTemplate {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Estimate For',
+                  'Bill To',
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 4),
@@ -100,11 +103,11 @@ class TemplateTax3 extends InvoiceTemplate {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               const Text(
-                'Estimate Details',
+                'Details',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 4),
-              _meta('Estimate No', invoice.invoiceNumber),
+              _meta('Invoice No', invoice.invoiceNumber),
               _meta('Date', invoiceDateLabel),
             ],
           ),
@@ -292,35 +295,14 @@ class TemplateTax3 extends InvoiceTemplate {
           Text(amountInWordsLabel, style: const TextStyle(fontSize: 11)),
           const SizedBox(height: 14),
           if (hasTermsCondition) ...[
-            Text(
-              termsConditionTitle,
-              style:
-                  const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-            ),
-            const SizedBox(height: 4),
-            Text(termsConditionDescription,
-                style: const TextStyle(fontSize: 11)),
-            if (customNotes != null) ...[
-              const SizedBox(height: 8),
-              const Text('Notes',
-                  style:
-                      TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
-              const SizedBox(height: 4),
-              Text(customNotes!, style: const TextStyle(fontSize: 11)),
-            ],
-          ] else ...[
             const Text(
-              'Terms And Conditions',
+              'Terms & Conditions',
               style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
             ),
             const SizedBox(height: 4),
-            const Text(
-              '1. Goods once sold will not be returned.',
-              style: TextStyle(fontSize: 11),
-            ),
-            const Text(
-              '2. Thank you for doing business with us.',
-              style: TextStyle(fontSize: 11),
+            Text(
+              termsConditionDescription,
+              style: const TextStyle(fontSize: 11),
             ),
           ],
           const SizedBox(height: 16),
@@ -330,13 +312,19 @@ class TemplateTax3 extends InvoiceTemplate {
             children: [
               Text(
                 'For: ${InvoiceTemplate.companyOf(context).name} ${InvoiceTemplate.companyOf(context).tagline} Vendor Number ${InvoiceTemplate.companyOf(context).vendorNumber}',
-                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   buildSignature(context),
-                  const Text('Authorized Signatory', style: TextStyle(fontSize: 12)),
+                  const Text(
+                    'Authorized Signatory',
+                    style: TextStyle(fontSize: 12),
+                  ),
                 ],
               ),
             ],
@@ -365,18 +353,10 @@ class TemplateTax3 extends InvoiceTemplate {
       ),
       child: Row(
         children: [
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(fontSize: 12),
-            ),
-          ),
+          Expanded(child: Text(label, style: const TextStyle(fontSize: 12))),
           Text(
             formatMoney(value),
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-            ),
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
           ),
         ],
       ),

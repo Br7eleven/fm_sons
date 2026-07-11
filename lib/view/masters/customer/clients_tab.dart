@@ -1,15 +1,13 @@
+import 'package:fm_sons/utils/money_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:provider/provider.dart';
 
 import 'package:fm_sons/data/local/dao/invoice_dao.dart';
+import 'package:fm_sons/view/masters/customer/add_party_form_sheet.dart';
 import 'package:fm_sons/view/masters/customer/customer_controller.dart';
 import 'package:fm_sons/view/masters/customer/customer_model.dart';
-import 'package:fm_sons/data/local/models/invoice_model.dart';
-import 'package:fm_sons/view/invoice/controller/create_invoice_controller.dart';
-import 'package:fm_sons/view/invoice/create_invoice_screen.dart';
-import 'package:fm_sons/view/invoice/preview/invoice_preview_screen.dart';
-
-import 'customer_edit_screen.dart';
+import 'client_detail_screen.dart';
 
 class ClientsTab extends StatefulWidget {
   const ClientsTab({super.key});
@@ -35,78 +33,27 @@ class _ClientsTabState extends State<ClientsTab> {
     super.dispose();
   }
 
-  Future<void> _showAddCustomerDialog() async {
-    final controller = context.read<CustomerController>();
+  Future<void> _showAddCustomerSheet() async {
     final messenger = ScaffoldMessenger.of(context);
-    final nameController = TextEditingController();
-    final phoneController = TextEditingController();
-    final addressController = TextEditingController();
+
+    final result = await showModalBottomSheet<Customer>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => const AddPartyFormSheet(),
+    );
+
+    if (result == null || !mounted) return;
 
     try {
-      final result = await showDialog<bool>(
-        context: context,
-        builder: (dialogContext) {
-          return AlertDialog(
-            title: const Text('Add Customer'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                ),
-                TextField(
-                  controller: phoneController,
-                  decoration: const InputDecoration(labelText: 'Phone'),
-                ),
-                TextField(
-                  controller: addressController,
-                  decoration: const InputDecoration(labelText: 'Address'),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  if (nameController.text.trim().isEmpty) return;
-                  Navigator.pop(dialogContext, true);
-                },
-                child: const Text('Add'),
-              ),
-            ],
-          );
-        },
-      );
-
-      if (result != true) return;
-
-      final customer = Customer(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: nameController.text.trim(),
-        phone: phoneController.text.trim().isEmpty
-            ? null
-            : phoneController.text.trim(),
-        address: addressController.text.trim().isEmpty
-            ? null
-            : addressController.text.trim(),
-      );
-
-      await controller.addOrGetCustomer(customer);
-      if (!mounted) return;
-      messenger.showSnackBar(const SnackBar(content: Text('Customer added')));
+      await context.read<CustomerController>().addOrGetCustomer(result);
+      messenger.showSnackBar(const SnackBar(content: Text('Party added')));
     } catch (e) {
-      if (!mounted) return;
       messenger.showSnackBar(
-        SnackBar(content: Text('Failed to add customer: $e')),
+        SnackBar(content: Text('Failed to add party: $e')),
       );
-    } finally {
-      nameController.dispose();
-      phoneController.dispose();
-      addressController.dispose();
     }
   }
 
@@ -117,11 +64,15 @@ class _ClientsTabState extends State<ClientsTab> {
     final customers = _searchQuery.isEmpty
         ? allCustomers
         : allCustomers
-            .where((c) =>
-                c.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-                (c.phone ?? '').contains(_searchQuery) ||
-                (c.address ?? '').toLowerCase().contains(_searchQuery.toLowerCase()))
-            .toList();
+              .where(
+                (c) =>
+                    c.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                    (c.phone ?? '').contains(_searchQuery) ||
+                    (c.address ?? '').toLowerCase().contains(
+                      _searchQuery.toLowerCase(),
+                    ),
+              )
+              .toList();
 
     return RefreshIndicator(
       onRefresh: controller.refresh,
@@ -132,21 +83,19 @@ class _ClientsTabState extends State<ClientsTab> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Manage Clients',
+                'Manage Parties',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
               ),
               ElevatedButton.icon(
-                onPressed: _showAddCustomerDialog,
-                icon: const Icon(Icons.add),
-                label: const Text('Add Client'),
+                onPressed: _showAddCustomerSheet,
+                icon: const Icon(Icons.add, size: 18),
+                label: const Text('Add Party'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  backgroundColor: FMSons.accent,
                   foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: const StadiumBorder(),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
+                    horizontal: 20,
                     vertical: 12,
                   ),
                 ),
@@ -158,7 +107,7 @@ class _ClientsTabState extends State<ClientsTab> {
             controller: _searchController,
             onChanged: (v) => setState(() => _searchQuery = v.trim()),
             decoration: InputDecoration(
-              hintText: 'Search clients...',
+              hintText: 'Search parties...',
               prefixIcon: const Icon(Icons.search),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
@@ -186,7 +135,7 @@ class _ClientsTabState extends State<ClientsTab> {
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Text(
-                  'No clients match "$_searchQuery"',
+                  'No parties match "$_searchQuery"',
                   style: const TextStyle(color: Colors.grey),
                 ),
               ),
@@ -202,25 +151,27 @@ class _ClientsTabState extends State<ClientsTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'No clients found',
+                    'No parties found',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Add clients to track their invoices and manage client details.',
+                    'Add parties to track their invoices and manage party details.',
                     style: TextStyle(color: Colors.grey, fontSize: 15),
                   ),
                   const SizedBox(height: 16),
                   Builder(
                     builder: (context) => ElevatedButton.icon(
-                      onPressed: _showAddCustomerDialog,
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Your First Client'),
+                      onPressed: _showAddCustomerSheet,
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('Add Your First Party'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        backgroundColor: FMSons.accent,
+                        foregroundColor: Colors.white,
+                        shape: const StadiumBorder(),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
                         ),
                       ),
                     ),
@@ -230,7 +181,7 @@ class _ClientsTabState extends State<ClientsTab> {
             )
           else
             ...customers.map(
-              (c) => _ClientCard(customer: c, invoiceDao: _invoiceDao),
+              (c) => _ClientListTile(customer: c, invoiceDao: _invoiceDao),
             ),
         ],
       ),
@@ -238,391 +189,156 @@ class _ClientsTabState extends State<ClientsTab> {
   }
 }
 
-class _ClientCard extends StatefulWidget {
+/* -------------------------------------------------------------------------- */
+/*                            CLIENT LIST TILE                                  */
+/* -------------------------------------------------------------------------- */
+
+class _ClientListTile extends StatefulWidget {
   final Customer customer;
   final InvoiceDao invoiceDao;
 
-  const _ClientCard({required this.customer, required this.invoiceDao});
+  const _ClientListTile({required this.customer, required this.invoiceDao});
 
   @override
-  State<_ClientCard> createState() => _ClientCardState();
+  State<_ClientListTile> createState() => _ClientListTileState();
 }
 
-class _ClientCardState extends State<_ClientCard> {
-  bool _isExpanded = false;
+class _ClientListTileState extends State<_ClientListTile> {
+  Map<String, dynamic>? _balance;
 
-  Future<void> _editInvoice(InvoiceModel invoice) async {
-    if (invoice.id == null) return;
-    final controller = context.read<InvoiceController>();
-    final messenger = ScaffoldMessenger.of(context);
-
-    try {
-      await controller.loadInvoiceForEditing(invoice.id!);
-      if (!mounted) return;
-
-      await Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const CreateInvoiceScreen()),
-      );
-
-      if (!mounted) return;
-      // Refresh the client card to show updated invoice
-      setState(() {});
-    } catch (e) {
-      if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text('Unable to open invoice: $e')),
-      );
-    }
+  @override
+  void initState() {
+    super.initState();
+    _loadBalance();
   }
 
-  Future<void> _previewInvoice(InvoiceModel invoice) async {
-    if (invoice.id == null) return;
-
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => InvoicePreviewScreen(previewInvoiceId: invoice.id!),
-      ),
-    );
-  }
-
-  Future<void> _shareInvoice(InvoiceModel invoice) async {
-    if (invoice.id == null) return;
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => InvoicePreviewScreen(
-          previewInvoiceId: invoice.id!,
-          autoShare: true,
-        ),
-      ),
-    );
-  }
-
-  Future<void> _editCustomer() async {
-    final navigator = Navigator.of(context);
-    await navigator.push(
-      MaterialPageRoute(
-        builder: (_) => CustomerEditScreen(customer: widget.customer),
-      ),
-    );
-  }
-
-  Future<void> _deleteCustomer() async {
-    final controller = context.read<CustomerController>();
-    final messenger = ScaffoldMessenger.of(context);
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (d) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete Client'),
-        content: Text(
-          'Delete ${widget.customer.name}? This will not delete associated invoices.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(d, false),
-            child: const Text('Cancel'),
-          ),
-          Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () => Navigator.pop(d, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.error,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Delete'),
-            ),
-          ),
-        ],
-      ),
-    );
-    if (confirm == true) {
-      try {
-        await controller.deleteCustomer(widget.customer.id);
-      } catch (e) {
-        if (!mounted) return;
-        messenger.showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
-      }
-    }
+  Future<void> _loadBalance() async {
+    final data = await widget.invoiceDao.getClientBalance(widget.customer.id);
+    if (mounted) setState(() => _balance = data);
   }
 
   @override
   Widget build(BuildContext context) {
     final c = widget.customer;
+    final bal = _balance;
+    final hasTransactions = bal != null && (bal['totalInvoiced'] as double) > 0;
+    final due = hasTransactions
+        ? normalizeMoney((bal['totalInvoiced'] as double) - (bal['totalReceived'] as double))
+        : 0.0;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          InkWell(
-            onTap: () => setState(() => _isExpanded = !_isExpanded),
-            borderRadius: BorderRadius.circular(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Icon(
-                      Icons.person_outline,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          c.name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
+    return Column(
+      key: ValueKey(c.id),
+      children: [
+        InkWell(
+          onTap: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ClientDetailScreen(customer: c)),
+            );
+            _loadBalance();
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    /// Initials circle avatar (accepted ref pattern)
+                    CircleAvatar(
+                      radius: 18,
+                      backgroundColor: FMSons.accent.withValues(alpha: 0.12),
+                      child: Text(
+                        c.name.isNotEmpty ? c.name[0].toUpperCase() : '?',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: FMSons.accent,
                         ),
-                        if (c.phone != null) ...[
-                          const SizedBox(height: 4),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            c.phone!,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium?.copyWith(fontSize: 14),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    _isExpanded
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                    color: Colors.grey.shade600,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (_isExpanded)
-            Container(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Divider(height: 1),
-                  const SizedBox(height: 14),
-                  if (c.address != null) ...[
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.location_on_outlined,
-                          size: 18,
-                          color: Theme.of(context).iconTheme.color,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            c.address!,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium?.copyWith(fontSize: 14),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                  ],
-                  const Text(
-                    'Invoices',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 10),
-                  FutureBuilder<List<InvoiceModel>>(
-                    future: widget.invoiceDao.getInvoicesByCustomerId(c.id),
-                    builder: (context, snap) {
-                      if (snap.connectionState != ConnectionState.done) {
-                        return const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          child: Center(
-                            child: SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                            c.name,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                        );
-                      }
-                      final inv = snap.data ?? [];
-                      if (inv.isEmpty) {
-                        return Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            'No invoices for this client',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodyMedium?.copyWith(fontSize: 14),
-                          ),
-                        );
-                      }
-                      return Column(
-                        children: inv.map((i) {
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 8),
-                            decoration: BoxDecoration(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: InkWell(
-                              onTap: () => _editInvoice(i),
-                              borderRadius: BorderRadius.circular(12),
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      Icons.receipt_outlined,
-                                      size: 20,
-                                      color: Theme.of(context).iconTheme.color,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Expanded(
-                                      child: Text(
-                                        i.invoiceNumber,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                    Text(
-                                      'PKR ${i.total.toStringAsFixed(0)}',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 15,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    PopupMenuButton<String>(
-                                      icon: Icon(
-                                        Icons.more_vert,
-                                        size: 20,
-                                        color: Theme.of(
-                                          context,
-                                        ).iconTheme.color,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      itemBuilder: (context) => [
-                                        const PopupMenuItem(
-                                          value: 'preview',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.visibility_outlined),
-                                              SizedBox(width: 12),
-                                              Text('Preview'),
-                                            ],
-                                          ),
-                                        ),
-                                        const PopupMenuItem(
-                                          value: 'share',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.share_outlined),
-                                              SizedBox(width: 12),
-                                              Text('Share'),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                      onSelected: (value) {
-                                        if (value == 'preview') {
-                                          _previewInvoice(i);
-                                        } else if (value == 'share') {
-                                          _shareInvoice(i);
-                                        }
-                                      },
-                                    ),
-                                  ],
+                          if (c.phone != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                c.phone!,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
                                 ),
                               ),
                             ),
-                          );
-                        }).toList(),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 14),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      color: Colors.grey.shade400,
+                      size: 20,
+                    ),
+                  ],
+                ),
+                if (hasTransactions) ...[
+                  const SizedBox(height: 10),
                   Row(
                     children: [
-                      Expanded(
-                        child: Builder(
-                          builder: (context) => OutlinedButton.icon(
-                            onPressed: _editCustomer,
-                            icon: const Icon(Icons.edit_outlined),
-                            label: const Text('Edit'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Theme.of(context).colorScheme.primary,
-                              side: BorderSide(color: Theme.of(context).colorScheme.primary),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
+                      _miniStat(
+                        'Total',
+                        bal['totalInvoiced'] as double,
+                        FMSons.accent,
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Builder(
-                          builder: (context) => OutlinedButton.icon(
-                            onPressed: _deleteCustomer,
-                            icon: const Icon(Icons.delete_outline),
-                            label: const Text('Delete'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Theme.of(
-                                context,
-                              ).colorScheme.error,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
+                      const SizedBox(width: 16),
+                      _miniStat(
+                        'Paid',
+                        bal['totalReceived'] as double,
+                        Colors.green.shade600,
                       ),
+                      const SizedBox(width: 16),
+                      _miniStat('Due', due, Colors.orange.shade700),
                     ],
                   ),
                 ],
-              ),
+              ],
             ),
-        ],
-      ),
+          ),
+        ),
+        // Thin 1px divider per DESIGN.md flat list rule
+        Divider(height: 1, color: Colors.grey.shade200),
+      ],
+    );
+  }
+
+  Widget _miniStat(String label, double amount, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Rs. ${amount.toStringAsFixed(0)}',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
+        ),
+      ],
     );
   }
 }
+

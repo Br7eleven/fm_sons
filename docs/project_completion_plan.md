@@ -539,7 +539,7 @@ Done when:
 
 Step 10 Execution Output (2026-04-22):
 1. Normalized template-level invoice rendering via shared base helpers:
-	- standardized currency formatting (PKR with 2 decimals)
+	- standardized currency formatting (Rs with 2 decimals)
 	- standardized invoice date formatting (dd MMM yyyy)
 	- standardized amount-in-words fallback
 	- standardized quantity formatting for integer/decimal values

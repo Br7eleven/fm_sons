@@ -9,6 +9,7 @@ import 'package:fm_sons/data/local/dao/terms_condition_dao.dart';
 import 'package:fm_sons/data/local/models/invoice_item_model.dart';
 import 'package:fm_sons/data/local/models/invoice_model.dart';
 import 'package:fm_sons/data/local/models/terms_condition_model.dart';
+import 'package:fm_sons/utils/money_utils.dart';
 import 'package:fm_sons/view/masters/customer/customer_model.dart';
 
 class InvoiceItem {
@@ -100,8 +101,6 @@ class InvoiceController extends ChangeNotifier {
   void setSelectedTerms(TermsCondition? tc) {
     _selectedTermsId = tc?.id;
     _selectedTermsCondition = tc;
-    // Pre-fill custom notes with T&C description for per-invoice editing
-    _customNotes = tc?.description ?? '';
     _saveDraft();
     notifyListeners();
   }
@@ -197,15 +196,22 @@ class InvoiceController extends ChangeNotifier {
   Future<void> initialize() async {
     if (_initialized) return;
     _initialized = true;
-    await _loadNextInvoiceNumber();
+    await _loadNextNumberForDocumentType();
     await loadSavedInvoices();
     await _restoreDraft();
     await loadAvailableTerms();
   }
 
-  Future<void> _loadNextInvoiceNumber() async {
+  /// Generate the next sequential number based on current document type.
+  /// INV-xxxx for invoice, EST-xxxx for estimate, PIN-xxxx for payment-in.
+  /// Always queries the DB fresh — no caching or client-name prefixing.
+  Future<void> _loadNextNumberForDocumentType() async {
     try {
-      _invoiceNumber = await _invoiceDao.nextInvoiceNumber();
+      _invoiceNumber = switch (_documentType) {
+        'estimate' => await _invoiceDao.nextEstimateNumber(),
+        'payment_in' => await _invoiceDao.nextPaymentInNumber(),
+        _ => await _invoiceDao.nextInvoiceNumber(),
+      };
       notifyListeners();
     } catch (_) {
       _invoiceNumber = 'INV-0001';
@@ -290,7 +296,7 @@ class InvoiceController extends ChangeNotifier {
   }
 
   double get receivedAmount => _receivedAmount;
-  double get balanceDue => totalAmount - _receivedAmount;
+  double get balanceDue => normalizeMoney(totalAmount - _receivedAmount);
 
   void setReceivedAmount(double value) {
     _receivedAmount = value < 0 ? 0 : value;
@@ -360,6 +366,7 @@ class InvoiceController extends ChangeNotifier {
       _templateId = invoice.template;
       _documentType = invoice.documentType;
       _paymentStatus = invoice.paymentStatus;
+      _receivedAmount = invoice.receivedAmount;
       _selectedTermsId = invoice.termsId;
       _customNotes = invoice.customNotes ?? '';
       _selectedTermsCondition = invoice.termsId != null
@@ -436,6 +443,7 @@ class InvoiceController extends ChangeNotifier {
         subtotal: totalAmount,
         tax: 0,
         total: totalAmount,
+        receivedAmount: _receivedAmount,
         status: existingInvoice?.status ?? status,
         paymentStatus: _paymentStatus,
         template: _templateId,
@@ -505,7 +513,7 @@ class InvoiceController extends ChangeNotifier {
     _availableTerms = [];
     _activeInvoiceId = null;
     _editingInvoiceId = null;
-    await _loadNextInvoiceNumber();
+    await _loadNextNumberForDocumentType();
     await _clearDraftStorage();
     notifyListeners();
   }

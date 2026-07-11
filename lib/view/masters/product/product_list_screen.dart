@@ -151,7 +151,7 @@ class _ProductTile extends StatelessWidget {
 
             /// Default Rate
             Text(
-              'PKR ${product.defaultRate.toStringAsFixed(2)}',
+              'Rs ${product.defaultRate.toStringAsFixed(2)}',
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
 

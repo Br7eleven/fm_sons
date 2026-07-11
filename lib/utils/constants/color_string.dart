@@ -3,6 +3,7 @@ import 'dart:ui';
 class FMSons {
   static const Color primary = Color(0xFF0A1F44); //Deep Navy
   static const Color secondary = Color(0xFF123B6D); //classic Navy
+  static const Color accent = Color(0xFF1E5EFF); // Interactive accent (buttons, focus, links, active states)
   static const Color bgLight = Color(0xFFF5F7FA); // Main background
   static const Color bgWhite = Color(0xFFFFFFFF); // Cards / sheets
 

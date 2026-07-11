@@ -3,7 +3,8 @@
     "allow": [
       "Bash(awk '{print $NF}')",
       "Bash(dart format *)",
-      "Bash(flutter analyze *)"
+      "Bash(flutter analyze *)",
+      "Bash(dart analyze *)"
     ]
   },
   "enableAllProjectMcpServers": true,

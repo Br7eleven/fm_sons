@@ -326,28 +326,17 @@ class TemplateGovt extends InvoiceTemplate {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (hasTermsCondition) ...[
-                      Text(
-                        termsConditionTitle,
-                        style: const TextStyle(
-                            fontSize: 11, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 4),
                       Text(termsConditionDescription,
                           style: const TextStyle(fontSize: 11)),
-                      if (customNotes != null) ...[
-                        const SizedBox(height: 8),
-                        const Text('Notes',
-                            style: TextStyle(
-                                fontSize: 11, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 2),
-                        Text(customNotes!,
-                            style: const TextStyle(fontSize: 11)),
-                      ],
-                    ] else ...[
+                    ],
+                    if (!hasTermsCondition &&
+                        invoice.notes.trim().isNotEmpty) ...[
+                      const Text('Notes',
+                          style: TextStyle(
+                              fontSize: 11, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 2),
                       Text(
-                        invoice.notes.trim().isEmpty
-                            ? 'Thank you for doing business with us.'
-                            : invoice.notes.trim(),
+                        invoice.notes.trim(),
                         style: const TextStyle(fontSize: 11),
                       ),
                     ],

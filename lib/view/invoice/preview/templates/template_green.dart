@@ -32,21 +32,30 @@ class TemplateOrange extends InvoiceTemplate {
                 Text(
                   InvoiceTemplate.companyOf(context).name,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 24,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 2),
-                Text(InvoiceTemplate.companyOf(context).email, style: const TextStyle(fontSize: 11)),
-                Text(InvoiceTemplate.companyOf(context).address, style: const TextStyle(fontSize: 11)),
-                Text('Vendor No: ${InvoiceTemplate.companyOf(context).vendorNumber}', style: const TextStyle(fontSize: 11)),
+                Text(
+                  InvoiceTemplate.companyOf(context).email,
+                  style: const TextStyle(fontSize: 11),
+                ),
+                Text(
+                  InvoiceTemplate.companyOf(context).address,
+                  style: const TextStyle(fontSize: 11),
+                ),
+                Text(
+                  'Vendor No: ${InvoiceTemplate.companyOf(context).vendorNumber}',
+                  style: const TextStyle(fontSize: 11),
+                ),
               ],
             ),
             // Document type title
             Text(
               documentTypeLabel,
               style: const TextStyle(
-                fontSize: 28,
+                fontSize: 24,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 2,
               ),
@@ -82,11 +91,18 @@ class TemplateOrange extends InvoiceTemplate {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Container(height: 1, width: 120, color: const Color(0xFF1A7A1A)),
+                Container(
+                  height: 1,
+                  width: 120,
+                  color: const Color(0xFF1A7A1A),
+                ),
                 const SizedBox(height: 8),
                 Text(
                   customerDisplayName,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
@@ -280,37 +296,17 @@ class TemplateOrange extends InvoiceTemplate {
                   ),
                   const SizedBox(height: 10),
                   if (hasTermsCondition) ...[
-                    Text(
-                      termsConditionTitle,
-                      style: const TextStyle(
-                          fontSize: 11, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(termsConditionDescription,
-                        style: const TextStyle(fontSize: 10)),
-                    if (customNotes != null) ...[
-                      const SizedBox(height: 8),
-                      const Text('Notes',
-                          style: TextStyle(
-                              fontSize: 11, fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 4),
-                      Text(customNotes!,
-                          style: const TextStyle(fontSize: 10)),
-                    ],
-                  ] else ...[
                     const Text(
-                      'Terms And Conditions',
+                      'Terms & Conditions',
                       style: TextStyle(
-                          fontSize: 11, fontWeight: FontWeight.w600),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      '1. Goods once sold will not be returned.',
-                      style: TextStyle(fontSize: 10),
-                    ),
-                    const Text(
-                      '2. Thank you for doing business with us.',
-                      style: TextStyle(fontSize: 10),
+                    Text(
+                      termsConditionDescription,
+                      style: const TextStyle(fontSize: 10),
                     ),
                   ],
                 ],
@@ -328,8 +324,10 @@ class TemplateOrange extends InvoiceTemplate {
                     formatMoney(grandTotalAmount),
                     isBold: true,
                   ),
-                  if (!isEstimate) _totalRow('RECEIVED', formatMoney(receivedAmount)),
-                  if (!isEstimate) _totalRow('BALANCE', formatMoney(balanceDue)),
+                  if (!isEstimate)
+                    _totalRow('RECEIVED', formatMoney(receivedAmount)),
+                  if (!isEstimate)
+                    _totalRow('BALANCE', formatMoney(balanceDue)),
                 ],
               ),
             ),
@@ -395,10 +393,7 @@ class TemplateOrange extends InvoiceTemplate {
           decoration: BoxDecoration(
             border: Border.all(color: Colors.grey.shade400),
           ),
-          child: Text(
-            value,
-            style: const TextStyle(fontSize: 10),
-          ),
+          child: Text(value, style: const TextStyle(fontSize: 10)),
         ),
       ],
     );

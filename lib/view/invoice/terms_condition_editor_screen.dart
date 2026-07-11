@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fm_sons/data/local/dao/terms_condition_dao.dart';
 import 'package:fm_sons/data/local/models/terms_condition_model.dart';
+import 'package:fm_sons/utils/constants/color_string.dart';
 
 class TermsConditionEditorScreen extends StatefulWidget {
   const TermsConditionEditorScreen({super.key});
@@ -112,7 +113,7 @@ class _TermsConditionEditorScreenState
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(
-                      color: Color(0xFF1E5EFF), width: 1.5),
+                      color: FMSons.accent, width: 1.5),
                 ),
               ),
             ),
@@ -140,7 +141,7 @@ class _TermsConditionEditorScreenState
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: const BorderSide(
-                      color: Color(0xFF1E5EFF), width: 1.5),
+                      color: FMSons.accent, width: 1.5),
                 ),
               ),
             ),
@@ -157,7 +158,7 @@ class _TermsConditionEditorScreenState
               title: const Text('Invoices'),
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
-              activeColor: const Color(0xFF1E5EFF),
+              activeColor: FMSons.accent,
             ),
             CheckboxListTile(
               value: _forEstimate,
@@ -165,7 +166,7 @@ class _TermsConditionEditorScreenState
               title: const Text('Estimates'),
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
-              activeColor: const Color(0xFF1E5EFF),
+              activeColor: FMSons.accent,
             ),
 
             const SizedBox(height: 32),
@@ -176,7 +177,7 @@ class _TermsConditionEditorScreenState
               height: 50,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E5EFF),
+                  backgroundColor: FMSons.accent,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12)),

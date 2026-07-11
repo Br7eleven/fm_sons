@@ -39,7 +39,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                   _DrawerItem(
                     icon: Icons.people_outline,
-                    title: 'Clients',
+                    title: 'Party Details',
                     isActive: currentRoute == 'clients',
                     onTap: () {
                       Navigator.pop(context);
@@ -49,7 +49,7 @@ class AppDrawer extends StatelessWidget {
                           builder: (_) => Scaffold(
                             appBar: AppBar(
                               title: const Text(
-                                'Clients',
+                                'Party Details',
                                 style: TextStyle(fontWeight: FontWeight.w800),
                               ),
                               centerTitle: true,

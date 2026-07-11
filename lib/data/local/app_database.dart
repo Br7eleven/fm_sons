@@ -11,7 +11,7 @@ import 'tables/note_table.dart';
 import 'tables/terms_conditions_table.dart';
 
 class AppDatabase {
-  static const int schemaVersion = 9;
+  static const int schemaVersion = 10;
   static const String _dbName = 'fm_sons.db';
 
   static Database? _db;
@@ -94,6 +94,9 @@ class AppDatabase {
     if (oldVersion < 9) {
       await _migrateV8ToV9(db);
     }
+    if (oldVersion < 10) {
+      await _migrateV9ToV10(db);
+    }
     if (newVersion > schemaVersion) {
       // ignore: avoid_print
       print(
@@ -157,6 +160,18 @@ class AppDatabase {
     if (!hasCustomNotes) {
       await db.execute(
         "ALTER TABLE ${InvoiceTable.tableName} ADD COLUMN custom_notes TEXT",
+      );
+    }
+  }
+
+  static Future<void> _migrateV9ToV10(Database db) async {
+    final cols = await db.rawQuery(
+      "PRAGMA table_info(${InvoiceTable.tableName})",
+    );
+    final hasReceivedAmount = cols.any((c) => c['name'] == 'received_amount');
+    if (!hasReceivedAmount) {
+      await db.execute(
+        "ALTER TABLE ${InvoiceTable.tableName} ADD COLUMN received_amount REAL NOT NULL DEFAULT 0",
       );
     }
   }

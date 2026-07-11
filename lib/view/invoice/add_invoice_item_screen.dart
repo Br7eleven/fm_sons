@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
+import 'package:fm_sons/view/shared/field_decoration.dart';
 import 'package:fm_sons/view/masters/product/product_controller.dart';
-import 'package:fm_sons/view/masters/product/product_selector_bottom_sheet.dart';
+import 'package:fm_sons/view/masters/product/product_form_screen.dart';
 import 'package:fm_sons/view/masters/product/product_model.dart';
 import 'package:fm_sons/view/masters/unit/unit_controller.dart';
 import 'package:fm_sons/view/masters/unit/unit_model.dart';
 import 'package:provider/provider.dart';
-import '.././masters/unit/unit_form_screen.dart';
+import 'package:fm_sons/view/invoice/widgets/unit_selection_bottom_sheet.dart';
 import 'controller/create_invoice_controller.dart';
 
 class AddInvoiceItemScreen extends StatefulWidget {
@@ -24,10 +25,10 @@ class AddInvoiceItemScreen extends StatefulWidget {
 class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // TEMP: mocked product & unit (until masters exist)
-  // final String _selectedProduct = 'Portland Cement (Grade 43)';
-  Product? _selectedProduct;
+  final _nameController = TextEditingController();
+  final _nameFocus = FocusNode();
 
+  Product? _matchedProduct;
   Unit? _selectedUnit;
 
   final _qtyController = TextEditingController(text: '1');
@@ -36,51 +37,65 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
   @override
   void initState() {
     super.initState();
+
+    _nameFocus.addListener(() => setState(() {}));
+
     final initialItem = widget.initialItem;
     if (initialItem == null) return;
 
     final productController = context.read<ProductController>();
     final unitController = context.read<UnitController>();
-    final units = unitController.units;
 
-    _selectedProduct = initialItem.productId == null
+    _matchedProduct = initialItem.productId == null
         ? null
         : productController.getById(initialItem.productId!);
+    _nameController.text = initialItem.name;
 
     _selectedUnit = initialItem.unitId == null
         ? null
         : unitController.getUnitById(initialItem.unitId!);
-    _selectedUnit ??= _selectedProduct?.unit;
+    _selectedUnit ??= _matchedProduct?.unit;
     if (_selectedUnit == null) {
-      for (final unit in units) {
+      for (final unit in unitController.units) {
         if (unit.name.toLowerCase() == initialItem.unit.toLowerCase()) {
           _selectedUnit = unit;
           break;
         }
       }
     }
-
     _qtyController.text = initialItem.quantity.toString();
     _rateController.text = initialItem.rate.toStringAsFixed(2);
   }
 
   @override
   void dispose() {
+    _nameController.dispose();
+    _nameFocus.dispose();
     _qtyController.dispose();
     _rateController.dispose();
     super.dispose();
+  }
+
+  List<Product> get _productMatches {
+    final q = _nameController.text.trim().toLowerCase();
+    if (q.isEmpty) return [];
+    return context
+        .read<ProductController>()
+        .products
+        .where((p) => p.name.toLowerCase().contains(q))
+        .toList();
   }
 
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<InvoiceController>();
 
-    final unitController = context.watch<UnitController>();
-    final units = unitController.units;
-
     final qty = double.tryParse(_qtyController.text) ?? 0;
     final rate = double.tryParse(_rateController.text) ?? 0;
     final total = qty * rate;
+
+    final showNameSuggestions =
+        _nameFocus.hasFocus && _nameController.text.trim().isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -89,20 +104,6 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
           widget.isEditing ? 'Edit Invoice Item' : 'Add Invoice Item',
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            // child: Center(
-            //   child: Text(
-            //     'Save',
-            //     style: TextStyle(
-            //       color: Color(0xFF1E5EFF),
-            //       fontWeight: FontWeight.w600,
-            //     ),
-            //   ),
-            // ),
-          ),
-        ],
       ),
       body: Form(
         key: _formKey,
@@ -115,90 +116,67 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    /// Product / Service
-                    const Text(
-                      'Product / Service',
-                      style: TextStyle(fontSize: 13, color: Colors.grey),
+                    /// Item Name (inline autocomplete)
+                    TextFormField(
+                      controller: _nameController,
+                      focusNode: _nameFocus,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: appInputDecoration(context, 'Item Name'),
+                      onChanged: (_) => setState(() {}),
+                      onTap: () => setState(() {}),
                     ),
-                    const SizedBox(height: 6),
-                    // _selectorField(_selectedProduct),
-                    _selectorField(
-                      _selectedProduct?.name ??
-                          widget.initialItem?.name ??
-                          'Select Product',
-                      onTap: () async {
-                        final product = await showModalBottomSheet<Product>(
-                          context: context,
-                          isScrollControlled: true,
-                          backgroundColor: Colors.transparent,
-                          builder: (_) => const ProductSelectorBottomSheet(),
-                        );
-
-                        if (product != null) {
-                          setState(() {
-                            _selectedProduct = product;
-                            _selectedUnit = product.unit;
-                            _rateController.text = product.defaultRate
-                                .toStringAsFixed(2);
-                          });
-                        }
-                      },
-                    ),
+                    if (showNameSuggestions) _productSuggestions(),
 
                     const SizedBox(height: 20),
 
-                    /// Unit of Measure
-                    // Row(
-                    //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    //   children: [
-                    //     const Text(
-                    //       'Unit of Measure',
-                    //       style: TextStyle(fontSize: 13, color: Colors.grey),
-                    //     ),
-                    //     InkWell(
-                    //       onTap: () async {
-                    //         await Navigator.push(
-                    //           context,
-                    //           MaterialPageRoute(
-                    //             builder: (_) => const UnitFormScreen(),
-                    //           ),
-                    //         );
-                    //         // No setState needed — Provider will auto-update
-                    //       },
-                    //       child: const Text(
-                    //         '+ Custom',
-                    //         style: TextStyle(
-                    //           fontSize: 13,
-                    //           color: Color(0xFF1E5EFF),
-                    //           fontWeight: FontWeight.w500,
-                    //         ),
-                    //       ),
-                    //     ),
-                    //   ],
-                    // ),
-                    const SizedBox(height: 10),
-
-                    Wrap(
-                      spacing: 4,
-                      children: units.map((unit) {
-                        return GestureDetector(
-                          onLongPress: () async {
-                            await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => UnitFormScreen(unit: unit),
-                              ),
-                            );
-                          },
-                          child: ChoiceChip(
-                            label: Text(unit.name),
-                            selected: _selectedUnit?.id == unit.id,
-                            onSelected: (_) {
-                              setState(() => _selectedUnit = unit);
-                            },
-                          ),
+                    /// Unit of Measure (bottom sheet selector)
+                    InkWell(
+                      onTap: () async {
+                        final unit = await showModalBottomSheet<Unit>(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) =>
+                              const UnitSelectionBottomSheet(),
                         );
-                      }).toList(),
+                        if (mounted) {
+                          setState(() => _selectedUnit = unit);
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _selectedUnit?.symbol ?? 'Unit of Measure',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: _selectedUnit != null
+                                      ? Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.color
+                                      : Colors.grey.shade600,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              Icons.arrow_drop_down,
+                              color: Colors.grey.shade600,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
 
                     const SizedBox(height: 24),
@@ -226,7 +204,7 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
                           child: _labeledField(
                             label: 'Rate per Unit',
                             controller: _rateController,
-                            prefix: 'PKR ',
+                            prefix: 'Rs ',
                             onChanged: () => setState(() {}),
                             validator: (value) {
                               final text = (value ?? '').trim();
@@ -249,6 +227,13 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
                       decoration: BoxDecoration(
                         color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.03),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,17 +246,18 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            _selectedProduct == null
+                            _selectedUnit == null
                                 ? '-'
-                                : '$qty ${_selectedUnit?.name ?? _selectedProduct!.unit.name} × PKR ${rate.toStringAsFixed(2)}',
+                                : '$qty ${_selectedUnit!.symbol} × Rs ${rate.toStringAsFixed(2)}',
                             style: const TextStyle(fontSize: 14),
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'PKR ${total.toStringAsFixed(2)}',
+                            'Rs ${total.toStringAsFixed(2)}',
                             style: const TextStyle(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
+                              color: FMSons.accent,
                             ),
                           ),
                         ],
@@ -293,33 +279,26 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
                     widget.isEditing ? Icons.save_outlined : Icons.add,
                   ),
                   label: Text(
-                    widget.isEditing ? 'Save Item' : 'Add to Invoice',
+                    widget.isEditing ? 'Save Item' : 'Add item',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E5EFF),
+                    backgroundColor: FMSons.accent,
                     foregroundColor: FMSons.bgWhite,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  onPressed: () {
-                    if (_selectedProduct == null && !widget.isEditing) {
+                  onPressed: () async {
+                    final navigator = Navigator.of(context);
+                    final name = _nameController.text.trim();
+                    if (name.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Please select a product first'),
-                        ),
-                      );
-                      return;
-                    }
-
-                    if (_selectedUnit == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please select a unit for this item'),
+                          content: Text('Please enter an item name'),
                         ),
                       );
                       return;
@@ -336,13 +315,46 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
                       return;
                     }
 
-                    final initialItem = widget.initialItem;
+                    final rate = double.tryParse(_rateController.text) ?? 0;
+
+                    // Resolve product id:
+                    // 1) currently matched product (if its name still matches)
+                    // 2) exact (case-insensitive, trimmed) existing match
+                    // 3) soft auto-create
+                    final key = name.toLowerCase();
+                    final matched =
+                        _matchedProduct != null &&
+                            _matchedProduct!.name.trim().toLowerCase() == key
+                        ? _matchedProduct
+                        : null;
+
+                    String? productId = matched?.id;
+                    if (productId == null) {
+                      final existing = context
+                          .read<ProductController>()
+                          .products
+                          .where((p) => p.name.trim().toLowerCase() == key)
+                          .toList();
+                      if (existing.isNotEmpty) {
+                        productId = existing.first.id;
+                        _matchedProduct = existing.first;
+                      }
+                    }
+
+                    if (productId == null && _selectedUnit != null) {
+                      final created = await context
+                          .read<ProductController>()
+                          .ensureProductByName(name, _selectedUnit!, rate);
+                      productId = created?.id;
+                      _matchedProduct = created ?? _matchedProduct;
+                    }
+
                     final item = InvoiceItem(
-                      productId: _selectedProduct?.id ?? initialItem?.productId,
-                      name: _selectedProduct?.name ?? initialItem!.name,
-                      unitId: _selectedUnit!.id,
-                      unit: _selectedUnit!.name,
-                      quantity: qty,
+                      productId: productId,
+                      name: name,
+                      unitId: _selectedUnit?.id,
+                      unit: _selectedUnit?.symbol ?? '',
+                      quantity: double.tryParse(_qtyController.text) ?? 0,
                       rate: rate,
                     );
 
@@ -351,7 +363,8 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
                     } else {
                       controller.addItem(item);
                     }
-                    Navigator.pop(context);
+                    if (!mounted) return;
+                    navigator.pop();
                   },
                 ),
               ),
@@ -362,27 +375,89 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
     );
   }
 
-  // --- small helpers (UI only) ---
+  /* --------------------------- product suggestions -------------------------- */
 
-  Widget _selectorField(String value, {required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: Theme.of(context).cardColor,
-          border: Border.all(color: Theme.of(context).dividerColor, width: 1),
-        ),
-        child: Row(
-          children: [
-            Expanded(child: Text(value)),
-            Icon(Icons.expand_more, color: Theme.of(context).iconTheme.color),
-          ],
-        ),
+  Widget _productSuggestions() {
+    final matches = _productMatches;
+    final query = _nameController.text.trim();
+
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      constraints: const BoxConstraints(maxHeight: 280),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Theme.of(context).dividerColor),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, 4)),
+        ],
+      ),
+      child: ListView(
+        shrinkWrap: true,
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        children: [
+          ListTile(
+            leading: const Icon(Icons.add_circle_outline, color: FMSons.accent),
+            title: Text(
+              query.isEmpty ? 'Add New Item' : 'Add New Item: "$query"',
+            ),
+            onTap: () async {
+              _nameFocus.unfocus();
+              final productController = context.read<ProductController>();
+              final typed = _nameController.text.trim();
+              await showModalBottomSheet(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => ProductFormScreen(initialName: typed),
+              );
+              if (!mounted) return;
+              // Select the product that was just created (by name).
+              final created = productController.products
+                  .where(
+                    (p) => p.name.trim().toLowerCase() == typed.toLowerCase(),
+                  )
+                  .toList();
+              if (created.isNotEmpty) {
+                setState(() {
+                  _matchedProduct = created.first;
+                  _nameController.text = created.first.name;
+                  _selectedUnit = created.first.unit;
+                  _rateController.text = created.first.defaultRate
+                      .toStringAsFixed(2);
+                });
+              }
+            },
+          ),
+          if (matches.isNotEmpty) const Divider(height: 1),
+          ...matches.map(
+            (product) => ListTile(
+              title: Text(
+                product.name,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              subtitle: Text(product.unit.name),
+              trailing: Text(
+                'Rs ${product.defaultRate.toStringAsFixed(2)}',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              onTap: () {
+                _nameFocus.unfocus();
+                setState(() {
+                  _matchedProduct = product;
+                  _nameController.text = product.name;
+                  _selectedUnit = product.unit;
+                  _rateController.text = product.defaultRate.toStringAsFixed(2);
+                });
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
+
+  /* ------------------------------- helpers --------------------------------- */
 
   Widget _labeledField({
     required String label,
@@ -391,34 +466,15 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
     required VoidCallback onChanged,
     String? Function(String?)? validator,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 13),
-        ),
-        const SizedBox(height: 6),
-        TextFormField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          onChanged: (_) => onChanged(),
-          validator: validator,
-          decoration: InputDecoration(
-            prefixText: prefix,
-            filled: true,
-            fillColor: Theme.of(context).cardColor,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Theme.of(context).dividerColor),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Theme.of(context).dividerColor),
-            ),
-          ),
-        ),
-      ],
+    return TextFormField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      onChanged: (_) => onChanged(),
+      validator: validator,
+      decoration: appInputDecoration(
+        context,
+        label,
+      ).copyWith(prefixText: prefix),
     );
   }
 }

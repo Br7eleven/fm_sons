@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../data/local/models/invoice_model.dart';
+import '../shared/date_range_filter.dart';
 import 'controller/create_invoice_controller.dart';
 import 'create_invoice_screen.dart';
 import 'preview/invoice_preview_screen.dart';
@@ -45,16 +46,18 @@ class InvoiceHistoryTab extends StatefulWidget {
 class _InvoiceHistoryTabState extends State<InvoiceHistoryTab> {
   final NumberFormat _currencyFormat = NumberFormat.currency(
     locale: 'en_IN',
-    symbol: 'PKR ',
+    symbol: 'Rs ',
     decimalDigits: 0,
   );
   final DateFormat _dateTimeFormat = DateFormat('dd MMM yyyy • hh:mm a');
 
   String _searchQuery = '';
   _InvoiceFilter _filter = _InvoiceFilter.all;
+  DateTimeRange? _dateRange;
 
   List<InvoiceModel> _applyFilters(List<InvoiceModel> invoices) {
     final query = _searchQuery.trim().toLowerCase();
+    final range = _dateRange;
     final filtered = invoices.where((invoice) {
       final matchesFilter = switch (_filter) {
         _InvoiceFilter.all => true,
@@ -62,10 +65,18 @@ class _InvoiceHistoryTabState extends State<InvoiceHistoryTab> {
         _InvoiceFilter.paid => invoice.status.toLowerCase() == 'paid',
         _InvoiceFilter.backedUp => invoice.status.toLowerCase() == 'backed_up',
       };
-
       if (!matchesFilter) return false;
-      if (query.isEmpty) return true;
 
+      if (range != null) {
+        final d = DateTime.tryParse(invoice.invoiceDate)?.toLocal();
+        if (d == null) return false;
+        if (d.isBefore(range.start) ||
+            d.isAfter(range.end.add(const Duration(days: 1)))) {
+          return false;
+        }
+      }
+
+      if (query.isEmpty) return true;
       return invoice.invoiceNumber.toLowerCase().contains(query) ||
           invoice.clientName.toLowerCase().contains(query);
     }).toList();
@@ -130,19 +141,19 @@ class _InvoiceHistoryTabState extends State<InvoiceHistoryTab> {
 
   Future<void> _editInvoice(InvoiceModel invoice) async {
     if (invoice.id == null) return;
-    final controller = context.read<InvoiceController>();
 
     try {
-      await controller.loadInvoiceForEditing(invoice.id!);
       if (!mounted) return;
 
       await Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const CreateInvoiceScreen()),
+        MaterialPageRoute(
+          builder: (_) => CreateInvoiceScreen(invoiceId: invoice.id!),
+        ),
       );
 
       if (!mounted) return;
-      await controller.loadSavedInvoices();
+      await context.read<InvoiceController>().loadSavedInvoices();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -221,9 +232,11 @@ class _InvoiceHistoryTabState extends State<InvoiceHistoryTab> {
     final isSelected = _filter == filter;
     final theme = Theme.of(context);
     return ChoiceChip(
-      label: Text(label),
+      label: Text(label, style: const TextStyle(fontSize: 12)),
       selected: isSelected,
       selectedColor: theme.colorScheme.primaryContainer,
+      visualDensity: VisualDensity.compact,
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
       labelStyle: TextStyle(
         color: isSelected
             ? theme.colorScheme.onPrimaryContainer
@@ -265,16 +278,21 @@ class _InvoiceHistoryTabState extends State<InvoiceHistoryTab> {
             child: Row(
               children: [
                 _buildChip('All', _InvoiceFilter.all),
-                const SizedBox(width: 10),
+                const SizedBox(width: 6),
                 _buildChip('Pending', _InvoiceFilter.pending),
-                const SizedBox(width: 10),
+                const SizedBox(width: 6),
                 _buildChip('Backed Up', _InvoiceFilter.backedUp),
-                const SizedBox(width: 10),
+                const SizedBox(width: 6),
                 _buildChip('Paid', _InvoiceFilter.paid),
               ],
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 12),
+          DateRangeFilter(
+            range: _dateRange,
+            onChanged: (r) => setState(() => _dateRange = r),
+          ),
+          const SizedBox(height: 16),
           if (invoices.isEmpty)
             Container(
               width: double.infinity,
@@ -305,20 +323,20 @@ class _InvoiceHistoryTabState extends State<InvoiceHistoryTab> {
 
               return [
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.only(bottom: 8),
                   child: Text(
                     monthTitle,
                     style: TextStyle(
                       color: Colors.blueGrey.shade700,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
                     ),
                   ),
                 ),
                 ...monthInvoices.map(
                   (invoice) => Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
+                    padding: const EdgeInsets.only(bottom: 10),
                     child: _InvoiceHistoryCard(
                       invoice: invoice,
                       currencyFormat: _currencyFormat,
@@ -365,141 +383,169 @@ class _InvoiceHistoryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconColor = statusColor;
+    final c = statusColor;
+    final amountText = currencyFormat.format(invoice.total);
 
     return Container(
+      key: ValueKey(invoice.id),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
+            // ── Row 1: icon | invoice # | amount ──
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 56,
-                  height: 56,
+                  width: 38,
+                  height: 38,
                   decoration: BoxDecoration(
-                    color: iconColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(14),
+                    color: c.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(Icons.description_outlined, color: iconColor),
+                  child: Icon(Icons.description_outlined, color: c, size: 19),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        invoice.invoiceNumber,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        invoice.clientName,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.copyWith(fontSize: 13),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        formattedDate,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
+                  child: Text(
+                    invoice.invoiceNumber,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          currencyFormat.format(invoice.total),
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primaryContainer,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: IconButton(
-                            onPressed: onShareTap,
-                            icon: Icon(
-                              Icons.share_outlined,
-                              size: 20,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                            padding: const EdgeInsets.all(8),
-                            constraints: const BoxConstraints(),
-                            tooltip: 'Share Invoice',
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        statusLabel,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ],
+                const SizedBox(width: 8),
+                Text(
+                  amountText,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: 14),
-            const Divider(height: 1),
-            const SizedBox(height: 10),
+            const SizedBox(height: 4),
+
+            // ── Row 2: client name | status chip ──
             Row(
               children: [
-                TextButton.icon(
-                  onPressed: onViewTap,
-                  icon: const Icon(Icons.visibility_outlined),
-                  label: const Text('View Invoice'),
+                const SizedBox(
+                  width: 48,
+                ), // align with text above (38 icon + 10 gap)
+                Expanded(
+                  child: Text(
+                    invoice.clientName,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
-                const Spacer(),
-                IconButton(
-                  onPressed: onEditTap,
-                  icon: const Icon(Icons.edit_outlined),
-                ),
-                IconButton(
-                  onPressed: onDeleteTap,
-                  icon: const Icon(Icons.delete_outline),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: c.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    statusLabel,
+                    style: TextStyle(
+                      color: c,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ],
+            ),
+            const SizedBox(height: 2),
+
+            // ── Row 3: date ──
+            Row(
+              children: [
+                const SizedBox(width: 48),
+                Text(
+                  formattedDate,
+                  style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+
+            // ── Row 4: action buttons ──
+            Row(
+              children: [
+                const SizedBox(width: 40),
+                _actionBtn(
+                  Icons.visibility_outlined,
+                  'View',
+                  onViewTap,
+                  context,
+                ),
+                const SizedBox(width: 16),
+                _actionBtn(Icons.edit_outlined, 'Edit', onEditTap, context),
+                const SizedBox(width: 16),
+                _actionBtn(Icons.share_outlined, 'Share', onShareTap, context),
+                const Spacer(),
+                _actionBtn(
+                  Icons.delete_outline,
+                  'Delete',
+                  onDeleteTap,
+                  context,
+                  isDestructive: true,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _actionBtn(
+    IconData icon,
+    String label,
+    VoidCallback onTap,
+    BuildContext context, {
+    bool isDestructive = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 15,
+              color: isDestructive ? Colors.red.shade400 : Colors.grey.shade600,
+            ),
+            const SizedBox(width: 3),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                color: isDestructive
+                    ? Colors.red.shade400
+                    : Colors.grey.shade600,
+              ),
             ),
           ],
         ),

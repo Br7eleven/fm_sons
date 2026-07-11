@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:provider/provider.dart';
 import '../../masters/unit/unit_controller.dart';
 
@@ -19,7 +20,8 @@ class BillableItemTile extends StatelessWidget {
     final unit = item.unitId == null
         ? null
         : unitController.getUnitById(item.unitId!);
-    final unitLabel = unit?.name ?? item.unit;
+    final unitLabel = unit?.symbol ?? item.unit;
+    final displayUnit = unitLabel.isEmpty ? '-' : unitLabel;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -60,13 +62,13 @@ class BillableItemTile extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
+                    color: FMSons.accent.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.edit_outlined,
                     size: 18,
-                    color: Colors.blue,
+                    color: FMSons.accent,
                   ),
                 ),
               ),
@@ -95,12 +97,12 @@ class BillableItemTile extends StatelessWidget {
           /// Measurement row (govt style)
           Row(
             children: [
-              _InfoChip(label: 'Qty', value: '${item.quantity} $unitLabel'),
+              _InfoChip(label: 'Qty', value: '${item.quantity} $displayUnit'),
 
               const SizedBox(width: 12),
               _InfoChip(
                 label: 'Rate',
-                value: 'PKR ${item.rate.toStringAsFixed(2)} / $unitLabel',
+                value: 'Rs ${item.rate.toStringAsFixed(2)} / $displayUnit',
               ),
             ],
           ),
@@ -109,7 +111,7 @@ class BillableItemTile extends StatelessWidget {
 
           /// Calculation hint (optional but powerful)
           Text(
-            '${item.quantity} $unitLabel × PKR ${item.rate.toStringAsFixed(2)}',
+            '${item.quantity} $displayUnit × Rs ${item.rate.toStringAsFixed(2)}',
             style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
           ),
 
@@ -119,7 +121,7 @@ class BillableItemTile extends StatelessWidget {
           Align(
             alignment: Alignment.centerRight,
             child: Text(
-              'PKR ${item.total.toStringAsFixed(2)}',
+              'Rs ${item.total.toStringAsFixed(2)}',
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
           ),

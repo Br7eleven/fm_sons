@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/constants/color_string.dart';
 
 import 'invoice_template_base.dart';
 
@@ -15,7 +16,7 @@ class TemplateModern extends InvoiceTemplate {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: const BoxDecoration(
-        color: Color(0xFF1E5EFF), // brand accent
+        color: FMSons.accent, // brand accent
         borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
       ),
       child: Column(
@@ -254,22 +255,13 @@ class TemplateModern extends InvoiceTemplate {
           ),
           if (hasTermsCondition) ...[
             const SizedBox(height: 8),
-            Text(
-              termsConditionTitle,
-              style: const TextStyle(
-                  fontSize: 12, fontWeight: FontWeight.w600),
+            const Text(
+              'Terms & Conditions',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 4),
             Text(termsConditionDescription,
                 style: const TextStyle(fontSize: 12)),
-          ],
-          if (customNotes != null) ...[
-            const SizedBox(height: 8),
-            const Text('Notes',
-                style: TextStyle(
-                    fontSize: 12, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
-            Text(customNotes!, style: const TextStyle(fontSize: 12)),
           ],
           const SizedBox(height: 4),
           const Text(

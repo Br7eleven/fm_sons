@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:provider/provider.dart';
 
 import 'customer_controller.dart';
@@ -80,7 +81,7 @@ class _CustomerSelectorBottomSheetState
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Select Customer',
+                  'Select Party',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -117,7 +118,7 @@ class _CustomerSelectorBottomSheetState
                     style: TextStyle(fontWeight: FontWeight.w600),
                   ),
                   style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF1E5EFF),
+                    foregroundColor: FMSons.accent,
                   ),
                 ),
               ],
@@ -148,7 +149,7 @@ class _CustomerSelectorBottomSheetState
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF1E5EFF)),
+                  borderSide: const BorderSide(color: FMSons.accent),
                 ),
               ),
             ),
@@ -185,7 +186,7 @@ class _CustomerSelectorBottomSheetState
                     ElevatedButton(
                       onPressed: () => customerController.refresh(),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E5EFF),
+                        backgroundColor: FMSons.accent,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -360,7 +361,7 @@ class _AddTypedCustomerTile extends StatelessWidget {
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: const Color(0xFF1E5EFF).withValues(alpha: 0.3),
+          color: FMSons.accent.withValues(alpha: 0.3),
           width: 1.5,
         ),
       ),
@@ -377,12 +378,12 @@ class _AddTypedCustomerTile extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E5EFF).withValues(alpha: 0.1),
+                  color: FMSons.accent.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
                   Icons.add,
-                  color: Color(0xFF1E5EFF),
+                  color: FMSons.accent,
                   size: 22,
                 ),
               ),
@@ -405,7 +406,7 @@ class _AddTypedCustomerTile extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF1E5EFF),
+                        color: FMSons.accent,
                       ),
                     ),
                   ],
@@ -413,7 +414,7 @@ class _AddTypedCustomerTile extends StatelessWidget {
               ),
               const Icon(
                 Icons.arrow_forward,
-                color: Color(0xFF1E5EFF),
+                color: FMSons.accent,
                 size: 20,
               ),
             ],

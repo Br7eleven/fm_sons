@@ -6,15 +6,17 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:fm_sons/view/invoice/preview/templates/template_blue.dart';
 import 'package:fm_sons/view/invoice/preview/templates/template_govt.dart';
-import 'package:fm_sons/view/invoice/preview/templates/template_orange.dart';
+import 'package:fm_sons/view/invoice/preview/templates/template_green.dart';
 import 'package:fm_sons/view/invoice/preview/templates/template_tax_1.dart';
 import 'package:fm_sons/view/invoice/preview/templates/template_tax_3.dart';
+import 'package:fm_sons/view/invoice/preview/templates/template_zaiqa.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 
 import '../controller/create_invoice_controller.dart';
+import '../../settings/company_profile_controller.dart';
 import 'theme_selector.dart';
 
 class InvoicePreviewScreen extends StatefulWidget {
@@ -136,7 +138,9 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
           ? 'PDF feature needs a full app restart. Hot reload is not enough after plugin changes.'
           : 'Unable to generate PDF from preview. Please try again.';
 
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) {
         setState(() {
@@ -221,7 +225,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
             mainAxisAlignment: pw.MainAxisAlignment.end,
             children: [
               pw.Text(
-                'Grand Total: PKR ${invoice.totalAmount.toStringAsFixed(2)}',
+                'Grand Total: Rs ${invoice.totalAmount.toStringAsFixed(2)}',
                 style: pw.TextStyle(
                   fontSize: 13,
                   fontWeight: pw.FontWeight.bold,
@@ -246,14 +250,17 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
     for (var attempt = 0; attempt < 5; attempt++) {
       await WidgetsBinding.instance.endOfFrame;
 
-      final renderObject = _previewBoundaryKey.currentContext?.findRenderObject();
+      final renderObject = _previewBoundaryKey.currentContext
+          ?.findRenderObject();
       if (renderObject is! RenderRepaintBoundary) continue;
       if (renderObject.debugNeedsPaint || renderObject.size.isEmpty) continue;
 
       final image = await renderObject.toImage(pixelRatio: pixelRatio);
       try {
         final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-        if (byteData == null) throw StateError('Failed to encode preview image');
+        if (byteData == null) {
+          throw StateError('Failed to encode preview image');
+        }
         return byteData.buffer.asUint8List();
       } finally {
         image.dispose();
@@ -275,15 +282,25 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
 
     if (_scopedLoading) {
       return Scaffold(
-        appBar: AppBar(leading: const CloseButton(), title: const Text('Preview'), centerTitle: true),
+        appBar: AppBar(
+          leading: const CloseButton(),
+          title: const Text('Preview'),
+          centerTitle: true,
+        ),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     if (_scopedError != null) {
       return Scaffold(
-        appBar: AppBar(leading: const CloseButton(), title: const Text('Preview'), centerTitle: true),
-        body: Center(child: Text(_scopedError!, style: const TextStyle(color: Colors.red))),
+        appBar: AppBar(
+          leading: const CloseButton(),
+          title: const Text('Preview'),
+          centerTitle: true,
+        ),
+        body: Center(
+          child: Text(_scopedError!, style: const TextStyle(color: Colors.red)),
+        ),
       );
     }
 
@@ -328,7 +345,10 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
             boundaryMargin: const EdgeInsets.all(double.infinity),
             child: Center(
               child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   boxShadow: [
@@ -360,7 +380,10 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
               duration: const Duration(milliseconds: 600),
               child: Center(
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.black54,
                     borderRadius: BorderRadius.circular(20),
@@ -385,6 +408,34 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
     );
   }
 
+  Widget _buildZaiqaTemplate(InvoiceController invoice) {
+    final items = invoice.items
+        .map(
+          (it) => ZaiqaLineItem(
+            qty: it.quantity,
+            description: it.name,
+            rate: it.rate,
+          ),
+        )
+        .toList();
+    final signaturePath = context
+        .read<CompanyProfileController>()
+        .signaturePath;
+    return Container(
+      width: 794,
+      height: 1123,
+      decoration: const BoxDecoration(color: Colors.white),
+      child: ZaiqaInvoiceWidget(
+        customerName: invoice.customerName ?? 'Walk-in Customer',
+        invoiceNumber: invoice.invoiceNumber,
+        date: invoice.invoiceDate,
+        items: items,
+        advance: invoice.receivedAmount,
+        signaturePath: signaturePath,
+      ),
+    );
+  }
+
   Widget _buildInvoiceByTheme(InvoiceController invoice) {
     switch (_selectedTheme) {
       case InvoiceThemeType.taxTheme1:
@@ -397,6 +448,8 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
         return TemplateBlue(invoice: invoice);
       case InvoiceThemeType.govtTemplate:
         return TemplateGovt(invoice: invoice);
+      case InvoiceThemeType.zaiqaTemplate:
+        return _buildZaiqaTemplate(invoice);
       // ignore: unreachable_switch_default
       default:
         return TemplateTax1(invoice: invoice);

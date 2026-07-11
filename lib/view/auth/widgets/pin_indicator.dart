@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:provider/provider.dart';
 import '../controller/pin_controller.dart';
 
@@ -21,7 +22,7 @@ class PinIndicator extends StatelessWidget {
           width: 12,
           height: 12,
           decoration: BoxDecoration(
-            color: filled ? const Color(0xFF2563EB) : Colors.grey.shade300,
+            color: filled ? FMSons.accent : Colors.grey.shade300,
             shape: BoxShape.circle,
           ),
         );

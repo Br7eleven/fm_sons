@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/constants/color_string.dart';
 
 class AuthHeader extends StatelessWidget {
   const AuthHeader({super.key});
@@ -13,14 +14,14 @@ class AuthHeader extends StatelessWidget {
             color: const Color(0xFFEFF4FF),
             borderRadius: BorderRadius.circular(20),
           ),
-          child: const Icon(Icons.lock, size: 36, color: Color(0xFF2563EB)),
+          child: const Icon(Icons.lock, size: 36, color: FMSons.accent),
         ),
         const SizedBox(height: 16),
         const Text(
           'FM SONS',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Color(0xFF2563EB),
+            color: FMSons.accent,
             letterSpacing: 2,
           ),
         ),

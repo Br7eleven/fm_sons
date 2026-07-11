@@ -15,7 +15,7 @@ abstract class InvoiceTemplate extends StatelessWidget {
   static const int _maxPreviewItems = 18;
   static final NumberFormat _moneyFormat = NumberFormat.currency(
     locale: 'en_IN',
-    symbol: 'PKR ',
+    symbol: 'Rs ',
     decimalDigits: 2,
   );
 
@@ -51,15 +51,13 @@ abstract class InvoiceTemplate extends StatelessWidget {
 
   double get subtotalAmount => invoice.totalAmount;
 
-  String get documentTypeLabel =>
-      invoice.isEstimate ? 'ESTIMATE' : 'INVOICE';
+  String get documentTypeLabel => invoice.isEstimate ? 'ESTIMATE' : 'INVOICE';
 
   bool get isEstimate => invoice.isEstimate;
 
   bool get hasTermsCondition => invoice.selectedTermsCondition != null;
 
-  String get termsConditionTitle =>
-      invoice.selectedTermsCondition?.title ?? '';
+  String get termsConditionTitle => invoice.selectedTermsCondition?.title ?? '';
 
   String get termsConditionDescription =>
       invoice.selectedTermsCondition?.description ?? '';
@@ -89,11 +87,7 @@ abstract class InvoiceTemplate extends StatelessWidget {
       height: 60,
       child: Align(
         alignment: Alignment.centerRight,
-        child: Image.file(
-          File(sigPath),
-          height: 60,
-          fit: BoxFit.contain,
-        ),
+        child: Image.file(File(sigPath), height: 60, fit: BoxFit.contain),
       ),
     );
   }

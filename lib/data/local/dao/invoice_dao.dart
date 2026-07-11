@@ -86,6 +86,35 @@ class InvoiceDao {
     return rows.map((e) => InvoiceModel.fromMap(e)).toList();
   }
 
+  Future<List<InvoiceModel>> getInvoicesByDateRange({
+    required DateTime start,
+    required DateTime end,
+    String? status,
+    String? documentType,
+  }) async {
+    final db = await AppDatabase.database;
+    final whereParts = <String>["invoice_date BETWEEN ? AND ?"];
+    final args = <dynamic>[
+      start.toUtc().toIso8601String(),
+      end.toUtc().toIso8601String(),
+    ];
+    if (status != null) {
+      whereParts.add('status = ?');
+      args.add(status);
+    }
+    if (documentType != null) {
+      whereParts.add('document_type = ?');
+      args.add(documentType);
+    }
+    final rows = await db.query(
+      InvoiceTable.tableName,
+      where: whereParts.join(' AND '),
+      whereArgs: args,
+      orderBy: 'invoice_date DESC',
+    );
+    return rows.map(InvoiceModel.fromMap).toList();
+  }
+
   Future<List<InvoiceModel>> getInvoicesByCustomerId(String customerId) async {
     final db = await AppDatabase.database;
     final rows = await db.query(
@@ -134,24 +163,47 @@ class InvoiceDao {
     return rows.isNotEmpty;
   }
 
-  Future<String> nextInvoiceNumber() async {
+  /// Takes the first 2 words of the client name, lowercases, joins with _,
+  /// strips special chars. Falls back to 'inv' for single-word or empty names.
+  /// Used for PDF filenames — not for invoice numbers themselves.
+  static String makePrefix(String name) {
+    final cleaned = name.trim().toLowerCase().replaceAll(
+      RegExp(r'[^a-z0-9\s]'),
+      '',
+    );
+    final words = cleaned
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty)
+        .toList();
+    final prefix = words.take(2).join('_');
+    if (prefix.isNotEmpty) return prefix;
+    return 'inv';
+  }
+
+  /// Generate the next sequential number for a given prefix (e.g. INV, EST, PIN).
+  /// Global sequence — not per-client. Always queries the DB fresh.
+  Future<String> nextSequentialNumber(String prefix) async {
     final db = await AppDatabase.database;
-    final rows = await db.query(
-      InvoiceTable.tableName,
-      columns: ['invoice_number'],
-      orderBy: 'id DESC',
-      limit: 1,
+    final pattern = '$prefix-%';
+    final rows = await db.rawQuery(
+      "SELECT invoice_number FROM ${InvoiceTable.tableName} WHERE invoice_number LIKE ? ORDER BY invoice_number DESC LIMIT 1",
+      [pattern],
     );
 
     if (rows.isEmpty) {
-      return 'INV-0001';
+      return '$prefix-0001';
     }
 
-    final latest = (rows.first['invoice_number'] as String?) ?? 'INV-0000';
+    final latest = (rows.first['invoice_number'] as String?) ?? '$prefix-0000';
     final parsed = _extractInvoiceNumberPart(latest);
     final next = parsed + 1;
-    return 'INV-${next.toString().padLeft(4, '0')}';
+    return '$prefix-${next.toString().padLeft(4, '0')}';
   }
+
+  /// Convenience wrappers
+  Future<String> nextInvoiceNumber() => nextSequentialNumber('INV');
+  Future<String> nextEstimateNumber() => nextSequentialNumber('EST');
+  Future<String> nextPaymentInNumber() => nextSequentialNumber('PIN');
 
   Future<Map<String, num>> getInvoiceStatusSummary() async {
     final db = await AppDatabase.database;
@@ -179,6 +231,28 @@ class InvoiceDao {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<Map<String, dynamic>> getClientBalance(String customerId) async {
+    final db = await AppDatabase.database;
+    final rows = await db.rawQuery(
+      '''
+      SELECT
+        COUNT(*) AS invoice_count,
+        COALESCE(SUM(total), 0) AS total_invoiced,
+        COALESCE(SUM(received_amount), 0) AS total_received
+      FROM ${InvoiceTable.tableName}
+      WHERE customer_id = ? AND document_type = 'invoice'
+      ''',
+      [customerId],
+    );
+
+    final row = rows.first;
+    return {
+      'invoiceCount': (row['invoice_count'] as num?)?.toInt() ?? 0,
+      'totalInvoiced': (row['total_invoiced'] as num?)?.toDouble() ?? 0,
+      'totalReceived': (row['total_received'] as num?)?.toDouble() ?? 0,
+    };
   }
 
   int _extractInvoiceNumberPart(String invoiceNumber) {

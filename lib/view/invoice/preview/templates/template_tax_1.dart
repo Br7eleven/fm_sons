@@ -106,8 +106,8 @@ class TemplateTax1 extends InvoiceTemplate {
               Text(
                 customerDisplayName,
                 style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  // fontWeight: FontWeight.bold,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -118,11 +118,18 @@ class TemplateTax1 extends InvoiceTemplate {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                documentTypeLabel[0] + documentTypeLabel.substring(1).toLowerCase(),
-                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w500),
+                documentTypeLabel[0] +
+                    documentTypeLabel.substring(1).toLowerCase(),
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
               const SizedBox(height: 8),
-              _metaRow('${documentTypeLabel[0]}${documentTypeLabel.substring(1).toLowerCase()} No.:', invoice.invoiceNumber),
+              _metaRow(
+                '${documentTypeLabel[0]}${documentTypeLabel.substring(1).toLowerCase()} No.:',
+                invoice.invoiceNumber,
+              ),
               _metaRow('Date:', invoiceDateLabel),
             ],
           ),
@@ -338,9 +345,9 @@ class TemplateTax1 extends InvoiceTemplate {
               ),
               const SizedBox(height: 15),
               if (hasTermsCondition) ...[
-                Text(
-                  termsConditionTitle,
-                  style: const TextStyle(
+                const Text(
+                  'Terms & Conditions',
+                  style: TextStyle(
                     color: brandRed,
                     fontWeight: FontWeight.bold,
                     fontSize: 11,
@@ -351,37 +358,23 @@ class TemplateTax1 extends InvoiceTemplate {
                   termsConditionDescription,
                   style: const TextStyle(fontSize: 10),
                 ),
-                if (customNotes != null) ...[
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Notes',
-                    style: TextStyle(
-                      color: brandRed,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 11,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(customNotes!, style: const TextStyle(fontSize: 10)),
-                ],
-              ] else ...[
-                const Text(
-                  'Terms And Conditions',
-                  style: TextStyle(
-                    color: brandRed,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11,
-                  ),
-                ),
-                const Text(
-                  '1. Goods once sold will not be returned.',
-                  style: TextStyle(fontSize: 10),
-                ),
-                const Text(
-                  '2. Thank you for doing business with us.',
-                  style: TextStyle(fontSize: 10),
-                ),
               ],
+              // const Text(
+              //   'Terms And Conditions',
+              //   style: TextStyle(
+              //     color: brandRed,
+              //     fontWeight: FontWeight.bold,
+              //     fontSize: 11,
+              //   ),
+              // ),
+              // const Text(
+              //   '1. Goods once sold will not be returned.',
+              //   style: TextStyle(fontSize: 10),
+              // ),
+              // const Text(
+              //   '2. Thank you for doing business with us.',
+              //   style: TextStyle(fontSize: 10),
+              // ),
             ],
           ),
         ),

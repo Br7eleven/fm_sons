@@ -145,7 +145,7 @@ class _UnitFormScreenState extends State<UnitFormScreen> {
           height: 56,
           child: ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E5EFF),
+              backgroundColor: FMSons.accent,
               foregroundColor: FMSons.bgWhite,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),

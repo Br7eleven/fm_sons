@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:provider/provider.dart';
 
 import '../controller/create_invoice_controller.dart';
@@ -51,7 +52,7 @@ class InvoiceItemsSection extends StatelessWidget {
                   width: 24,
                   height: 24,
                   decoration: const BoxDecoration(
-                    color: Color(0xFF1E5EFF),
+                    color: FMSons.accent,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.add, size: 16, color: Colors.white),
@@ -65,7 +66,7 @@ class InvoiceItemsSection extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF1E5EFF),
+                          color: FMSons.accent,
                         ),
                       ),
                       TextSpan(

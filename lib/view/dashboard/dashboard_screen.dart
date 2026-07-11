@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:fm_sons/view/invoice/create_invoice_screen.dart';
 import 'package:fm_sons/view/dashboard/widgets/dashborad_app_bar.dart';
 import 'package:fm_sons/view/dashboard/widgets/overview_card.dart';
@@ -28,7 +29,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   final InvoiceDao _invoiceDao = InvoiceDao();
   final NumberFormat _currencyFormat = NumberFormat.currency(
     locale: 'en_IN',
-    symbol: 'PKR ',
+    symbol: 'Rs ',
     decimalDigits: 0,
   );
 
@@ -40,6 +41,10 @@ class _DashboardScreenState extends State<DashboardScreen>
   double _pendingAmount = 0;
   double _paidAmount = 0;
   double _todayBilledAmount = 0;
+
+  // Scroll-aware pill button
+  bool _isPillVisible = true;
+  double _lastScrollPos = 0;
 
   @override
   void initState() {
@@ -126,18 +131,24 @@ class _DashboardScreenState extends State<DashboardScreen>
   String _formatCurrency(num value) => _currencyFormat.format(value);
 
   void _handleTabChanged(int index) {
+    if (index == 0) {
+      _lastScrollPos = 0;
+      _isPillVisible = true;
+    }
     if (index == 2) {
-      Navigator.of(context).push(
-        PageRouteBuilder(
-          pageBuilder: (_, _, _) => const NotesScreen(),
-          transitionDuration: Duration.zero,
-          reverseTransitionDuration: Duration.zero,
-        ),
-      ).then((result) {
-        if (result is int && mounted) {
-          setState(() => _currentIndex = result);
-        }
-      });
+      Navigator.of(context)
+          .push(
+            PageRouteBuilder(
+              pageBuilder: (_, _, _) => const NotesScreen(),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
+            ),
+          )
+          .then((result) {
+            if (result is int && mounted) {
+              setState(() => _currentIndex = result);
+            }
+          });
       return;
     }
     setState(() => _currentIndex = index);
@@ -155,9 +166,7 @@ class _DashboardScreenState extends State<DashboardScreen>
   PreferredSizeWidget _buildAppBar() {
     switch (_currentIndex) {
       case 1:
-        return InvoiceHistoryAppBar(
-          onSettingsTap: () => _navigateToSettings(),
-        );
+        return InvoiceHistoryAppBar(onSettingsTap: () => _navigateToSettings());
       default:
         return const DashboardAppBar();
     }
@@ -182,39 +191,87 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildBody() {
-    return IndexedStack(
-      index: _currentIndex,
+    return Stack(
       children: [
-        _DashboardOverviewTab(
-          isLoading: _isLoading,
-          loadError: _loadError,
-          billedAmountLabel: _formatCurrency(_todayBilledAmount),
-          pendingAmountLabel: _formatCurrency(_pendingAmount),
-          paidAmountLabel: _formatCurrency(_paidAmount),
-          totalInvoices: _totalInvoices,
-          todayInvoices: _todayInvoices,
-          onNewInvoiceTap: _openCreateInvoiceFlow,
-          onOpenInvoicesTap: () => setState(() => _currentIndex = 1),
-          onOpenClientsTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => Scaffold(
-                  appBar: AppBar(
-                    title: const Text(
-                      'Clients',
-                      style: TextStyle(fontWeight: FontWeight.w800),
+        NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            if (_currentIndex != 0) return false;
+            final delta = notification.metrics.pixels - _lastScrollPos;
+            const threshold = 8.0;
+
+            if (delta.abs() > threshold) {
+              if (delta > 0 && _isPillVisible) {
+                setState(() => _isPillVisible = false);
+              } else if (delta < 0 && !_isPillVisible) {
+                setState(() => _isPillVisible = true);
+              }
+            }
+            _lastScrollPos = notification.metrics.pixels;
+            return false;
+          },
+          child: IndexedStack(
+            index: _currentIndex,
+            children: [
+              _DashboardOverviewTab(
+                isLoading: _isLoading,
+                loadError: _loadError,
+                billedAmountLabel: _formatCurrency(_todayBilledAmount),
+                pendingAmountLabel: _formatCurrency(_pendingAmount),
+                paidAmountLabel: _formatCurrency(_paidAmount),
+                totalInvoices: _totalInvoices,
+                todayInvoices: _todayInvoices,
+                onNewInvoiceTap: _openCreateInvoiceFlow,
+                onOpenInvoicesTap: () => setState(() => _currentIndex = 1),
+                onOpenClientsTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => Scaffold(
+                        appBar: AppBar(
+                          title: const Text(
+                            'Party Details',
+                            style: TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          centerTitle: true,
+                          elevation: 0,
+                        ),
+                        body: const ClientsTab(),
+                      ),
                     ),
-                    centerTitle: true,
-                    elevation: 0,
+                  );
+                },
+                onRefresh: _loadDashboardData,
+              ),
+              const InvoiceHistoryTab(),
+            ],
+          ),
+        ),
+        // ── Floating "Add New Sale" pill (dashboard tab only) ──
+        if (_currentIndex == 0)
+          Positioned(
+            bottom: 16,
+            left: 0,
+            right: 0,
+            child: AnimatedSlide(
+              offset: _isPillVisible ? Offset.zero : const Offset(0, 2),
+              duration: const Duration(milliseconds: 250),
+              curve: _isPillVisible ? Curves.easeOutBack : Curves.easeOut,
+              child: AnimatedOpacity(
+                opacity: _isPillVisible ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 200),
+                child: Center(
+                  child: FloatingActionButton.extended(
+                    onPressed: _openCreateInvoiceFlow,
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Add New Sale'),
+                    backgroundColor: FMSons.accent,
+                    foregroundColor: Colors.white,
+                    shape: const StadiumBorder(),
+                    elevation: 4,
                   ),
-                  body: const ClientsTab(),
                 ),
               ),
-            );
-          },
-          onRefresh: _loadDashboardData,
-        ),
-        const InvoiceHistoryTab(),
+            ),
+          ),
       ],
     );
   }

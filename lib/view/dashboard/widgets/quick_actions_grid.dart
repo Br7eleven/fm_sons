@@ -31,7 +31,7 @@ class QuickActionGrid extends StatelessWidget {
         // 🔹 Main Action
         QuickActionTile(
           icon: Icons.add,
-          title: 'New Invoice',
+          title: 'New Sale',
           subtitle: 'Create a new government contract bill',
           onTap: () {
             if (onNewInvoiceTap != null) {
@@ -65,8 +65,8 @@ class QuickActionGrid extends StatelessWidget {
             Expanded(
               child: _SmallActionTile(
                 icon: Icons.people,
-                title: 'Clients',
-                subtitle: 'Manage database',
+                title: 'Party Details',
+                subtitle: 'Manage party records',
                 onTap: onClientsTap ?? () {},
               ),
             ),

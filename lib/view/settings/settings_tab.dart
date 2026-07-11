@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -534,10 +535,10 @@ class _SettingsTile extends StatelessWidget {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: (iconColor ?? Colors.blue).withValues(alpha: 0.1),
+          color: (iconColor ?? FMSons.accent).withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: iconColor ?? Colors.blue),
+        child: Icon(icon, color: iconColor ?? FMSons.accent),
       ),
       title: Text(
         title,
@@ -580,10 +581,10 @@ class _StaticTile extends StatelessWidget {
         width: 44,
         height: 44,
         decoration: BoxDecoration(
-          color: Colors.blue.withValues(alpha: 0.1),
+          color: FMSons.accent.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: const Icon(Icons.info_outline, color: Colors.blue),
+        child: const Icon(Icons.info_outline, color: FMSons.accent),
       ),
       title: Text(
         title,

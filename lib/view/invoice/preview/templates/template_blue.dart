@@ -10,38 +10,60 @@ class TemplateBlue extends InvoiceTemplate {
 
   @override
   Widget buildHeader(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          InvoiceTemplate.companyOf(context).name,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF1565C0),
+    return Container(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    InvoiceTemplate.companyOf(context).name,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1565C0),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    InvoiceTemplate.companyOf(context).tagline,
+                    style: const TextStyle(fontSize: 10, color: Colors.black87),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    InvoiceTemplate.companyOf(context).email,
+                    style: const TextStyle(fontSize: 10, color: Colors.black87),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    InvoiceTemplate.companyOf(context).address,
+                    style: const TextStyle(fontSize: 10, color: Colors.black87),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Vendor No: ${InvoiceTemplate.companyOf(context).vendorNumber}',
+                    style: const TextStyle(fontSize: 10, color: Colors.black87),
+                  ),
+                ],
+              ),
+              Text(
+                documentTypeLabel,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF1565C0),
+                ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          InvoiceTemplate.companyOf(context).tagline,
-          style: const TextStyle(fontSize: 10, color: Colors.black87),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          InvoiceTemplate.companyOf(context).email,
-          style: const TextStyle(fontSize: 10, color: Colors.black87),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          InvoiceTemplate.companyOf(context).address,
-          style: const TextStyle(fontSize: 10, color: Colors.black87),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          'Vendor No: ${InvoiceTemplate.companyOf(context).vendorNumber}',
-          style: const TextStyle(fontSize: 10, color: Colors.black87),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -73,11 +95,18 @@ class TemplateBlue extends InvoiceTemplate {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Container(height: 1, width: 80, color: const Color(0xFF1565C0)),
+                    Container(
+                      height: 1,
+                      width: 80,
+                      color: const Color(0xFF1565C0),
+                    ),
                     const SizedBox(height: 8),
                     Text(
                       customerDisplayName,
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                 ),
@@ -86,9 +115,17 @@ class TemplateBlue extends InvoiceTemplate {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  _dateRow('${documentTypeLabel[0]}${documentTypeLabel.substring(1).toLowerCase()} Date:', invoiceDateLabel),
+                  const Text(
+                    'Details',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1565C0),
+                    ),
+                  ),
                   const SizedBox(height: 8),
-                  _dateRow('Valid For:', '14 days'),
+                  _meta('Invoice No', invoice.invoiceNumber),
+                  _meta('Date', invoiceDateLabel),
                 ],
               ),
             ],
@@ -280,8 +317,10 @@ class TemplateBlue extends InvoiceTemplate {
                     formatMoney(grandTotalAmount),
                     isBold: true,
                   ),
-                  if (!isEstimate) _totalRow('RECEIVED', formatMoney(receivedAmount)),
-                  if (!isEstimate) _totalRow('BALANCE', formatMoney(balanceDue)),
+                  if (!isEstimate)
+                    _totalRow('RECEIVED', formatMoney(receivedAmount)),
+                  if (!isEstimate)
+                    _totalRow('BALANCE', formatMoney(balanceDue)),
                 ],
               ),
             ),
@@ -335,33 +374,8 @@ class TemplateBlue extends InvoiceTemplate {
         // Terms & Conditions
         if (hasTermsCondition) ...[
           const SizedBox(height: 4),
-          Text(
-            termsConditionTitle,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1565C0),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(termsConditionDescription,
-              style:
-                  const TextStyle(fontSize: 10, color: Colors.black87)),
-          if (customNotes != null) ...[
-            const SizedBox(height: 8),
-            const Text('Notes',
-                style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1565C0))),
-            const SizedBox(height: 4),
-            Text(customNotes!,
-                style: const TextStyle(
-                    fontSize: 10, color: Colors.black87)),
-          ],
-        ] else ...[
           const Text(
-            'Terms And Conditions',
+            'Terms & Conditions',
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
@@ -369,23 +383,12 @@ class TemplateBlue extends InvoiceTemplate {
             ),
           ),
           const SizedBox(height: 4),
-          Container(
-            height: 1,
-            width: 120,
-            color: const Color(0xFF1565C0),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            '1. Goods once sold will not be returned.',
-            style: TextStyle(fontSize: 10, color: Colors.black87),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            '2. Thank you for doing business with us.',
-            style: TextStyle(fontSize: 10, color: Colors.black87),
+          Text(
+            termsConditionDescription,
+            style: const TextStyle(fontSize: 10, color: Colors.black87),
           ),
         ],
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.end,
@@ -400,7 +403,10 @@ class TemplateBlue extends InvoiceTemplate {
                 buildSignature(context),
                 Container(width: 160, height: 1.5, color: Colors.black),
                 const SizedBox(height: 4),
-                const Text('Authorized Signatory', style: TextStyle(fontSize: 11)),
+                const Text(
+                  'Authorized Signatory',
+                  style: TextStyle(fontSize: 11),
+                ),
               ],
             ),
           ],
@@ -413,21 +419,31 @@ class TemplateBlue extends InvoiceTemplate {
   /*                                HELPERS                                     */
   /* -------------------------------------------------------------------------- */
 
-  Widget _dateRow(String label, String value) {
+  Widget _meta(String label, String value) {
     return Row(
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
         ),
         const SizedBox(width: 6),
-        Text(
-          value,
-          style: const TextStyle(fontSize: 10),
-        ),
+        Text(value, style: const TextStyle(fontSize: 10)),
       ],
     );
   }
+
+  // Widget _dateRow(String label, String value) {
+  //   return Row(
+  //     children: [
+  //       Text(
+  //         label,
+  //         style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+  //       ),
+  //       const SizedBox(width: 6),
+  //       Text(value, style: const TextStyle(fontSize: 10)),
+  //     ],
+  //   );
+  // }
 
   Widget _totalRow(String label, String value, {bool isBold = false}) {
     return Padding(

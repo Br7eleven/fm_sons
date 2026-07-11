@@ -10,8 +10,9 @@ import 'product_model.dart';
 
 class ProductFormScreen extends StatefulWidget {
   final Product? product; // null = add, not null = edit
+  final String? initialName; // prefill name when opened from inline "Add New Item"
 
-  const ProductFormScreen({super.key, this.product});
+  const ProductFormScreen({super.key, this.product, this.initialName});
 
   @override
   State<ProductFormScreen> createState() => _ProductFormScreenState();
@@ -34,7 +35,9 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
   void initState() {
     super.initState();
 
-    _nameController = TextEditingController(text: widget.product?.name ?? '');
+    _nameController = TextEditingController(
+      text: widget.product?.name ?? widget.initialName ?? '',
+    );
     _rateController = TextEditingController(
       text: widget.product?.defaultRate.toString() ?? '',
     );
@@ -152,7 +155,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                         '+ Custom',
                         style: TextStyle(
                           fontSize: 13,
-                          color: Color(0xFF1E5EFF),
+                          color: FMSons.accent,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -218,7 +221,7 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                   height: 52,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E5EFF),
+                      backgroundColor: FMSons.accent,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),

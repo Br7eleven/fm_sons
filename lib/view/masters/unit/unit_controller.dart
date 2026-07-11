@@ -140,9 +140,22 @@ class UnitController extends ChangeNotifier {
 
     const defaults = [
       Unit(id: 'bag', name: 'Bag', symbol: 'bag', allowDecimal: false),
-      Unit(id: 'kg', name: 'Kilogram', symbol: 'kg', allowDecimal: true),
-      Unit(id: 'rft', name: 'Running Feet', symbol: 'rft', allowDecimal: true),
+      Unit(id: 'bottle', name: 'Bottle', symbol: 'btl', allowDecimal: false),
+      Unit(id: 'box', name: 'Box', symbol: 'box', allowDecimal: false),
+      Unit(id: 'bundle', name: 'Bundle', symbol: 'bdl', allowDecimal: false),
+      Unit(id: 'can', name: 'Can', symbol: 'can', allowDecimal: false),
+      Unit(id: 'carton', name: 'Carton', symbol: 'ctn', allowDecimal: false),
       Unit(id: 'day', name: 'Day', symbol: 'day', allowDecimal: false),
+      Unit(id: 'dozen', name: 'Dozen', symbol: 'dzn', allowDecimal: false),
+      Unit(id: 'gram', name: 'Gramme', symbol: 'g', allowDecimal: true),
+      Unit(id: 'kg', name: 'Kilogram', symbol: 'kg', allowDecimal: true),
+      Unit(id: 'litre', name: 'Litre', symbol: 'L', allowDecimal: true),
+      Unit(id: 'metre', name: 'Metre', symbol: 'm', allowDecimal: true),
+      Unit(id: 'ml', name: 'Millilitre', symbol: 'ml', allowDecimal: true),
+      Unit(id: 'num', name: 'Number', symbol: 'no', allowDecimal: false),
+      Unit(id: 'piece', name: 'Piece', symbol: 'pc', allowDecimal: false),
+      Unit(id: 'rft', name: 'Running Feet', symbol: 'rft', allowDecimal: true),
+      Unit(id: 'sqft', name: 'Square Feet', symbol: 'sqft', allowDecimal: true),
     ];
 
     for (final unit in defaults) {

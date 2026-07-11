@@ -10,6 +10,7 @@ class InvoiceModel {
   final double subtotal;
   final double tax;
   final double total;
+  final double receivedAmount;
   final String status;
   final String paymentStatus;
   final String template;
@@ -33,6 +34,7 @@ class InvoiceModel {
     required this.subtotal,
     this.tax = 0,
     required this.total,
+    this.receivedAmount = 0,
     required this.status,
     this.paymentStatus = 'unpaid',
     this.template = 'taxTheme1',
@@ -58,6 +60,7 @@ class InvoiceModel {
       'subtotal': subtotal,
       'tax': tax,
       'total': total,
+      'received_amount': receivedAmount,
       'status': status,
       'payment_status': paymentStatus,
       'template': template,
@@ -84,6 +87,7 @@ class InvoiceModel {
       subtotal: map['subtotal'],
       tax: map['tax'],
       total: map['total'],
+      receivedAmount: (map['received_amount'] as num?)?.toDouble() ?? 0,
       status: map['status'],
       paymentStatus: map['payment_status'] as String? ?? 'unpaid',
       template: map['template'] as String? ?? 'taxTheme1',

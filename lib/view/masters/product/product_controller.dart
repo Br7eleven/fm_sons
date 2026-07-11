@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/view/masters/unit/unit_model.dart';
 
 import '../../../data/local/dao/product_dao.dart';
 import '../unit/unit_controller.dart';
@@ -78,6 +79,44 @@ class ProductController extends ChangeNotifier {
     _products.add(product);
     _sortProducts();
     notifyListeners();
+  }
+
+  /// Returns the existing product with a matching (case-insensitive, trimmed)
+  /// name, or silently creates a new one and returns it. Returns `null` if the
+  /// name is empty or creation fails — callers should NOT block on this.
+  Future<Product?> ensureProductByName(String name, Unit unit, double rate) async {
+    final normalized = name.trim();
+    if (normalized.isEmpty) return null;
+
+    final key = normalized.toLowerCase();
+    final existing = _products
+        .where((p) => p.name.trim().toLowerCase() == key)
+        .toList();
+    if (existing.isNotEmpty) return existing.first;
+
+    final product = Product(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: normalized,
+      type: ProductType.material,
+      unit: unit,
+      defaultRate: rate,
+      description: null,
+    );
+
+    try {
+      final result = await _productDao.create(product);
+      if (result.isFailure) {
+        debugPrint('ensureProductByName: failed to create product: ${result.error}');
+        return null;
+      }
+      _products.add(product);
+      _sortProducts();
+      notifyListeners();
+      return product;
+    } catch (e) {
+      debugPrint('ensureProductByName: exception creating product: $e');
+      return null;
+    }
   }
 
   Future<void> updateProduct(Product product) async {
