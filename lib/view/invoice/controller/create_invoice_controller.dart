@@ -388,6 +388,11 @@ class InvoiceController extends ChangeNotifier {
           ),
         );
 
+      // Payment-In has no line items — use invoice.total directly
+      if (_items.isEmpty) {
+        _manualTotal = invoice.total;
+      }
+
       updateAmountInWords();
       notifyListeners();
     } catch (e) {

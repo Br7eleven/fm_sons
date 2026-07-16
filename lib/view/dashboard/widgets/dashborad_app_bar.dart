@@ -9,8 +9,11 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     final name = context.select<CompanyProfileController, String>((cp) => cp.name);
 
+    final bgColor = Theme.of(context).scaffoldBackgroundColor;
     return AppBar(
       elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor: bgColor,
       titleSpacing: 0,
       title: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'invoice_template_base.dart';
+import '../../controller/create_invoice_controller.dart';
 
 class TemplateBlue extends InvoiceTemplate {
   const TemplateBlue({super.key, required super.invoice});
@@ -140,15 +141,30 @@ class TemplateBlue extends InvoiceTemplate {
   /* -------------------------------------------------------------------------- */
 
   @override
-  Widget buildItems(BuildContext context) {
+  Widget buildItems(
+    BuildContext context, {
+    required List<InvoiceItem> pageItems,
+    required int startIndex,
+    required bool isLastPage,
+    required bool isFinalPage,
+  }) {
+    final blue = const Color(0xFF1976D2);
     return Column(
       children: [
         // Blue header
-        Container(
+        if (pageItems.isNotEmpty)
+          Container(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-          color: const Color(0xFF1976D2), // Blue
+          color: blue,
           child: const Row(
             children: [
+              Expanded(
+                flex: 1,
+                child: Padding(
+                  padding: EdgeInsets.only(left: 4),
+                  child: Text('#', style: TextStyle(color: Colors.white)),
+                ),
+              ),
               Expanded(
                 flex: 4,
                 child: Text(
@@ -208,9 +224,9 @@ class TemplateBlue extends InvoiceTemplate {
           ),
         ),
         // Items
-        ...previewItems.map(
-          (item) => Container(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        ...pageItems.asMap().entries.map(
+          (e) => Container(
+            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(color: Colors.grey.shade300, width: 0.5),
@@ -219,61 +235,99 @@ class TemplateBlue extends InvoiceTemplate {
             child: Row(
               children: [
                 Expanded(
+                  flex: 1,
+                  child: Text(
+                    '${startIndex + e.key + 1}',
+                    // textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 10),
+                  ),
+                ),
+                Expanded(
                   flex: 4,
                   child: Text(
-                    item.name,
-                    style: const TextStyle(fontSize: 11),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    formatQuantity(item.quantity),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    item.unit,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 11),
+                    e.value.name,
+                    style: const TextStyle(fontSize: 10),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 Expanded(
                   child: Text(
-                    formatMoney(item.rate),
+                    formatQuantity(e.value.quantity),
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 11),
+                    style: const TextStyle(fontSize: 10),
                   ),
                 ),
                 Expanded(
                   child: Text(
-                    formatMoney(item.total),
+                    e.value.unit,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 10),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    formatMoney(e.value.rate),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 10),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    formatMoney(e.value.total),
                     textAlign: TextAlign.right,
-                    style: const TextStyle(fontSize: 11),
+                    style: const TextStyle(fontSize: 10),
                   ),
                 ),
               ],
             ),
           ),
         ),
-        if (hiddenItemsCount > 0)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                '+$hiddenItemsCount more item(s) not shown',
-                style: const TextStyle(
-                  fontSize: 10,
-                  color: Colors.grey,
-                  fontStyle: FontStyle.italic,
+        // Total row (last page only)
+        if (isLastPage && pageItems.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
+            color: blue,
+            child: Row(
+              children: [
+                const Expanded(
+                  flex: 5,
+                  child: Text(
+                    'Total',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
-              ),
+                Expanded(
+                  child: Text(
+                    '${invoice.items.length}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                const Expanded(child: SizedBox()),
+                const Expanded(child: SizedBox()),
+                Expanded(
+                  child: Text(
+                    formatMoney(grandTotalAmount),
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
       ],
@@ -395,7 +449,7 @@ class TemplateBlue extends InvoiceTemplate {
           children: [
             Text(
               'For: ${InvoiceTemplate.companyOf(context).name} ${InvoiceTemplate.companyOf(context).tagline} Vendor Number ${InvoiceTemplate.companyOf(context).vendorNumber}',
-              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.center,

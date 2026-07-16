@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:fm_sons/utils/constants/color_string.dart';
 import 'note_controller.dart';
 import '../../data/local/models/note_model.dart';
 import 'note_detail_screen.dart';
@@ -53,7 +54,9 @@ class _NotesScreenState extends State<NotesScreen> {
               onChanged: (value) => controller.search(value),
               decoration: InputDecoration(
                 hintText: 'Search notes...',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search, size: 18),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
                 suffixIcon: controller.searchQuery.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
@@ -98,13 +101,9 @@ class _NotesScreenState extends State<NotesScreen> {
                     hasSearch: controller.searchQuery.isNotEmpty,
                     onAdd: () => _openAdd(context),
                   )
-                : ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    itemCount: notes.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      return _NoteTile(note: notes[index]);
-                    },
+                : ListView(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
+                    children: notes.map((n) => _NoteTile(note: n)).toList(),
                   ),
           ),
         ],
@@ -133,59 +132,7 @@ class _NoteTile extends StatelessWidget {
 
   const _NoteTile({required this.note});
 
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => NoteDetailScreen(note: note)),
-        );
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).dividerColor),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// Title
-            Text(
-              note.title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 8),
-
-            /// Body Preview
-            Text(
-              note.body,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(fontSize: 14, height: 1.4),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 12),
-
-            /// Timestamp
-            Text(
-              _formatDate(note.updatedAt),
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(fontSize: 12),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formatDate(DateTime date) {
+  String _fmtDate(DateTime date) {
     final now = DateTime.now();
     final diff = now.difference(date);
 
@@ -204,6 +151,52 @@ class _NoteTile extends StatelessWidget {
     } else {
       return '${date.day}/${date.month}/${date.year}';
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => NoteDetailScreen(note: note)),
+        );
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    note.title,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    note.body,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600, height: 1.3),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _fmtDate(note.updatedAt),
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Icon(Icons.chevron_right, size: 20, color: Colors.grey.shade400),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -255,11 +248,9 @@ class _EmptyState extends StatelessWidget {
                 icon: const Icon(Icons.add),
                 label: const Text('Create Note'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  backgroundColor: FMSons.accent,
+                  foregroundColor: Colors.white,
+                  shape: const StadiumBorder(),
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
               ),

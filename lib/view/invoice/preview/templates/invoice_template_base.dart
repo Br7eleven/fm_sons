@@ -12,7 +12,8 @@ import '../../../settings/company_profile_controller.dart';
 abstract class InvoiceTemplate extends StatelessWidget {
   final InvoiceController invoice;
 
-  static const int _maxPreviewItems = 18;
+  static const int itemsPerPage = 25;
+  static const int maxItemsWithTotals = 16;
   static final NumberFormat _moneyFormat = NumberFormat.currency(
     locale: 'en_IN',
     symbol: 'Rs ',
@@ -23,18 +24,39 @@ abstract class InvoiceTemplate extends StatelessWidget {
 
   Widget buildHeader(BuildContext context);
   Widget buildInvoiceInfo(BuildContext context);
-  Widget buildItems(BuildContext context);
+  Widget buildItems(BuildContext context, {required List<InvoiceItem> pageItems, required int startIndex, required bool isLastPage, required bool isFinalPage});
   Widget buildTotals(BuildContext context);
   Widget buildFooter(BuildContext context);
 
-  List<InvoiceItem> get previewItems {
-    if (invoice.items.length <= _maxPreviewItems) {
-      return invoice.items;
-    }
-    return invoice.items.take(_maxPreviewItems).toList(growable: false);
-  }
+  List<List<InvoiceItem>> get pageItemChunks {
+    final items = invoice.items;
+    final n = items.length;
+    if (n == 0) return [[]];
+    if (n <= maxItemsWithTotals) return [items];
 
-  int get hiddenItemsCount => invoice.items.length - previewItems.length;
+    // 17–25 items: one items-only page + totals-only page
+    if (n <= itemsPerPage) return [items, []];
+
+    // > 25 items: first page = 25 items (no totals), then distribute
+    // remaining so the final chunk has ≤ maxItemsWithTotals items
+    final chunks = <List<InvoiceItem>>[];
+    chunks.add(items.sublist(0, itemsPerPage));
+
+    var i = itemsPerPage;
+    while (i < n) {
+      final remaining = n - i;
+      if (remaining <= maxItemsWithTotals) {
+        chunks.add(items.sublist(i, n));
+        break;
+      }
+      // Take a full page of itemsPerPage, ensuring enough left for last page
+      final take = (remaining - maxItemsWithTotals).clamp(1, itemsPerPage);
+      chunks.add(items.sublist(i, i + take));
+      i += take;
+    }
+
+    return chunks;
+  }
 
   String get customerDisplayName {
     final text = invoice.customerName?.trim() ?? '';
@@ -102,8 +124,16 @@ abstract class InvoiceTemplate extends StatelessWidget {
     return asDouble.toStringAsFixed(2);
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildPage(BuildContext context, int pageIndex) {
+    final chunks = pageItemChunks;
+    final pageItems = chunks[pageIndex];
+    final startIndex = chunks.take(pageIndex).fold<int>(0, (s, c) => s + c.length);
+    final isLastPage = pageIndex == chunks.length - 1;
+    // Total row belongs on the last page that actually has items,
+    // not on an empty trailing totals-only page.
+    final hasItemsAfter = pageIndex + 1 < chunks.length && chunks[pageIndex + 1].isNotEmpty;
+    final isLastItemsPage = isLastPage || !hasItemsAfter;
+
     return DefaultTextStyle(
       style: const TextStyle(color: Color(0xFF1A1A1A), fontFamily: ''),
       child: IconTheme(
@@ -118,27 +148,55 @@ abstract class InvoiceTemplate extends StatelessWidget {
             children: [
               buildHeader(context),
               const SizedBox(height: 20),
-
-              buildInvoiceInfo(context),
-              const SizedBox(height: 15),
-
-              Expanded(
-                child: SingleChildScrollView(
+              if (pageIndex == 0) ...[
+                buildInvoiceInfo(context),
+                const SizedBox(height: 15),
+              ],
+              if (!isLastPage)
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const NeverScrollableScrollPhysics(),
+                    clipBehavior: Clip.hardEdge,
+                    child: buildItems(context,
+                        pageItems: pageItems,
+                        startIndex: startIndex,
+                        isLastPage: isLastItemsPage,
+                        isFinalPage: isLastPage),
+                  ),
+                )
+              else
+                SingleChildScrollView(
                   physics: const NeverScrollableScrollPhysics(),
                   clipBehavior: Clip.hardEdge,
-                  child: buildItems(context),
+                  child: buildItems(context,
+                      pageItems: pageItems,
+                      startIndex: startIndex,
+                      isLastPage: isLastItemsPage,
+                      isFinalPage: isLastPage),
                 ),
-              ),
-
-              const Divider(thickness: 1, color: Colors.black26),
-              const SizedBox(height: 10),
-              buildTotals(context),
-
-              const SizedBox(height: 30),
-              buildFooter(context),
+              if (isLastPage) ...[
+                const Divider(thickness: 1, color: Colors.black26),
+                const SizedBox(height: 10),
+                buildTotals(context),
+                const SizedBox(height: 30),
+                buildFooter(context),
+              ],
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  List<Widget> buildPages(BuildContext context) {
+    return List.generate(pageItemChunks.length, (i) => _buildPage(context, i));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        children: buildPages(context),
       ),
     );
   }

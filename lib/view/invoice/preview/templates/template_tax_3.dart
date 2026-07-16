@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'invoice_template_base.dart';
+import '../../controller/create_invoice_controller.dart';
 
 class TemplateTax3 extends InvoiceTemplate {
   const TemplateTax3({super.key, required super.invoice});
@@ -121,62 +122,56 @@ class TemplateTax3 extends InvoiceTemplate {
   /* -------------------------------------------------------------------------- */
 
   @override
-  Widget buildItems(BuildContext context) {
+  Widget buildItems(BuildContext context, {required List<InvoiceItem> pageItems, required int startIndex, required bool isLastPage, required bool isFinalPage}) {
     return Column(
       children: [
-        const SizedBox(height: 20),
-
-        /// Header Row
-        Container(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF8F8CD9),
-            borderRadius: BorderRadius.circular(6),
-          ),
-          child: const Row(
-            children: [
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(left: 4),
-                  child: Text('#', style: TextStyle(color: Colors.white)),
-                ),
-              ),
-              Expanded(
-                flex: 4,
-                child: Text('Item Name', style: TextStyle(color: Colors.white)),
-              ),
-              Expanded(
-                child: Text('Quantity', style: TextStyle(color: Colors.white)),
-              ),
-              Expanded(
-                child: Text('Unit', style: TextStyle(color: Colors.white)),
-              ),
-              Expanded(
-                child: Text(
-                  'Price/Unit',
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-              Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(right: 4),
-                  child: Text(
-                    'Amount',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(color: Colors.white),
+        if (pageItems.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          /// Header Row
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF8F8CD9),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: const Row(
+              children: [
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 4),
+                    child: Text('#', style: TextStyle(color: Colors.white)),
                   ),
                 ),
-              ),
-            ],
+                Expanded(
+                  flex: 4,
+                  child: Text('Item Name', style: TextStyle(color: Colors.white)),
+                ),
+                Expanded(
+                  child: Text('Quantity', style: TextStyle(color: Colors.white)),
+                ),
+                Expanded(
+                  child: Text('Unit', style: TextStyle(color: Colors.white)),
+                ),
+                Expanded(
+                  child: Text('Price/Unit', style: TextStyle(color: Colors.white)),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(right: 4),
+                    child: Text('Amount', textAlign: TextAlign.right,
+                        style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-
-        const SizedBox(height: 6),
+          const SizedBox(height: 6),
+        ],
 
         /// Items
-        ...previewItems.asMap().entries.map(
+        ...pageItems.asMap().entries.map(
           (entry) => Container(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
             decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
             ),
@@ -185,32 +180,35 @@ class TemplateTax3 extends InvoiceTemplate {
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(left: 4),
-                    child: Text('${entry.key + 1}'),
+                    child: Text('${startIndex + entry.key + 1}', style: const TextStyle(fontSize: 10)),
                   ),
                 ),
                 Expanded(
                   flex: 4,
                   child: Text(
                     entry.value.name,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                Expanded(child: Text(formatQuantity(entry.value.quantity))),
-                Expanded(
-                  child: Text(
-                    entry.value.unit,
+                    style: const TextStyle(fontSize: 10),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                Expanded(child: Text(formatMoney(entry.value.rate))),
+                Expanded(child: Text(formatQuantity(entry.value.quantity), style: const TextStyle(fontSize: 10))),
+                Expanded(
+                  child: Text(
+                    entry.value.unit,
+                    style: const TextStyle(fontSize: 10),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Expanded(child: Text(formatMoney(entry.value.rate), style: const TextStyle(fontSize: 10))),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.only(right: 4),
                     child: Text(
                       formatMoney(entry.value.total),
                       textAlign: TextAlign.right,
+                      style: const TextStyle(fontSize: 10),
                     ),
                   ),
                 ),
@@ -218,19 +216,26 @@ class TemplateTax3 extends InvoiceTemplate {
             ),
           ),
         ),
-        if (hiddenItemsCount > 0)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                '+$hiddenItemsCount more item(s) not shown in preview',
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: Colors.grey,
-                  fontStyle: FontStyle.italic,
+        // Total row (last page only)
+        if (isLastPage && pageItems.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
+            color: const Color(0xFF8F8CD9),
+            child: Row(
+              children: [
+                const Expanded(flex: 5, child: Text('Total',
+                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white))),
+                Expanded(
+                  child: Text('${invoice.items.length}', textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
                 ),
-              ),
+                const Expanded(child: SizedBox()),
+                const Expanded(child: SizedBox()),
+                Expanded(
+                  child: Text(formatMoney(grandTotalAmount), textAlign: TextAlign.right,
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white)),
+                ),
+              ],
             ),
           ),
       ],

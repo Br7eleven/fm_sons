@@ -177,7 +177,10 @@ class _CreateInvoiceBody extends StatelessWidget {
           ],
         ),
 
-        body: Column(
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          behavior: HitTestBehavior.translucent,
+          child: Column(
           children: [
             Expanded(
               child: SingleChildScrollView(
@@ -227,6 +230,7 @@ class _CreateInvoiceBody extends StatelessWidget {
             // ── Fixed Bottom Bar ──
             const _InvoiceBottomBar(),
           ],
+        ),
         ),
       ),
     );
@@ -526,7 +530,8 @@ class _CustomerFieldState extends State<_CustomerField> {
                               (bal['totalInvoiced'] as double) > 0;
                           final due = hasTransactions
                               ? normalizeMoney((bal['totalInvoiced'] as double) -
-                                  (bal['totalReceived'] as double))
+                                  (bal['totalReceived'] as double) -
+                                  (bal['totalPaymentIn'] as double? ?? 0.0))
                               : 0.0;
 
                           return InkWell(

@@ -3,42 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 
 import 'invoice_template_base.dart';
+import '../../controller/create_invoice_controller.dart';
 
 class TemplateGovt extends InvoiceTemplate {
   const TemplateGovt({super.key, required super.invoice});
-
-  // Override base build() to avoid Expanded gap — items grow naturally,
-  // the outer fixed-height container clips any extreme overflow.
-  @override
-  Widget build(BuildContext context) {
-    return DefaultTextStyle(
-      style: const TextStyle(color: Color(0xFF1A1A1A), fontFamily: ''),
-      child: IconTheme(
-        data: const IconThemeData(color: Color(0xFF1A1A1A)),
-        child: Container(
-          width: 794,
-          height: 1123,
-          clipBehavior: Clip.hardEdge,
-          decoration: const BoxDecoration(color: Colors.white),
-          padding: const EdgeInsets.symmetric(horizontal: 45, vertical: 40),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              buildHeader(context),
-              const SizedBox(height: 20),
-              buildInvoiceInfo(context),
-              const SizedBox(height: 15),
-              buildItems(context),
-              const SizedBox(height: 16),
-              buildTotals(context),
-              const SizedBox(height: 20),
-              buildFooter(context),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   static const Color _green = Color(0xFF1A7A1A);
   static const Color _borderGrey = Color(0xFFCCCCCC);
@@ -167,7 +135,7 @@ class TemplateGovt extends InvoiceTemplate {
   // ── Items ────────────────────────────────────────────────────────────────────
 
   @override
-  Widget buildItems(BuildContext context) {
+  Widget buildItems(BuildContext context, {required List<InvoiceItem> pageItems, required int startIndex, required bool isLastPage, required bool isFinalPage}) {
     return Table(
       border: TableBorder.all(color: _borderGrey),
       columnWidths: const {
@@ -179,12 +147,11 @@ class TemplateGovt extends InvoiceTemplate {
         5: FixedColumnWidth(90),
       },
       children: [
-        _tableHeader(),
-        ...previewItems.asMap().entries.map(
-          (e) => _tableRow(e.key + 1, e.value),
+        if (pageItems.isNotEmpty) _tableHeader(),
+        ...pageItems.asMap().entries.map(
+          (e) => _tableRow(startIndex + e.key + 1, e.value),
         ),
-        _tableTotalRow(),
-        if (hiddenItemsCount > 0) _hiddenItemsRow(),
+        if (isLastPage) _tableTotalRow(),
       ],
     );
   }
@@ -203,13 +170,13 @@ class TemplateGovt extends InvoiceTemplate {
       children: headers
           .map(
             (h) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
+              padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 6),
               child: Text(
                 h,
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 11,
+                  fontSize: 10,
                 ),
               ),
             ),
@@ -232,7 +199,7 @@ class TemplateGovt extends InvoiceTemplate {
   }
 
   TableRow _tableTotalRow() {
-    final totalQty = previewItems.fold<num>(0, (s, i) => s + i.quantity);
+    final totalQty = invoice.items.fold<num>(0, (s, i) => s + i.quantity);
     return TableRow(
       children: [
         _cell(''),
@@ -249,41 +216,18 @@ class TemplateGovt extends InvoiceTemplate {
     );
   }
 
-  TableRow _hiddenItemsRow() {
-    return TableRow(
-      children: [
-        const SizedBox(),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
-          child: Text(
-            '+$hiddenItemsCount more item(s) not shown',
-            style: const TextStyle(
-              fontSize: 10,
-              color: Colors.grey,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-        ),
-        const SizedBox(),
-        const SizedBox(),
-        const SizedBox(),
-        const SizedBox(),
-      ],
-    );
-  }
-
   Widget _cell(
     String text, {
     bool bold = false,
     TextAlign align = TextAlign.left,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 6),
+      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 6),
       child: Text(
         text,
         textAlign: align,
         style: TextStyle(
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: bold ? FontWeight.bold : FontWeight.normal,
         ),
       ),

@@ -1,17 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(awk '{print $NF}')",
-      "Bash(dart format *)",
       "Bash(flutter analyze *)",
       "Bash(dart analyze *)"
     ]
   },
-  "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": [
-    "stitch"
-  ],
   "disabledMcpjsonServers": [
+    "stitch",
     "ruflo"
   ]
 }

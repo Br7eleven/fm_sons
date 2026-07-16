@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-
+import 'package:fm_sons/utils/constants/color_string.dart';
 import '../../data/local/models/invoice_model.dart';
+import '../payment_in/payment_in_screen.dart';
 import '../shared/date_range_filter.dart';
+import '../shared/share_transaction_bottom_sheet.dart';
 import 'controller/create_invoice_controller.dart';
 import 'create_invoice_screen.dart';
 import 'preview/invoice_preview_screen.dart';
@@ -141,23 +143,35 @@ class _InvoiceHistoryTabState extends State<InvoiceHistoryTab> {
 
   Future<void> _editInvoice(InvoiceModel invoice) async {
     if (invoice.id == null) return;
+    if (!mounted) return;
 
     try {
-      if (!mounted) return;
-
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => CreateInvoiceScreen(invoiceId: invoice.id!),
-        ),
-      );
+      if (invoice.documentType == 'payment_in') {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PaymentInScreen(
+              customerId: invoice.customerId ?? '',
+              customerName: invoice.clientName,
+              editingInvoiceId: invoice.id,
+            ),
+          ),
+        );
+      } else {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CreateInvoiceScreen(invoiceId: invoice.id!),
+          ),
+        );
+      }
 
       if (!mounted) return;
       await context.read<InvoiceController>().loadSavedInvoices();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to open invoice for editing: $e')),
+        SnackBar(content: Text('Unable to open: $e')),
       );
     }
   }
@@ -168,19 +182,29 @@ class _InvoiceHistoryTabState extends State<InvoiceHistoryTab> {
 
     final shouldDelete = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) {
+      builder: (d) {
         return AlertDialog(
-          title: const Text('Delete Invoice'),
+          backgroundColor: Theme.of(context).cardColor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text(
+            'Delete Invoice',
+            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+          ),
           content: Text(
             'Delete ${invoice.invoiceNumber}? This action cannot be undone.',
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
+              onPressed: () => Navigator.pop(d, false),
               child: const Text('Cancel'),
             ),
             ElevatedButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
+              onPressed: () => Navigator.pop(d, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(d).colorScheme.error,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
               child: const Text('Delete'),
             ),
           ],
@@ -262,13 +286,22 @@ class _InvoiceHistoryTabState extends State<InvoiceHistoryTab> {
           TextField(
             onChanged: (value) => setState(() => _searchQuery = value),
             decoration: InputDecoration(
-              hintText: 'Search contract or invoice #',
-              prefixIcon: const Icon(Icons.search),
+              hintText: 'Search by party or invoice #',
+              prefixIcon: const Icon(Icons.search, size: 18),
+              isDense: true,
+              contentPadding: const EdgeInsets.symmetric(vertical: 8),
               filled: true,
               fillColor: Theme.of(context).cardColor,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: FMSons.accent, width: 1.5),
               ),
             ),
           ),
@@ -358,6 +391,12 @@ class _InvoiceHistoryTabState extends State<InvoiceHistoryTab> {
   }
 }
 
+int _seqNum(String invoiceNumber) {
+  final match = RegExp(r'(\d+)$').firstMatch(invoiceNumber);
+  if (match == null) return 0;
+  return int.tryParse(match.group(1) ?? '0') ?? 0;
+}
+
 class _InvoiceHistoryCard extends StatelessWidget {
   final InvoiceModel invoice;
   final NumberFormat currencyFormat;
@@ -381,173 +420,120 @@ class _InvoiceHistoryCard extends StatelessWidget {
     required this.onShareTap,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    final c = statusColor;
-    final amountText = currencyFormat.format(invoice.total);
+  String _typeLabel() {
+    switch (invoice.documentType) {
+      case 'payment_in': return 'PAYMENT-IN';
+      case 'estimate': return 'ESTIMATE';
+      default: return 'SALE';
+    }
+  }
 
-    return Container(
-      key: ValueKey(invoice.id),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // ── Row 1: icon | invoice # | amount ──
-            Row(
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: c.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(Icons.description_outlined, color: c, size: 19),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    invoice.invoiceNumber,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  amountText,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
+  Color _typeColor() {
+    switch (invoice.documentType) {
+      case 'payment_in': return Colors.teal;
+      case 'estimate': return Colors.purple;
+      default: return FMSons.accent;
+    }
+  }
 
-            // ── Row 2: client name | status chip ──
-            Row(
-              children: [
-                const SizedBox(
-                  width: 48,
-                ), // align with text above (38 icon + 10 gap)
-                Expanded(
-                  child: Text(
-                    invoice.clientName,
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 2,
-                  ),
-                  decoration: BoxDecoration(
-                    color: c.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    statusLabel,
-                    style: TextStyle(
-                      color: c,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 2),
+  Color _typeBg() {
+    switch (invoice.documentType) {
+      case 'payment_in': return Colors.teal.shade50;
+      case 'estimate': return Colors.purple.shade50;
+      default: return FMSons.accent.withValues(alpha: 0.1);
+    }
+  }
 
-            // ── Row 3: date ──
-            Row(
-              children: [
-                const SizedBox(width: 48),
-                Text(
-                  formattedDate,
-                  style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-
-            // ── Row 4: action buttons ──
-            Row(
-              children: [
-                const SizedBox(width: 40),
-                _actionBtn(
-                  Icons.visibility_outlined,
-                  'View',
-                  onViewTap,
-                  context,
-                ),
-                const SizedBox(width: 16),
-                _actionBtn(Icons.edit_outlined, 'Edit', onEditTap, context),
-                const SizedBox(width: 16),
-                _actionBtn(Icons.share_outlined, 'Share', onShareTap, context),
-                const Spacer(),
-                _actionBtn(
-                  Icons.delete_outline,
-                  'Delete',
-                  onDeleteTap,
-                  context,
-                  isDestructive: true,
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
+  void _showShareSheet(BuildContext context) {
+    final id = invoice.id;
+    if (id == null) return;
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => ShareTransactionBottomSheet(invoiceId: id, documentType: invoice.documentType),
     );
   }
 
-  Widget _actionBtn(
-    IconData icon,
-    String label,
-    VoidCallback onTap,
-    BuildContext context, {
-    bool isDestructive = false,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(6),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              icon,
-              size: 15,
-              color: isDestructive ? Colors.red.shade400 : Colors.grey.shade600,
-            ),
-            const SizedBox(width: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: isDestructive
-                    ? Colors.red.shade400
-                    : Colors.grey.shade600,
-              ),
-            ),
-          ],
+  @override
+  Widget build(BuildContext context) {
+    final i = invoice;
+    final remaining = i.total - i.receivedAmount;
+    final isPaymentIn = i.documentType == 'payment_in';
+    final seq = _seqNum(i.invoiceNumber);
+    final remainingStr = isPaymentIn ? 'Rs. 0' : 'Rs. ${remaining.toStringAsFixed(0)}';
+    final remainingColor = isPaymentIn ? Colors.grey.shade400 : (remaining > 0 ? Colors.orange.shade700 : Colors.green.shade600);
+
+    return Container(
+      key: ValueKey(invoice.id),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2))],
+      ),
+      child: InkWell(
+        onTap: onViewTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Row 1: Party name | #N
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Expanded(child: Text(i.clientName,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                    overflow: TextOverflow.ellipsis)),
+                const SizedBox(width: 8),
+                Text('#$seq', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Colors.grey.shade600)),
+              ]),
+              const SizedBox(height: 4),
+              // Row 2: Type pill | date
+              Row(children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(color: _typeBg(), borderRadius: BorderRadius.circular(10)),
+                  child: Text(_typeLabel(),
+                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: _typeColor(), letterSpacing: 0.5)),
+                ),
+                const Spacer(),
+                Text(formattedDate, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+              ]),
+              const SizedBox(height: 10),
+              // Row 3: Total + Balance | print share ⋮
+              Row(children: [
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Total', style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+                  const SizedBox(height: 2),
+                  Text('Rs. ${i.total.toStringAsFixed(0)}',
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700)),
+                ]),
+                const SizedBox(width: 24),
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(isPaymentIn ? 'Unused' : 'Balance', style: TextStyle(fontSize: 10, color: Colors.grey.shade500)),
+                  const SizedBox(height: 2),
+                  Text(remainingStr, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: remainingColor)),
+                ]),
+                const Spacer(),
+                InkWell(onTap: onViewTap, child: Padding(
+                  padding: const EdgeInsets.all(6), child: Icon(Icons.print_outlined, size: 18, color: Colors.grey.shade500))),
+                InkWell(onTap: () => _showShareSheet(context), child: Padding(
+                  padding: const EdgeInsets.all(6), child: Icon(Icons.share_outlined, size: 18, color: Colors.grey.shade500))),
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert, size: 18, color: Colors.grey.shade500),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  itemBuilder: (_) => [
+                    const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                    const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
+                  ],
+                  onSelected: (v) {
+                    if (v == 'edit') onEditTap();
+                    if (v == 'delete') onDeleteTap();
+                  },
+                ),
+              ]),
+            ],
+          ),
         ),
       ),
     );

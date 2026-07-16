@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:fm_sons/utils/constants/color_string.dart';
 import 'note_controller.dart';
 import '../../data/local/models/note_model.dart';
 
@@ -73,21 +74,10 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               decoration: InputDecoration(
                 hintText: 'Title',
                 filled: true,
-                fillColor: Theme.of(context).cardColor,
+                fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Theme.of(context).dividerColor),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Theme.of(context).dividerColor),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                    width: 2,
-                  ),
+                  borderSide: BorderSide.none,
                 ),
               ),
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
@@ -104,25 +94,10 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
                 decoration: InputDecoration(
                   hintText: 'Start typing...',
                   filled: true,
-                  fillColor: Theme.of(context).cardColor,
+                  fillColor: Theme.of(context).colorScheme.surfaceContainerLowest,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).dividerColor,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 2,
-                    ),
+                    borderSide: BorderSide.none,
                   ),
                 ),
                 style: const TextStyle(fontSize: 16, height: 1.5),
@@ -135,6 +110,11 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: FMSons.accent,
+                  foregroundColor: Colors.white,
+                  shape: const StadiumBorder(),
+                ),
                 onPressed: _isSaving ? null : _handleSave,
                 child: _isSaving
                     ? const SizedBox(
@@ -222,18 +202,25 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
 
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Note'),
+      builder: (d) => AlertDialog(
+        backgroundColor: Theme.of(context).cardColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text(
+          'Delete Note',
+          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+        ),
         content: const Text('Are you sure you want to delete this note?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(d, false),
             child: const Text('Cancel'),
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
+          ElevatedButton(
+            onPressed: () => Navigator.pop(d, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(d).colorScheme.error,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
             child: const Text('Delete'),
           ),

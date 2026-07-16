@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'invoice_template_base.dart';
+import '../../controller/create_invoice_controller.dart';
 
 class TemplateTax1 extends InvoiceTemplate {
   const TemplateTax1({super.key, required super.invoice});
@@ -139,124 +140,69 @@ class TemplateTax1 extends InvoiceTemplate {
   }
 
   @override
-  Widget buildItems(BuildContext context) {
+  Widget buildItems(BuildContext context, {required List<InvoiceItem> pageItems, required int startIndex, required bool isLastPage, required bool isFinalPage}) {
     return Column(
       children: [
         // Table Header with Border + Color
-        Container(
-          decoration: BoxDecoration(
-            color: brandRed,
-            border: Border.all(color: Colors.black, width: 1),
+        if (pageItems.isNotEmpty)
+          Container(
+            decoration: BoxDecoration(
+              color: brandRed,
+              border: Border.all(color: Colors.black, width: 1),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: Row(
+              children: [
+                _cell('#', flex: 1, isHeader: true, align: TextAlign.center),
+                _cell('Item Name', flex: 5, isHeader: true, align: TextAlign.left),
+                _cell('Quantity', flex: 2, isHeader: true, align: TextAlign.center),
+                _cell('Unit', flex: 2, isHeader: true, align: TextAlign.center),
+                _cell('Price', flex: 3, isHeader: true, align: TextAlign.right),
+                _cell('Amount', flex: 3, isHeader: true, align: TextAlign.right),
+              ],
+            ),
           ),
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-          child: Row(
-            children: [
-              _cell('#', flex: 1, isHeader: true, align: TextAlign.center),
-              _cell(
-                'Item Name',
-                flex: 5,
-                isHeader: true,
-                align: TextAlign.left,
-              ),
-              _cell(
-                'Quantity',
-                flex: 2,
-                isHeader: true,
-                align: TextAlign.center,
-              ),
-              _cell('Unit', flex: 2, isHeader: true, align: TextAlign.center),
-              _cell('Price', flex: 3, isHeader: true, align: TextAlign.right),
-              _cell('Amount', flex: 3, isHeader: true, align: TextAlign.right),
-            ],
-          ),
-        ),
         // Rows with Borders
-        ...previewItems.asMap().entries.map((e) => _itemRow(e.key, e.value)),
-        if (hiddenItemsCount > 0)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                '+$hiddenItemsCount more item(s) not shown in preview',
-                style: const TextStyle(
-                  fontSize: 11,
-                  color: Colors.black54,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
+        ...pageItems.asMap().entries.map((e) => _itemRow(startIndex + e.key, e.value)),
+        if (isLastPage && pageItems.isNotEmpty) ...[
+          // Total Row with Border + Color
+          Container(
+            decoration: BoxDecoration(
+              color: brandRed,
+              border: Border.all(color: Colors.black, width: 1),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
+            child: Row(
+              children: [
+                const Expanded(flex: 6, child: Text('Total', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                Expanded(flex: 2, child: Text('${invoice.items.length}', textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                const Spacer(flex: 5),
+                Expanded(flex: 3, child: Text(formatMoney(grandTotalAmount), textAlign: TextAlign.right, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+              ],
             ),
           ),
-        // Total Row with Border + Color
-        Container(
-          decoration: BoxDecoration(
-            color: brandRed,
-            border: Border.all(color: Colors.black, width: 1),
-          ),
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-          child: Row(
+        ],
+        if (isFinalPage) ...[
+          // Summary Table with Full Borders and Red Highlights
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              const Expanded(
-                flex: 6,
-                child: Text(
-                  'Total',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Expanded(
-                flex: 2,
-                child: Text(
-                  '${invoice.items.length}',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              const Spacer(flex: 5),
-              Expanded(
-                flex: 3,
-                child: Text(
-                  formatMoney(grandTotalAmount),
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+              SizedBox(
+                width: 260,
+                child: Table(
+                  border: TableBorder.all(color: Colors.black, width: .5),
+                  children: [
+                    _totalTableRow('Sub Total', formatMoney(subtotalAmount)),
+                    _totalTableRow('Tax', formatMoney(taxAmount)),
+                    _totalTableRow('Total', formatMoney(grandTotalAmount), isRed: true),
+                    if (!isEstimate) _totalTableRow('Received', formatMoney(receivedAmount)),
+                    if (!isEstimate) _totalTableRow('Balance', formatMoney(balanceDue)),
+                  ],
                 ),
               ),
             ],
           ),
-        ),
-        // Summary Table with Full Borders and Red Highlights
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            SizedBox(
-              width: 260,
-              child: Table(
-                border: TableBorder.all(color: Colors.black, width: .5),
-                children: [
-                  _totalTableRow('Sub Total', formatMoney(subtotalAmount)),
-                  _totalTableRow('Tax', formatMoney(taxAmount)),
-                  _totalTableRow(
-                    'Total',
-                    formatMoney(grandTotalAmount),
-                    isRed: true,
-                  ),
-                  if (!isEstimate)
-                    _totalTableRow('Received', formatMoney(receivedAmount)),
-                  if (!isEstimate)
-                    _totalTableRow('Balance', formatMoney(balanceDue)),
-                ],
-              ),
-            ),
-          ],
-        ),
+        ],
       ],
     );
   }
@@ -271,7 +217,7 @@ class TemplateTax1 extends InvoiceTemplate {
         ),
         color: index % 2 != 0 ? Colors.grey[50] : Colors.white,
       ),
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
       child: Row(
         children: [
           _cell('${index + 1}', flex: 1),
@@ -279,7 +225,7 @@ class TemplateTax1 extends InvoiceTemplate {
             item.name,
             flex: 5,
             align: TextAlign.left,
-            maxLines: 2,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           _cell(formatQuantity(item.quantity), flex: 2),
@@ -378,19 +324,6 @@ class TemplateTax1 extends InvoiceTemplate {
             ],
           ),
         ),
-        // // Summary Table with Full Borders and Red Highlights
-        // SizedBox(
-        //   width: 260,
-        //   child: Table(
-        //     border: TableBorder.all(color: Colors.black, width: 1),
-        //     children: [
-        //       _totalTableRow('Sub Total', 'Rs ${invoice.totalAmount}'),
-        //       _totalTableRow('Total', 'Rs ${invoice.totalAmount}', isRed: true),
-        //       _totalTableRow('Received', 'Rs 0.00'),
-        //       _totalTableRow('Balance', 'Rs ${invoice.totalAmount}'),
-        //     ],
-        //   ),
-        // ),
       ],
     );
   }

@@ -6,10 +6,11 @@ import 'package:provider/provider.dart';
 
 import 'package:fm_sons/data/local/dao/invoice_dao.dart';
 import 'package:fm_sons/data/local/models/invoice_model.dart';
-import 'package:fm_sons/view/invoice/controller/create_invoice_controller.dart';
 import 'package:fm_sons/view/invoice/create_invoice_screen.dart';
 import 'package:fm_sons/view/invoice/preview/invoice_preview_screen.dart';
+import 'package:fm_sons/view/payment_in/payment_in_screen.dart';
 import 'package:fm_sons/view/shared/date_range_filter.dart';
+import 'package:fm_sons/view/shared/share_transaction_bottom_sheet.dart';
 import 'customer_controller.dart';
 import 'customer_edit_screen.dart';
 import 'customer_model.dart';
@@ -30,6 +31,7 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
   DateTimeRange? _dateRange;
   bool _hasInvoices = true;
   bool _hasEstimates = true;
+  bool _hasPayments = false;
   bool _countsLoaded = false;
 
   @override
@@ -43,15 +45,14 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
     if (!mounted) return;
     final invoices = all.where((i) => i.documentType == 'invoice').length;
     final estimates = all.where((i) => i.documentType == 'estimate').length;
+    final payments = all.where((i) => i.documentType == 'payment_in').length;
     _tabController?.dispose();
     _tabController = null;
     setState(() {
       _hasInvoices = invoices > 0;
       _hasEstimates = estimates > 0;
+      _hasPayments = payments > 0;
       _countsLoaded = true;
-      if (_hasInvoices && _hasEstimates) {
-        _tabController = TabController(length: 2, vsync: this);
-      }
     });
   }
 
@@ -65,12 +66,25 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
     if (invoice.id == null) return;
     try {
       if (!mounted) return;
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => CreateInvoiceScreen(invoiceId: invoice.id!),
-        ),
-      );
+      if (invoice.documentType == 'payment_in') {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PaymentInScreen(
+              customerId: invoice.customerId ?? '',
+              customerName: invoice.clientName,
+              editingInvoiceId: invoice.id,
+            ),
+          ),
+        );
+      } else {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CreateInvoiceScreen(invoiceId: invoice.id!),
+          ),
+        );
+      }
       if (mounted) {
         _refreshKey++;
         _loadCounts();
@@ -94,61 +108,7 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
     );
   }
 
-  Future<void> _deleteInvoice(InvoiceModel invoice) async {
-    if (invoice.id == null) return;
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (d) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Delete'),
-        content: Text(
-          'Delete ${invoice.invoiceNumber}? This cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(d, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(d, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
-    if (confirm == true && mounted) {
-      try {
-        await context.read<InvoiceController>().deleteInvoice(invoice.id!);
-        if (mounted) {
-          _refreshKey++;
-          _loadCounts();
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Delete failed: $e')));
-        }
-      }
-    }
-  }
-
-  Future<void> _shareInvoice(InvoiceModel invoice) async {
-    if (invoice.id == null) return;
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => InvoicePreviewScreen(
-          previewInvoiceId: invoice.id!,
-          autoShare: true,
-        ),
-      ),
-    );
-  }
+  // _deleteInvoice removed — delete is handled in the detail/preview screen's bottom bar
 
   Future<void> _editCustomer() async {
     await Navigator.push(
@@ -252,11 +212,20 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
       ),
       bottomNavigationBar: _BottomActionBar(
         customerName: c.name,
-        onTakePayment: () {
-          Navigator.push(
+        onTakePayment: () async {
+          final result = await Navigator.push<bool>(
             context,
-            MaterialPageRoute(builder: (_) => const CreateInvoiceScreen()),
+            MaterialPageRoute(
+              builder: (_) => PaymentInScreen(
+                customerId: c.id,
+                customerName: c.name,
+              ),
+            ),
           );
+          if (result == true && mounted) {
+            _refreshKey++;
+            _loadCounts();
+          }
         },
         onAddSale: () {
           Navigator.push(
@@ -306,42 +275,12 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
             ),
           ),
 
-          // ── Tab bar (only when both types exist) ──
-          if (_countsLoaded && _hasInvoices && _hasEstimates)
-            Container(
-              color: Theme.of(context).cardColor,
-              child: TabBar(
-                controller: _tabController,
-                labelColor: FMSons.accent,
-                unselectedLabelColor: Colors.grey.shade600,
-                indicatorColor: FMSons.accent,
-                labelStyle: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-                tabs: const [
-                  Tab(text: 'Invoices'),
-                  Tab(text: 'Estimates'),
-                ],
-              ),
-            ),
-
-          // ── Content ──
+          // ── All transactions (combined, date-sorted) ──
           if (!_countsLoaded)
             const Expanded(child: Center(child: CircularProgressIndicator()))
-          else if (_hasInvoices && _hasEstimates)
+          else if (_hasInvoices || _hasEstimates || _hasPayments)
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _docList(c.id, 'invoice'),
-                  _docList(c.id, 'estimate'),
-                ],
-              ),
-            )
-          else if (_hasInvoices || _hasEstimates)
-            Expanded(
-              child: _docList(c.id, _hasInvoices ? 'invoice' : 'estimate'),
+              child: _allDocList(c.id),
             )
           else
             Expanded(
@@ -356,7 +295,7 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'No invoices or estimates yet',
+                      'No transactions yet',
                       style: TextStyle(
                         color: Colors.grey.shade500,
                         fontSize: 15,
@@ -371,17 +310,15 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
     );
   }
 
-  Widget _docList(String customerId, String docType) {
+  Widget _allDocList(String customerId) {
     return _DocumentList(
       customerId: customerId,
       invoiceDao: _invoiceDao,
       refreshKey: _refreshKey,
-      docType: docType,
+      docType: null, // no filter — show all document types
       dateRange: _dateRange,
       onEdit: _editInvoice,
       onPreview: _previewInvoice,
-      onShare: _shareInvoice,
-      onDelete: _deleteInvoice,
     );
   }
 
@@ -426,8 +363,12 @@ class _ClientBalanceCard extends StatelessWidget {
         final d = snap.data!;
         final invoiced = d['totalInvoiced'] as double;
         final received = d['totalReceived'] as double;
-        final due = normalizeMoney(invoiced - received);
-        final pct = invoiced > 0 ? (received / invoiced) : 0.0;
+        final paymentIn = d['totalPaymentIn'] as double? ?? 0.0;
+        final due = normalizeMoney(invoiced - received - paymentIn);
+        final pct = invoiced > 0 ? ((received + paymentIn) / invoiced) : 0.0;
+
+        final isCredit = due < 0;
+        final absDue = due.abs();
 
         return Container(
           padding: const EdgeInsets.all(16),
@@ -446,8 +387,56 @@ class _ClientBalanceCard extends StatelessWidget {
               Row(
                 children: [
                   _balCol('Total', invoiced, FMSons.accent),
-                  _balCol('Paid', received, Colors.green.shade600),
-                  _balCol('Due', due, Colors.orange.shade700),
+                  _balCol('Paid', received + paymentIn, Colors.green.shade600),
+                  // Balance with direction indicator (Fix #3)
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text(
+                          absDue == 0
+                              ? 'Rs. 0'
+                              : 'Rs. ${absDue.toStringAsFixed(0)}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: isCredit
+                                ? Colors.green.shade600
+                                : Colors.red.shade600,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (absDue > 0)
+                              Icon(
+                                isCredit
+                                    ? Icons.arrow_downward
+                                    : Icons.arrow_upward,
+                                size: 10,
+                                color: isCredit
+                                    ? Colors.green.shade600
+                                    : Colors.red.shade600,
+                              ),
+                            if (absDue > 0) const SizedBox(width: 2),
+                            Text(
+                              absDue == 0
+                                  ? 'Balance Clear'
+                                  : isCredit
+                                      ? 'Receivable'
+                                      : 'Payable',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: isCredit
+                                    ? Colors.green.shade600
+                                    : Colors.red.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
               if (invoiced > 0) ...[
@@ -467,7 +456,7 @@ class _ClientBalanceCard extends StatelessWidget {
                 Align(
                   alignment: Alignment.centerRight,
                   child: Text(
-                    '${(pct * 100).toStringAsFixed(0)}% paid',
+                    '${(pct.clamp(0, 1) * 100).toStringAsFixed(0)}% paid',
                     style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
                   ),
                 ),
@@ -510,29 +499,25 @@ class _DocumentList extends StatelessWidget {
   final String customerId;
   final InvoiceDao invoiceDao;
   final int refreshKey;
-  final String docType;
+  final String? docType; // null = show all document types
   final DateTimeRange? dateRange;
   final void Function(InvoiceModel) onEdit;
   final void Function(InvoiceModel) onPreview;
-  final void Function(InvoiceModel) onShare;
-  final void Function(InvoiceModel)? onDelete;
 
   const _DocumentList({
     required this.customerId,
     required this.invoiceDao,
     required this.refreshKey,
-    required this.docType,
+    this.docType, // null = show all
     this.dateRange,
     required this.onEdit,
     required this.onPreview,
-    required this.onShare,
-    this.onDelete,
   });
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<InvoiceModel>>(
-      key: ValueKey('docs_${customerId}_${docType}_$refreshKey'),
+      key: ValueKey('docs_${customerId}_${docType ?? 'all'}_$refreshKey'),
       future: invoiceDao.getInvoicesByCustomerId(customerId),
       builder: (context, snap) {
         if (snap.connectionState != ConnectionState.done) {
@@ -540,7 +525,8 @@ class _DocumentList extends StatelessWidget {
         }
         final all = snap.data ?? [];
         final filtered = all.where((i) {
-          if (i.documentType != docType) return false;
+          // Filter by docType only when non-null
+          if (docType != null && i.documentType != docType) return false;
           if (dateRange != null) {
             final d = DateTime.tryParse(i.invoiceDate)?.toLocal();
             if (d == null) return false;
@@ -552,6 +538,13 @@ class _DocumentList extends StatelessWidget {
           return true;
         }).toList();
 
+        // Sort by date descending (all types together)
+        filtered.sort((a, b) {
+          final aDate = DateTime.tryParse(a.invoiceDate)?.toLocal() ?? DateTime(0);
+          final bDate = DateTime.tryParse(b.invoiceDate)?.toLocal() ?? DateTime(0);
+          return bDate.compareTo(aDate);
+        });
+
         if (filtered.isEmpty) {
           return Center(
             child: Padding(
@@ -560,15 +553,13 @@ class _DocumentList extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    docType == 'invoice'
-                        ? Icons.receipt_long_outlined
-                        : Icons.description_outlined,
+                    Icons.receipt_long_outlined,
                     size: 48,
                     color: Colors.grey.shade400,
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'No ${docType}s for this client',
+                    'No transactions yet',
                     style: TextStyle(color: Colors.grey.shade500, fontSize: 15),
                   ),
                 ],
@@ -577,15 +568,17 @@ class _DocumentList extends StatelessWidget {
           );
         }
 
-        return ListView.builder(
+        return ListView.separated(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           itemCount: filtered.length,
+          separatorBuilder: (_, _) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 2),
+            child: Divider(height: 1, color: Colors.grey.shade200),
+          ),
           itemBuilder: (_, i) => _DocTile(
             invoice: filtered[i],
             onTap: () => onEdit(filtered[i]),
             onPreview: () => onPreview(filtered[i]),
-            onShare: () => onShare(filtered[i]),
-            onDelete: onDelete != null ? () => onDelete!(filtered[i]) : null,
           ),
         );
       },
@@ -594,22 +587,25 @@ class _DocumentList extends StatelessWidget {
 }
 
 /* -------------------------------------------------------------------------- */
-/*                            DOCUMENT TILE                                     */
+/*                            DOCUMENT TILE (ref-matching)                       */
 /* -------------------------------------------------------------------------- */
+
+/// Extracts trailing numeric part from an invoice number (e.g. PIN-0001 → 1)
+int _seqNum(String invoiceNumber) {
+  final match = RegExp(r'(\d+)$').firstMatch(invoiceNumber);
+  if (match == null) return 0;
+  return int.tryParse(match.group(1) ?? '0') ?? 0;
+}
 
 class _DocTile extends StatelessWidget {
   final InvoiceModel invoice;
   final VoidCallback onTap;
   final VoidCallback onPreview;
-  final VoidCallback onShare;
-  final VoidCallback? onDelete;
 
   const _DocTile({
     required this.invoice,
     required this.onTap,
     required this.onPreview,
-    required this.onShare,
-    this.onDelete,
   });
 
   String _fmtDate(String raw) {
@@ -618,208 +614,185 @@ class _DocTile extends StatelessWidget {
     return DateFormat('dd MMM yyyy').format(d);
   }
 
+  String _typeLabel() {
+    switch (invoice.documentType) {
+      case 'payment_in':
+        return 'Payment-In';
+      case 'estimate':
+        return 'Estimate';
+      default:
+        return 'Sale';
+    }
+  }
+
+  Color _typeColor() {
+    switch (invoice.documentType) {
+      case 'payment_in':
+        return Colors.green;
+      case 'estimate':
+        return Colors.purple;
+      default:
+        return FMSons.accent;
+    }
+  }
+
+  void _showShareSheet(BuildContext context) {
+    final id = invoice.id;
+    if (id == null) return;
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => ShareTransactionBottomSheet(
+        invoiceId: id,
+        documentType: invoice.documentType,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final i = invoice;
     final remaining = i.total - i.receivedAmount;
-    final isEstimate = i.documentType == 'estimate';
-    final fullyPaid = !isEstimate && i.receivedAmount >= i.total && i.total > 0;
+    final isPaymentIn = i.documentType == 'payment_in';
+    final typeColor = _typeColor();
+    final seq = _seqNum(i.invoiceNumber);
 
-    return Container(
+    return Padding(
       key: ValueKey(invoice.id),
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
+        borderRadius: BorderRadius.circular(8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+          // ── Row 1: Type label (left) | #N + date (right) ──
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: isEstimate
-                      ? Colors.purple.shade50
-                      : fullyPaid
-                      ? Colors.green.shade50
-                      : Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  isEstimate
-                      ? Icons.description_outlined
-                      : Icons.receipt_outlined,
-                  color: isEstimate
-                      ? Colors.purple.shade400
-                      : fullyPaid
-                      ? Colors.green.shade600
-                      : Colors.orange.shade600,
-                  size: 20,
+              // Type label
+              Text(
+                _typeLabel(),
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: typeColor,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      i.invoiceNumber,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      _fmtDate(i.invoiceDate),
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              const Spacer(),
+              // #N + date stacked right-aligned
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    'Rs ${i.total.toStringAsFixed(0)}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
+                    '#$seq',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
                     ),
                   ),
-                  if (!isEstimate && !fullyPaid && i.total > 0)
-                    Text(
-                      'Due: ${remaining.toStringAsFixed(0)}',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.orange.shade700,
-                        fontWeight: FontWeight.w500,
-                      ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _fmtDate(i.invoiceDate),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey.shade500,
                     ),
-                  if (isEstimate)
-                    Container(
-                      margin: const EdgeInsets.only(top: 2),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.purple.shade50,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        'Estimate',
-                        style: TextStyle(
-                          fontSize: 9,
-                          color: Colors.purple.shade600,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  if (!isEstimate)
-                    Container(
-                      margin: const EdgeInsets.only(top: 2),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 1,
-                      ),
-                      decoration: BoxDecoration(
-                        color: FMSons.accent.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        'Sale',
-                        style: TextStyle(
-                          fontSize: 9,
-                          color: FMSons.accent,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
+                  ),
                 ],
-              ),
-              const SizedBox(width: 4),
-              PopupMenuButton<String>(
-                icon: Icon(
-                  Icons.more_vert,
-                  size: 18,
-                  color: Colors.grey.shade500,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                itemBuilder: (_) => [
-                  const PopupMenuItem(
-                    value: 'edit',
-                    child: Row(
-                      children: [
-                        Icon(Icons.edit_outlined, size: 18),
-                        SizedBox(width: 10),
-                        Text('Edit'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'preview',
-                    child: Row(
-                      children: [
-                        Icon(Icons.visibility_outlined, size: 18),
-                        SizedBox(width: 10),
-                        Text('Preview'),
-                      ],
-                    ),
-                  ),
-                  const PopupMenuItem(
-                    value: 'share',
-                    child: Row(
-                      children: [
-                        Icon(Icons.share_outlined, size: 18),
-                        SizedBox(width: 10),
-                        Text('Share'),
-                      ],
-                    ),
-                  ),
-                  if (onDelete != null)
-                    const PopupMenuItem(
-                      value: 'delete',
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.delete_outline,
-                            size: 18,
-                            color: Colors.red,
-                          ),
-                          SizedBox(width: 10),
-                          Text('Delete', style: TextStyle(color: Colors.red)),
-                        ],
-                      ),
-                    ),
-                ],
-                onSelected: (v) {
-                  if (v == 'edit') onTap();
-                  if (v == 'preview') onPreview();
-                  if (v == 'share') onShare();
-                  if (v == 'delete') onDelete?.call();
-                },
               ),
             ],
           ),
-        ),
+
+          const SizedBox(height: 10),
+
+          // ── Row 2: Total/Unused (left) | print/share/⋮ (right) ──
+          Row(
+            children: [
+              // Total
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Total',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey.shade500,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Rs. ${i.total.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: typeColor,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(width: 24),
+
+              // Unused (Payment-In) or Balance (Sale/Estimate)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isPaymentIn ? 'Unused' : 'Balance',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.grey.shade500,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    isPaymentIn
+                        ? 'Rs. 0'
+                        : 'Rs. ${remaining.toStringAsFixed(0)}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: isPaymentIn
+                          ? Colors.grey.shade400
+                          : remaining > 0
+                              ? Colors.orange.shade700
+                              : Colors.green.shade600,
+                    ),
+                  ),
+                ],
+              ),
+
+              const Spacer(),
+
+              // Action icons — always visible
+              InkWell(
+                onTap: onPreview,
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(Icons.print_outlined, size: 20, color: Colors.grey.shade500),
+                ),
+              ),
+              InkWell(
+                onTap: () => _showShareSheet(context),
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Icon(Icons.share_outlined, size: 20, color: Colors.grey.shade500),
+                ),
+              ),
+              // 3-dot removed — Edit/Delete in detail view, print/share are direct icons
+              const SizedBox(width: 4),
+            ],
+          ),
+        ],
+      ),
       ),
     );
   }

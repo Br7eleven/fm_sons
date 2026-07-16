@@ -239,10 +239,11 @@ class InvoiceDao {
       '''
       SELECT
         COUNT(*) AS invoice_count,
-        COALESCE(SUM(total), 0) AS total_invoiced,
-        COALESCE(SUM(received_amount), 0) AS total_received
+        COALESCE(SUM(CASE WHEN document_type = 'invoice' THEN total ELSE 0 END), 0) AS total_invoiced,
+        COALESCE(SUM(CASE WHEN document_type = 'invoice' THEN received_amount ELSE 0 END), 0) AS total_received,
+        COALESCE(SUM(CASE WHEN document_type = 'payment_in' THEN total ELSE 0 END), 0) AS total_payment_in
       FROM ${InvoiceTable.tableName}
-      WHERE customer_id = ? AND document_type = 'invoice'
+      WHERE customer_id = ?
       ''',
       [customerId],
     );
@@ -252,6 +253,7 @@ class InvoiceDao {
       'invoiceCount': (row['invoice_count'] as num?)?.toInt() ?? 0,
       'totalInvoiced': (row['total_invoiced'] as num?)?.toDouble() ?? 0,
       'totalReceived': (row['total_received'] as num?)?.toDouble() ?? 0,
+      'totalPaymentIn': (row['total_payment_in'] as num?)?.toDouble() ?? 0,
     };
   }
 

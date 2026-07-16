@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../dashboard/dashboard_screen.dart';
 import '../letterheads/letterheads_screen.dart';
-import '../masters/customer/clients_tab.dart';
-import '../notes/notes_screen.dart';
 import '../settings/about_screen.dart';
 import '../settings/company_profile_controller.dart';
 import '../settings/company_profile_screen.dart';
@@ -36,42 +34,6 @@ class AppDrawer extends StatelessWidget {
                     title: 'Dashboard',
                     isActive: currentRoute == 'dashboard',
                     onTap: () => _handleNavigation(context, 0),
-                  ),
-                  _DrawerItem(
-                    icon: Icons.people_outline,
-                    title: 'Party Details',
-                    isActive: currentRoute == 'clients',
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => Scaffold(
-                            appBar: AppBar(
-                              title: const Text(
-                                'Party Details',
-                                style: TextStyle(fontWeight: FontWeight.w800),
-                              ),
-                              centerTitle: true,
-                              elevation: 0,
-                            ),
-                            body: const ClientsTab(),
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  _DrawerItem(
-                    icon: Icons.note_alt_outlined,
-                    title: 'Notes',
-                    isActive: currentRoute == 'notes',
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const NotesScreen()),
-                      );
-                    },
                   ),
                   _DrawerItem(
                     icon: Icons.article_outlined,
@@ -135,7 +97,10 @@ class AppDrawer extends StatelessWidget {
                 children: [
                   Text(
                     'FM Sons v1.0.2',
-                    style: TextStyle(color: Colors.blueGrey.shade400, fontSize: 11),
+                    style: TextStyle(
+                      color: Colors.blueGrey.shade400,
+                      fontSize: 11,
+                    ),
                   ),
                   const Text(
                     'BR7 Technologies & Co.',
@@ -181,9 +146,15 @@ class AppDrawer extends StatelessWidget {
 class _DrawerHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final name = context.select<CompanyProfileController, String>((p) => p.name);
-    final tagline = context.select<CompanyProfileController, String>((p) => p.tagline);
-    final logoPath = context.select<CompanyProfileController, String?>((p) => p.logoPath);
+    final name = context.select<CompanyProfileController, String>(
+      (p) => p.name,
+    );
+    final tagline = context.select<CompanyProfileController, String>(
+      (p) => p.tagline,
+    );
+    final logoPath = context.select<CompanyProfileController, String?>(
+      (p) => p.logoPath,
+    );
 
     return GestureDetector(
       onTap: () {
@@ -194,45 +165,45 @@ class _DrawerHeader extends StatelessWidget {
         );
       },
       child: Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      margin: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          _LogoAvatar(logoPath: logoPath, name: name),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  tagline.isNotEmpty ? tagline : 'Billing App',
-                  style: const TextStyle(color: Colors.white70, fontSize: 11),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        margin: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-        ],
-      ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            _LogoAvatar(logoPath: logoPath, name: name),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    tagline.isNotEmpty ? tagline : 'Billing App',
+                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -251,7 +222,9 @@ class _LogoAvatar extends StatelessWidget {
   String _initials() {
     final parts = name.trim().split(RegExp(r'\s+'));
     if (parts.isEmpty) return 'FM';
-    if (parts.length == 1) return parts[0].substring(0, parts[0].length.clamp(1, 2)).toUpperCase();
+    if (parts.length == 1) {
+      return parts[0].substring(0, parts[0].length.clamp(1, 2)).toUpperCase();
+    }
     return (parts[0][0] + parts[1][0]).toUpperCase();
   }
 
@@ -311,19 +284,21 @@ class _DrawerItem extends StatelessWidget {
       leading: Icon(
         icon,
         size: 20,
-        color: isActive ? color : Theme.of(context).iconTheme.color?.withValues(alpha: 0.7),
+        color: isActive
+            ? color
+            : Theme.of(context).iconTheme.color?.withValues(alpha: 0.7),
       ),
       title: Text(
         title,
         style: TextStyle(
           fontSize: 14,
           fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-          color: isActive ? color : Theme.of(context).textTheme.bodyLarge?.color,
+          color: isActive
+              ? color
+              : Theme.of(context).textTheme.bodyLarge?.color,
         ),
       ),
-      trailing: isActive
-          ? Icon(Icons.circle, size: 8, color: color)
-          : null,
+      trailing: isActive ? Icon(Icons.circle, size: 8, color: color) : null,
     );
   }
 }

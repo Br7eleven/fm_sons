@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
 
 import 'invoice_template_base.dart';
+import '../../controller/create_invoice_controller.dart';
 
 class TemplateModern extends InvoiceTemplate {
   const TemplateModern({super.key, required super.invoice});
@@ -91,76 +92,65 @@ class TemplateModern extends InvoiceTemplate {
   /* -------------------------------------------------------------------------- */
 
   @override
-  Widget buildItems(BuildContext context) {
+  Widget buildItems(BuildContext context, {required List<InvoiceItem> pageItems, required int startIndex, required bool isLastPage, required bool isFinalPage}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
         children: [
           /// Header
-          Container(
+          if (pageItems.isNotEmpty)
+            Container(
             padding: const EdgeInsets.symmetric(vertical: 10),
             decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
             ),
             child: const Row(
               children: [
-                Expanded(flex: 4, child: Text('Description')),
-                Expanded(child: Text('Qty')),
-                Expanded(child: Text('Unit')),
-                Expanded(child: Text('Rate')),
-                Expanded(child: Text('Amount', textAlign: TextAlign.right)),
+                Expanded(flex: 4, child: Text('Description', style: TextStyle(fontSize: 10))),
+                Expanded(child: Text('Qty', style: TextStyle(fontSize: 10))),
+                Expanded(child: Text('Unit', style: TextStyle(fontSize: 10))),
+                Expanded(child: Text('Rate', style: TextStyle(fontSize: 10))),
+                Expanded(child: Text('Amount', textAlign: TextAlign.right, style: TextStyle(fontSize: 10))),
               ],
             ),
           ),
 
           /// Items
-          ...previewItems.map(
+          ...pageItems.map(
             (item) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
+              padding: const EdgeInsets.symmetric(vertical: 5),
               child: Row(
                 children: [
                   Expanded(
                     flex: 4,
                     child: Text(
                       item.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Expanded(child: Text(formatQuantity(item.quantity))),
-                  Expanded(
-                    child: Text(
-                      item.unit,
+                      style: const TextStyle(fontSize: 10),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  Expanded(child: Text(formatMoney(item.rate))),
+                  Expanded(child: Text(formatQuantity(item.quantity), style: const TextStyle(fontSize: 10))),
+                  Expanded(
+                    child: Text(
+                      item.unit,
+                      style: const TextStyle(fontSize: 10),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Expanded(child: Text(formatMoney(item.rate), style: const TextStyle(fontSize: 10))),
                   Expanded(
                     child: Text(
                       formatMoney(item.total),
                       textAlign: TextAlign.right,
+                      style: const TextStyle(fontSize: 10),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          if (hiddenItemsCount > 0)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  '+$hiddenItemsCount more item(s) not shown in preview',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey,
-                    fontStyle: FontStyle.italic,
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );

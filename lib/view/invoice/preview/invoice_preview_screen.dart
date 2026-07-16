@@ -6,7 +6,9 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:fm_sons/view/invoice/preview/templates/template_blue.dart';
 import 'package:fm_sons/view/invoice/preview/templates/template_govt.dart';
+import 'package:fm_sons/view/invoice/preview/templates/invoice_template_base.dart';
 import 'package:fm_sons/view/invoice/preview/templates/template_green.dart';
+import 'package:fm_sons/view/invoice/preview/templates/template_payment_in.dart';
 import 'package:fm_sons/view/invoice/preview/templates/template_tax_1.dart';
 import 'package:fm_sons/view/invoice/preview/templates/template_tax_3.dart';
 import 'package:fm_sons/view/invoice/preview/templates/template_zaiqa.dart';
@@ -15,6 +17,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 
+import '../../../data/local/dao/invoice_dao.dart';
 import '../controller/create_invoice_controller.dart';
 import '../../settings/company_profile_controller.dart';
 import 'theme_selector.dart';
@@ -40,7 +43,7 @@ class InvoicePreviewScreen extends StatefulWidget {
 
 class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
   late InvoiceThemeType _selectedTheme;
-  final GlobalKey _previewBoundaryKey = GlobalKey();
+  final List<GlobalKey> _pageKeys = <GlobalKey>[];
   bool _isPrinting = false;
   bool _isSharingPdf = false;
 
@@ -125,7 +128,8 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
     });
     try {
       final bytes = await _buildPdfBytes(invoice);
-      final fileName = '${invoice.invoiceNumber}.pdf';
+      final prefix = InvoiceDao.makePrefix(invoice.customerName ?? '');
+        final fileName = '${prefix}_${invoice.invoiceNumber}.pdf';
 
       if (printOnly) {
         await Printing.layoutPdf(onLayout: (_) async => bytes, name: fileName);
@@ -156,25 +160,25 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
 
   Future<Uint8List> _buildPdfBytes(InvoiceController invoice) async {
     try {
-      final previewPng = await _capturePreviewPng();
-      return _buildImagePdfBytes(previewPng);
+      final pagePngs = await _captureAllPagePngs();
+      return _buildImagePdfBytes(pagePngs);
     } catch (_) {
       return _buildDataPdfBytes(invoice);
     }
   }
 
-  Future<Uint8List> _buildImagePdfBytes(Uint8List previewPng) async {
+  Future<Uint8List> _buildImagePdfBytes(List<Uint8List> pagePngs) async {
     final doc = pw.Document();
-    final image = pw.MemoryImage(previewPng);
-
-    doc.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        margin: pw.EdgeInsets.zero,
-        build: (_) => pw.Center(child: pw.Image(image, fit: pw.BoxFit.contain)),
-      ),
-    );
-
+    for (final png in pagePngs) {
+      final image = pw.MemoryImage(png);
+      doc.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: pw.EdgeInsets.zero,
+          build: (_) => pw.Center(child: pw.Image(image, fit: pw.BoxFit.contain)),
+        ),
+      );
+    }
     return await doc.save();
   }
 
@@ -242,32 +246,38 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
     return await doc.save();
   }
 
-  Future<Uint8List> _capturePreviewPng() async {
+  Future<List<Uint8List>> _captureAllPagePngs() async {
     // 6.0 pixel ratio = ~300 DPI for A4 (794px * 6 = ~4764px wide).
     const pixelRatio = 6.0;
+    final pngs = <Uint8List>[];
 
-    // Wait up to 5 frames for the RepaintBoundary to finish painting.
-    for (var attempt = 0; attempt < 5; attempt++) {
-      await WidgetsBinding.instance.endOfFrame;
+    for (var i = 0; i < _pageKeys.length; i++) {
+      // Wait up to 5 frames for each page's RepaintBoundary to finish painting.
+      for (var attempt = 0; attempt < 5; attempt++) {
+        await WidgetsBinding.instance.endOfFrame;
 
-      final renderObject = _previewBoundaryKey.currentContext
-          ?.findRenderObject();
-      if (renderObject is! RenderRepaintBoundary) continue;
-      if (renderObject.debugNeedsPaint || renderObject.size.isEmpty) continue;
+        final renderObject = _pageKeys[i].currentContext?.findRenderObject();
+        if (renderObject is! RenderRepaintBoundary) continue;
+        if (renderObject.debugNeedsPaint || renderObject.size.isEmpty) continue;
 
-      final image = await renderObject.toImage(pixelRatio: pixelRatio);
-      try {
-        final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-        if (byteData == null) {
-          throw StateError('Failed to encode preview image');
+        final image = await renderObject.toImage(pixelRatio: pixelRatio);
+        try {
+          final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+          if (byteData == null) {
+            throw StateError('Failed to encode preview image for page ${i + 1}');
+          }
+          pngs.add(byteData.buffer.asUint8List());
+          break; // Success, move to next page
+        } finally {
+          image.dispose();
         }
-        return byteData.buffer.asUint8List();
-      } finally {
-        image.dispose();
       }
     }
 
-    throw StateError('Preview is still rendering. Please try again.');
+    if (pngs.isEmpty) {
+      throw StateError('Preview is still rendering. Please try again.');
+    }
+    return pngs;
   }
 
   @override
@@ -337,73 +347,95 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
         ],
       ),
 
-      body: Stack(
-        children: [
-          InteractiveViewer(
-            minScale: 0.5,
-            maxScale: 5.0,
-            boundaryMargin: const EdgeInsets.all(double.infinity),
-            child: Center(
-              child: Container(
-                margin: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
+      body: Builder(
+        builder: (context) {
+          final isZaiqa = invoice.documentType != 'payment_in' && _selectedTheme == InvoiceThemeType.zaiqaTemplate;
+
+          final List<Widget> renderedPages;
+          if (isZaiqa) {
+            _pageKeys.clear();
+            _pageKeys.add(GlobalKey());
+            renderedPages = <Widget>[
+              FittedBox(
+                fit: BoxFit.contain,
+                alignment: Alignment.topCenter,
+                child: RepaintBoundary(key: _pageKeys[0], child: _buildZaiqaTemplate(invoice)),
+              ),
+            ];
+          } else {
+            final template = _buildInvoiceTemplate(invoice);
+            final pages = template.buildPages(context);
+            _pageKeys.clear();
+            renderedPages = List.generate(pages.length, (i) {
+              _pageKeys.add(GlobalKey());
+              return FittedBox(
+                fit: BoxFit.contain,
+                alignment: Alignment.topCenter,
+                child: RepaintBoundary(key: _pageKeys[i], child: pages[i]),
+              );
+            });
+          }
+
+          return Stack(
+            children: [
+              InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 5.0,
+                boundaryMargin: const EdgeInsets.all(double.infinity),
+                child: Center(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                // FittedBox scales the fixed 794x1123 canvas to fit the screen.
-                child: FittedBox(
-                  fit: BoxFit.contain,
-                  child: RepaintBoundary(
-                    key: _previewBoundaryKey,
-                    child: _buildInvoiceByTheme(invoice),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          // Fade-out zoom hint
-          Positioned(
-            bottom: 24,
-            left: 0,
-            right: 0,
-            child: AnimatedOpacity(
-              opacity: _showZoomHint ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 600),
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.black54,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.pinch, color: Colors.white, size: 16),
-                      SizedBox(width: 6),
-                      Text(
-                        'Pinch to zoom',
-                        style: TextStyle(color: Colors.white, fontSize: 13),
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: renderedPages,
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
-        ],
+              // Fade-out zoom hint
+              Positioned(
+                bottom: 24,
+                left: 0,
+                right: 0,
+                child: AnimatedOpacity(
+                  opacity: _showZoomHint ? 1.0 : 0.0,
+                  duration: const Duration(milliseconds: 600),
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.pinch, color: Colors.white, size: 16),
+                          SizedBox(width: 6),
+                          Text(
+                            'Pinch to zoom',
+                            style: TextStyle(color: Colors.white, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -436,7 +468,10 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
     );
   }
 
-  Widget _buildInvoiceByTheme(InvoiceController invoice) {
+  InvoiceTemplate _buildInvoiceTemplate(InvoiceController invoice) {
+    if (invoice.documentType == 'payment_in') {
+      return TemplatePaymentIn(invoice: invoice);
+    }
     switch (_selectedTheme) {
       case InvoiceThemeType.taxTheme1:
         return TemplateTax1(invoice: invoice);
@@ -448,8 +483,6 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
         return TemplateBlue(invoice: invoice);
       case InvoiceThemeType.govtTemplate:
         return TemplateGovt(invoice: invoice);
-      case InvoiceThemeType.zaiqaTemplate:
-        return _buildZaiqaTemplate(invoice);
       // ignore: unreachable_switch_default
       default:
         return TemplateTax1(invoice: invoice);

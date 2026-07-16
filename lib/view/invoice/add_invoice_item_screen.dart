@@ -105,7 +105,10 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
           style: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      body: Form(
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        behavior: HitTestBehavior.translucent,
+        child: Form(
         key: _formKey,
         child: Column(
           children: [
@@ -371,7 +374,7 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
             ),
           ],
         ),
-      ),
+      )),
     );
   }
 

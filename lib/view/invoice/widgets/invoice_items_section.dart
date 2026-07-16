@@ -32,10 +32,14 @@ class InvoiceItemsSection extends StatelessWidget {
         InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () async {
+            FocusScope.of(context).unfocus();
             await Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const AddInvoiceItemScreen()),
             );
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              FocusScope.of(context).unfocus();
+            });
           },
           child: Container(
             width: double.infinity,

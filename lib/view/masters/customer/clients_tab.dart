@@ -223,8 +223,10 @@ class _ClientListTileState extends State<_ClientListTile> {
     final bal = _balance;
     final hasTransactions = bal != null && (bal['totalInvoiced'] as double) > 0;
     final due = hasTransactions
-        ? normalizeMoney((bal['totalInvoiced'] as double) - (bal['totalReceived'] as double))
+        ? normalizeMoney((bal['totalInvoiced'] as double) - (bal['totalReceived'] as double) - (bal['totalPaymentIn'] as double? ?? 0.0))
         : 0.0;
+    final isCredit = due < 0;
+    final absDue = due.abs();
 
     return Column(
       key: ValueKey(c.id),
@@ -306,7 +308,7 @@ class _ClientListTileState extends State<_ClientListTile> {
                         Colors.green.shade600,
                       ),
                       const SizedBox(width: 16),
-                      _miniStat('Due', due, Colors.orange.shade700),
+                      _balanceStat(absDue, isCredit),
                     ],
                   ),
                 ],
@@ -337,6 +339,49 @@ class _ClientListTileState extends State<_ClientListTile> {
           label,
           style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
         ),
+      ],
+    );
+  }
+
+  /// Balance stat with directional indicator (Fix #3).
+  /// positive due → red Payable with up arrow
+  /// negative due → green Receivable with down arrow
+  /// zero → neutral "Balance Clear"
+  Widget _balanceStat(double absAmount, bool isCredit) {
+    final due = isCredit ? -absAmount : absAmount;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (due != 0)
+          Padding(
+            padding: const EdgeInsets.only(right: 2),
+            child: Icon(
+              isCredit ? Icons.arrow_downward : Icons.arrow_upward,
+              size: 11,
+              color: isCredit ? Colors.green.shade600 : Colors.red.shade600,
+            ),
+          ),
+        Text(
+          due == 0
+              ? 'Balance Clear'
+              : 'Rs. ${absAmount.toStringAsFixed(0)}',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: due == 0
+                ? Colors.grey
+                : isCredit
+                    ? Colors.green.shade600
+                    : Colors.red.shade600,
+          ),
+        ),
+        if (due != 0) ...[
+          const SizedBox(width: 3),
+          Text(
+            isCredit ? 'Receivable' : 'Payable',
+            style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
+          ),
+        ],
       ],
     );
   }
