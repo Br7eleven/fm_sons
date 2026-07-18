@@ -66,6 +66,7 @@ class InvoiceController extends ChangeNotifier {
   final List<InvoiceItem> _items = [];
   final List<InvoiceModel> _savedInvoices = [];
   bool _isLoading = false;
+  bool _isViewMode = false;
   String? _errorMessage;
   int? _activeInvoiceId;
   int? _editingInvoiceId;
@@ -78,6 +79,11 @@ class InvoiceController extends ChangeNotifier {
   int? get activeInvoiceId => _activeInvoiceId;
   int? get editingInvoiceId => _editingInvoiceId;
   bool get isEditingInvoice => _editingInvoiceId != null;
+  bool get isViewMode => _isViewMode;
+  void setViewMode(bool v) {
+    _isViewMode = v;
+    notifyListeners();
+  }
   String get notes => _notes;
   String? get attachedImagePath => _attachedImagePath;
   String? get attachedDocPath => _attachedDocPath;

@@ -54,50 +54,52 @@ class BillableItemTile extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
-              InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () async {
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => AddInvoiceItemScreen(
-                        itemIndex: index,
-                        initialItem: item,
+              if (!controller.isViewMode) ...[
+                const SizedBox(width: 6),
+                InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AddInvoiceItemScreen(
+                          itemIndex: index,
+                          initialItem: item,
+                        ),
                       ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: FMSons.accent.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
                     ),
-                  );
-                },
-                child: Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: FMSons.accent.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.edit_outlined,
-                    size: 16,
-                    color: FMSons.accent,
+                    child: const Icon(
+                      Icons.edit_outlined,
+                      size: 16,
+                      color: FMSons.accent,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () => controller.removeItem(index),
-                child: Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.delete_outline,
-                    size: 16,
-                    color: Colors.red,
+                const SizedBox(width: 6),
+                InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () => controller.removeItem(index),
+                  child: Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withValues(alpha: 0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.delete_outline,
+                      size: 16,
+                      color: Colors.red,
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
           ),
 

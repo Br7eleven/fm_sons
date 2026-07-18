@@ -5,7 +5,7 @@ import 'package:fm_sons/utils/constants/color_string.dart';
 import '../../data/local/models/invoice_model.dart';
 import '../payment_in/payment_in_screen.dart';
 import '../shared/date_range_filter.dart';
-import '../shared/share_transaction_bottom_sheet.dart';
+import '../shared/transaction_action_sheet.dart';
 import 'controller/create_invoice_controller.dart';
 import 'create_invoice_screen.dart';
 import 'preview/invoice_preview_screen.dart';
@@ -228,28 +228,37 @@ class _InvoiceHistoryTabState extends State<InvoiceHistoryTab> {
     }
   }
 
-  Future<void> _shareInvoice(InvoiceModel invoice) async {
+  void _showActionSheet(InvoiceModel invoice) {
     if (invoice.id == null) return;
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => InvoicePreviewScreen(
-          previewInvoiceId: invoice.id!,
-          autoShare: true,
-        ),
-      ),
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => TransactionActionSheet(invoiceId: invoice.id!),
     );
   }
 
   Future<void> _previewInvoice(InvoiceModel invoice) async {
     if (invoice.id == null) return;
 
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => InvoicePreviewScreen(previewInvoiceId: invoice.id!),
-      ),
-    );
+    if (invoice.documentType == 'payment_in') {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PaymentInScreen(
+            customerId: invoice.customerId ?? '',
+            customerName: invoice.clientName,
+            editingInvoiceId: invoice.id,
+          ),
+        ),
+      );
+    } else {
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => CreateInvoiceScreen(invoiceId: invoice.id!, viewMode: true),
+        ),
+      );
+    }
   }
 
   Widget _buildChip(String label, _InvoiceFilter filter) {
@@ -379,7 +388,7 @@ class _InvoiceHistoryTabState extends State<InvoiceHistoryTab> {
                       onViewTap: () => _previewInvoice(invoice),
                       onEditTap: () => _editInvoice(invoice),
                       onDeleteTap: () => _deleteInvoice(invoice),
-                      onShareTap: () => _shareInvoice(invoice),
+                      onShareTap: () => _showActionSheet(invoice),
                     ),
                   ),
                 ),
@@ -450,7 +459,7 @@ class _InvoiceHistoryCard extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => ShareTransactionBottomSheet(invoiceId: id, documentType: invoice.documentType),
+      builder: (_) => TransactionActionSheet(invoiceId: id),
     );
   }
 
@@ -515,7 +524,10 @@ class _InvoiceHistoryCard extends StatelessWidget {
                   Text(remainingStr, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: remainingColor)),
                 ]),
                 const Spacer(),
-                InkWell(onTap: onViewTap, child: Padding(
+                InkWell(onTap: () {
+                  if (invoice.id == null) return;
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => InvoicePreviewScreen(previewInvoiceId: invoice.id!, autoPrint: true)));
+                }, child: Padding(
                   padding: const EdgeInsets.all(6), child: Icon(Icons.print_outlined, size: 18, color: Colors.grey.shade500))),
                 InkWell(onTap: () => _showShareSheet(context), child: Padding(
                   padding: const EdgeInsets.all(6), child: Icon(Icons.share_outlined, size: 18, color: Colors.grey.shade500))),
@@ -523,10 +535,12 @@ class _InvoiceHistoryCard extends StatelessWidget {
                   icon: Icon(Icons.more_vert, size: 18, color: Colors.grey.shade500),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   itemBuilder: (_) => [
+                    const PopupMenuItem(value: 'share', child: Text('Share')),
                     const PopupMenuItem(value: 'edit', child: Text('Edit')),
                     const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
                   ],
                   onSelected: (v) {
+                    if (v == 'share') _showShareSheet(context);
                     if (v == 'edit') onEditTap();
                     if (v == 'delete') onDeleteTap();
                   },

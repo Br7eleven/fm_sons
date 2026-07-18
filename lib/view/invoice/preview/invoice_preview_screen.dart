@@ -31,10 +31,15 @@ class InvoicePreviewScreen extends StatefulWidget {
   /// immediately triggers the PDF share sheet and pops on completion.
   final bool autoShare;
 
+  /// When true (requires [previewInvoiceId]), renders the template then
+  /// immediately triggers the system print dialog.
+  final bool autoPrint;
+
   const InvoicePreviewScreen({
     super.key,
     this.previewInvoiceId,
     this.autoShare = false,
+    this.autoPrint = false,
   });
 
   @override
@@ -89,11 +94,19 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
       if (widget.autoShare) {
         WidgetsBinding.instance.addPostFrameCallback((_) async {
           if (!mounted) return;
-          // Extra frame to ensure RepaintBoundary has fully painted.
           await WidgetsBinding.instance.endOfFrame;
           if (!mounted) return;
           await _handlePdfAction(ctrl, printOnly: false);
           if (mounted) Navigator.of(context).pop();
+        });
+      }
+      // autoPrint: wait for template, then open system print dialog.
+      if (widget.autoPrint) {
+        WidgetsBinding.instance.addPostFrameCallback((_) async {
+          if (!mounted) return;
+          await WidgetsBinding.instance.endOfFrame;
+          if (!mounted) return;
+          await _handlePdfAction(ctrl, printOnly: true);
         });
       }
     } catch (e) {

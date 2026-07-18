@@ -4,8 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:fm_sons/data/local/models/invoice_model.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:fm_sons/view/invoice/controller/create_invoice_controller.dart';
+import 'package:fm_sons/view/invoice/create_invoice_screen.dart';
 import 'package:fm_sons/view/invoice/preview/invoice_preview_screen.dart';
-import 'package:fm_sons/view/shared/share_transaction_bottom_sheet.dart';
+import 'package:fm_sons/view/payment_in/payment_in_screen.dart';
+import 'package:fm_sons/view/shared/transaction_action_sheet.dart';
 import 'quick_links_row.dart';
 
 int _seqNum(String invoiceNumber) {
@@ -141,13 +143,13 @@ class _TransactionRow extends StatelessWidget {
     }
   }
 
-  void _showShareSheet(BuildContext context) {
+  void _showActionSheet(BuildContext context) {
     final id = invoice.id;
     if (id == null) return;
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => ShareTransactionBottomSheet(invoiceId: id, documentType: invoice.documentType),
+      builder: (_) => TransactionActionSheet(invoiceId: id),
     );
   }
 
@@ -161,7 +163,15 @@ class _TransactionRow extends StatelessWidget {
     return InkWell(
       onTap: () {
         if (i.id == null) return;
-        Navigator.push(context, MaterialPageRoute(builder: (_) => InvoicePreviewScreen(previewInvoiceId: i.id)));
+        if (i.documentType == 'payment_in') {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => PaymentInScreen(
+            customerId: i.customerId ?? '',
+            customerName: i.clientName,
+            editingInvoiceId: i.id,
+          )));
+        } else {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => CreateInvoiceScreen(invoiceId: i.id, viewMode: true)));
+        }
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -200,23 +210,15 @@ class _TransactionRow extends StatelessWidget {
             const Spacer(),
             InkWell(onTap: () {
               if (i.id == null) return;
-              Navigator.push(context, MaterialPageRoute(builder: (_) => InvoicePreviewScreen(previewInvoiceId: i.id)));
+              Navigator.push(context, MaterialPageRoute(builder: (_) => InvoicePreviewScreen(previewInvoiceId: i.id, autoPrint: true)));
             }, child: Padding(padding: const EdgeInsets.all(6), child: Icon(Icons.print_outlined, size: 18, color: Colors.grey.shade500))),
-            InkWell(onTap: () => _showShareSheet(context), child: Padding(padding: const EdgeInsets.all(6), child: Icon(Icons.share_outlined, size: 18, color: Colors.grey.shade500))),
-            PopupMenuButton<String>(
-              icon: Icon(Icons.more_vert, size: 18, color: Colors.grey.shade500),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              itemBuilder: (_) => [
-                const PopupMenuItem(value: 'duplicate', child: Text('Duplicate')),
-                const PopupMenuItem(value: 'share_pdf', child: Text('Share as PDF')),
-                const PopupMenuItem(value: 'print', child: Text('Print')),
-              ],
-              onSelected: (v) {
-                if (v == 'share_pdf') _showShareSheet(context);
-                if (v == 'print' && i.id != null) {
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => InvoicePreviewScreen(previewInvoiceId: i.id)));
-                }
-              },
+            InkWell(onTap: () => _showActionSheet(context), child: Padding(padding: const EdgeInsets.all(6), child: Icon(Icons.share_outlined, size: 18, color: Colors.grey.shade500))),
+            InkWell(
+              onTap: () => _showActionSheet(context),
+              child: Padding(
+                padding: const EdgeInsets.all(6),
+                child: Icon(Icons.more_vert, size: 18, color: Colors.grey.shade500),
+              ),
             ),
           ]),
         ]),

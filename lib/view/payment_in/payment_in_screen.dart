@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:fm_sons/data/local/dao/invoice_dao.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:fm_sons/view/shared/notes_attachment_widget.dart';
+import 'package:fm_sons/view/shared/transaction_action_sheet.dart';
 import 'payment_in_controller.dart';
 
 class PaymentInScreen extends StatefulWidget {
@@ -175,17 +176,29 @@ class _PaymentInScreenState extends State<PaymentInScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          isNewRecord ? 'Take Payment' : 'Payment Receipt',
-          style: const TextStyle(fontWeight: FontWeight.w600),
+          widget.customerName,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 15,
+          ),
+          overflow: TextOverflow.ellipsis,
         ),
         centerTitle: false,
         actions: [
           if (!isNewRecord && _isViewMode) ...[
             IconButton(
-              icon: const Icon(Icons.share_outlined),
-              tooltip: 'Share',
+              icon: const Icon(Icons.more_vert),
+              tooltip: 'More options',
               onPressed: () {
-                // Share PDF — future: trigger PDF generation + share
+                showModalBottomSheet(
+                  context: context,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  builder: (_) => TransactionActionSheet(
+                    invoiceId: widget.editingInvoiceId!,
+                  ),
+                );
               },
             ),
             PopupMenuButton<String>(
@@ -237,215 +250,157 @@ class _PaymentInScreenState extends State<PaymentInScreen> {
               children: [
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // ── Party name (always read-only) ──
+                        // ── Receipt No. + Date row (compact, like InvoiceHeader) ──
                         Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: theme.cardColor,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 20,
-                                backgroundColor:
-                                    FMSons.accent.withValues(alpha: 0.12),
-                                child: Text(
-                                  widget.customerName.isNotEmpty
-                                      ? widget.customerName[0].toUpperCase()
-                                      : '?',
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w700,
-                                    color: FMSons.accent,
+                          color: theme.cardColor,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          child: IntrinsicHeight(
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Receipt No.',
+                                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        _controller.receiptNumber,
+                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  widget.customerName,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // ── Current Due (read-only) ──
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                FMSons.accent.withValues(alpha: 0.08),
-                                FMSons.accent.withValues(alpha: 0.03),
-                              ],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: FMSons.accent.withValues(alpha: 0.15),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Current Balance Due',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Rs. ${_controller.currentDue.toStringAsFixed(0)}',
-                                style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                  color: _controller.currentDue > 0
-                                      ? Colors.orange.shade700
-                                      : Colors.green.shade600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // ── Receipt No. + Date row ──
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: theme.cardColor,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Receipt No.',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      _controller.receiptNumber,
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              SizedBox(
-                                height: 32,
-                                child: VerticalDivider(
+                                VerticalDivider(
                                   width: 24,
                                   thickness: 1,
                                   color: Colors.grey.shade300,
                                 ),
+                                Expanded(
+                                  child: GestureDetector(
+                                    behavior: HitTestBehavior.opaque,
+                                    onTap: _isViewMode ? null : _pickDate,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Date',
+                                          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              DateFormat('dd/MM/yyyy').format(_controller.date),
+                                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                                            ),
+                                            if (!_isViewMode) ...[
+                                              const SizedBox(width: 2),
+                                              Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.grey.shade500),
+                                            ],
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 6),
+
+                        // ── Current Balance Due (compact) ──
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: FMSons.accent.withValues(alpha: 0.06),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: FMSons.accent.withValues(alpha: 0.12)),
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  'Balance Due',
+                                  style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  'Rs. ${_controller.currentDue.toStringAsFixed(0)}',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: _controller.currentDue > 0
+                                        ? Colors.orange.shade700
+                                        : Colors.green.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 10),
+
+                        // ── Amount input (matching new sale customer field height) ──
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: TextField(
+                            controller: _amountCtrl,
+                            keyboardType: TextInputType.number,
+                            autofocus: isNewRecord,
+                            readOnly: _isViewMode,
+                            style: const TextStyle(fontSize: 15),
+                            decoration: InputDecoration(
+                              labelText: 'Amount Received *',
+                              prefixText: 'Rs. ',
+                              prefixStyle: TextStyle(
+                                fontSize: 15,
+                                color: Colors.grey.shade700,
                               ),
-                              GestureDetector(
-                                onTap: _isViewMode ? null : _pickDate,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Date',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      DateFormat('dd/MM/yyyy')
-                                          .format(_controller.date),
-                                      style: const TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
+                              floatingLabelBehavior: FloatingLabelBehavior.auto,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                              filled: true,
+                              fillColor: theme.cardColor,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(color: Colors.grey.shade300),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: FMSons.accent,
+                                  width: 1.5,
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // ── Amount input ──
-                        TextField(
-                          controller: _amountCtrl,
-                          keyboardType: TextInputType.number,
-                          autofocus: isNewRecord,
-                          readOnly: _isViewMode,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          decoration: InputDecoration(
-                            labelText: 'Amount Received *',
-                            prefixText: 'Rs. ',
-                            prefixStyle: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade700,
-                            ),
-                            floatingLabelBehavior: FloatingLabelBehavior.auto,
-                            filled: true,
-                            fillColor: _isViewMode
-                                ? Colors.grey.shade100
-                                : theme.cardColor,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                color: Colors.grey.shade300,
-                              ),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(
-                                color: FMSons.accent,
-                                width: 1.5,
-                              ),
                             ),
                           ),
                         ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 10),
 
-                        // ── Notes + Photo ──
-                        NotesAttachmentWidget(
-                          notes: _controller.notes,
-                          attachedImagePath: _controller.attachedImagePath,
-                          onNotesChanged: _controller.setNotes,
-                          onImageChanged: _controller.setAttachedImage,
-                          editable: !_isViewMode,
+                        // ── Notes + Photo (same as new sale) ──
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: NotesAttachmentWidget(
+                            notes: _controller.notes,
+                            attachedImagePath: _controller.attachedImagePath,
+                            onNotesChanged: _controller.setNotes,
+                            onImageChanged: _controller.setAttachedImage,
+                            editable: !_isViewMode,
+                          ),
                         ),
                       ],
                     ),
@@ -464,84 +419,98 @@ class _PaymentInScreenState extends State<PaymentInScreen> {
     final isNewRecord = widget.editingInvoiceId == null;
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       decoration: BoxDecoration(
         color: theme.cardColor,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 10,
             offset: const Offset(0, -3),
           ),
         ],
       ),
-      child: SafeArea(
-        top: false,
-        child: _isViewMode && !isNewRecord
-            ? Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 48,
-                      child: OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red.shade600,
-                          side: BorderSide(color: Colors.red.shade300),
-                          shape: const StadiumBorder(),
+      child: _isViewMode && !isNewRecord
+          ? Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 50,
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.red.shade400),
+                        foregroundColor: Colors.red.shade600,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        onPressed: _deletePayment,
-                        icon: const Icon(Icons.delete_outline, size: 18),
-                        label: const Text('Delete'),
+                      ),
+                      onPressed: _deletePayment,
+                      child: const Text(
+                        'Delete',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: SizedBox(
-                      height: 48,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: FMSons.accent,
-                          foregroundColor: Colors.white,
-                          shape: const StadiumBorder(),
-                        ),
-                        onPressed: _switchToEditMode,
-                        icon: const Icon(Icons.edit_outlined, size: 18),
-                        label: const Text('Edit'),
-                      ),
-                    ),
-                  ),
-                ],
-              )
-            : SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: FMSons.accent,
-                    foregroundColor: Colors.white,
-                    shape: const StadiumBorder(),
-                  ),
-                  onPressed: _controller.isSaving ? null : _save,
-                  child: _controller.isSaving
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text(
-                          'Save Payment',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
                 ),
+                const SizedBox(width: 10),
+                Expanded(
+                  flex: 2,
+                  child: SizedBox(
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: FMSons.accent,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: _switchToEditMode,
+                      child: const Text(
+                        'Edit',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: FMSons.accent,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                onPressed: _controller.isSaving ? null : _save,
+                child: _controller.isSaving
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Save Payment',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
-      ),
+            ),
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:fm_sons/view/invoice/preview/invoice_preview_screen.dart';
 import 'package:fm_sons/view/invoice/preview/theme_selector.dart';
+import 'package:fm_sons/view/shared/transaction_action_sheet.dart';
 import 'package:fm_sons/view/masters/customer/customer_controller.dart';
 import 'package:fm_sons/view/masters/customer/add_party_form_sheet.dart';
 import 'package:fm_sons/view/masters/customer/customer_model.dart';
@@ -26,7 +27,8 @@ import 'widgets/invoice_items_section.dart';
 /// Otherwise, resets the controller to a clean new-invoice state.
 class CreateInvoiceScreen extends StatefulWidget {
   final int? invoiceId;
-  const CreateInvoiceScreen({super.key, this.invoiceId});
+  final bool viewMode;
+  const CreateInvoiceScreen({super.key, this.invoiceId, this.viewMode = false});
 
   @override
   State<CreateInvoiceScreen> createState() => _CreateInvoiceScreenState();
@@ -47,6 +49,9 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     final controller = context.read<InvoiceController>();
     if (widget.invoiceId != null) {
       await controller.loadInvoiceForEditing(widget.invoiceId!);
+      if (widget.viewMode) {
+        controller.setViewMode(true);
+      }
     } else {
       await controller.resetDraft();
     }
@@ -101,39 +106,54 @@ class _CreateInvoiceBody extends StatelessWidget {
           ),
           centerTitle: false,
           actions: [
-            // Credit / Cash toggle — only for invoices
-            if (!invoiceController.isEstimate) _CreditCashToggle(),
-            if (!invoiceController.isEstimate) const SizedBox(width: 8),
+            // Credit / Cash toggle — only for invoices, hidden in view mode
+            if (!invoiceController.isEstimate && !invoiceController.isViewMode) _CreditCashToggle(),
+            if (!invoiceController.isEstimate && !invoiceController.isViewMode) const SizedBox(width: 8),
             // Settings / more
             if (invoiceController.items.isNotEmpty ||
                 invoiceController.customerName != null)
-              PopupMenuButton<String>(
-                icon: const Icon(Icons.settings_outlined),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                itemBuilder: (context) => [
-                  PopupMenuItem(
-                    value: 'discard',
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.delete_outline,
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Discard Draft',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.error,
+              invoiceController.isViewMode
+                  ? IconButton(
+                      icon: const Icon(Icons.more_vert),
+                      onPressed: () {
+                        final id = invoiceController.editingInvoiceId;
+                        if (id == null) return;
+                        showModalBottomSheet(
+                          context: context,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                          ),
+                          builder: (_) => TransactionActionSheet(invoiceId: id),
+                        );
+                      },
+                    )
+                  : PopupMenuButton<String>(
+                      icon: const Icon(Icons.settings_outlined),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'discard',
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.delete_outline,
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Discard Draft',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                ],
-                onSelected: (value) async {
-                  if (value == 'discard') {
+                      onSelected: (value) async {
+                        if (value == 'discard') {
                     final confirm = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
@@ -260,13 +280,17 @@ class _CreditCashToggle extends StatelessWidget {
             label: 'Credit',
             selected: isCredit,
             selectedColor: FMSons.accent,
-            onTap: () => controller.setPaymentStatus('unpaid'),
+            onTap: controller.isViewMode
+                ? () {}
+                : () => controller.setPaymentStatus('unpaid'),
           ),
           _ToggleChip(
             label: 'Cash',
             selected: !isCredit,
             selectedColor: Colors.grey.shade700,
-            onTap: () => controller.setPaymentStatus('paid'),
+            onTap: controller.isViewMode
+                ? () {}
+                : () => controller.setPaymentStatus('paid'),
           ),
         ],
       ),
@@ -306,13 +330,17 @@ class _DocTypeToggle extends StatelessWidget {
                   label: 'Invoice',
                   selected: isInvoice,
                   selectedColor: FMSons.accent,
-                  onTap: () => controller.setDocumentType('invoice'),
+                  onTap: controller.isViewMode
+                      ? () {}
+                      : () => controller.setDocumentType('invoice'),
                 ),
                 _ToggleChip(
                   label: 'Estimate',
                   selected: !isInvoice,
                   selectedColor: FMSons.accent,
-                  onTap: () => controller.setDocumentType('estimate'),
+                  onTap: controller.isViewMode
+                      ? () {}
+                      : () => controller.setDocumentType('estimate'),
                 ),
               ],
             ),
@@ -395,6 +423,7 @@ class _CustomerFieldState extends State<_CustomerField> {
       child: Autocomplete<Customer>(
         initialValue: TextEditingValue(text: initialName),
         optionsBuilder: (TextEditingValue textEditingValue) {
+          if (invoiceController.isViewMode) return const Iterable.empty();
           final query = textEditingValue.text.trim();
           if (query.isEmpty) return const Iterable.empty();
           final results = customerController.search(query);
@@ -403,32 +432,48 @@ class _CustomerFieldState extends State<_CustomerField> {
         },
         displayStringForOption: (c) => c.name,
         fieldViewBuilder: (context, textCtrl, focusNode, onSubmitted) {
-          return MediaQuery(
-            data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1.0)),
-            child: TextField(
-              controller: textCtrl,
-              focusNode: focusNode,
-              style: const TextStyle(fontSize: 15),
-              onChanged: (v) => invoiceController.setCustomerName(v),
-              decoration: InputDecoration(
-                labelText: 'Customer *',
-                floatingLabelBehavior: FloatingLabelBehavior.auto,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                filled: true,
-                fillColor: Theme.of(context).cardColor,
-                suffixIcon: const Icon(Icons.arrow_drop_down),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey.shade300),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: FMSons.accent,
-                    width: 1.5,
+          final isViewMode = invoiceController.isViewMode;
+          return GestureDetector(
+            onTap: isViewMode
+                ? () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Please click on Edit to change the item details.',
+                        ),
+                      ),
+                    );
+                  }
+                : null,
+            child: MediaQuery(
+              data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1.0)),
+              child: TextField(
+                controller: textCtrl,
+                focusNode: focusNode,
+                style: const TextStyle(fontSize: 15),
+                readOnly: isViewMode,
+                enableInteractiveSelection: !isViewMode,
+                onChanged: (v) => invoiceController.setCustomerName(v),
+                decoration: InputDecoration(
+                  labelText: 'Customer *',
+                  floatingLabelBehavior: FloatingLabelBehavior.auto,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  filled: true,
+                  fillColor: Theme.of(context).cardColor,
+                  suffixIcon: const Icon(Icons.arrow_drop_down),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: FMSons.accent,
+                      width: 1.5,
+                    ),
                   ),
                 ),
               ),
@@ -829,6 +874,7 @@ class _TotalsSectionState extends State<_TotalsSection> {
                             Expanded(
                               child: TextField(
                                 controller: _receivedCtrl,
+                                readOnly: controller.isViewMode,
                                 keyboardType:
                                     const TextInputType.numberWithOptions(
                                       decimal: true,
@@ -951,160 +997,164 @@ class _TermsAndNotesSectionState extends State<_TermsAndNotesSection> {
           const SizedBox(height: 16),
 
           // ── Collapsible header: Terms & condition ──
-          GestureDetector(
-            onTap: () => setState(() => _isOpen = !_isOpen),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      Text(
-                        'Terms & conditions',
+          InkWell(
+            onTap: controller.isViewMode
+                ? null
+                : () => setState(() => _isOpen = !_isOpen),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Row(
+                children: [
+                  Text(
+                    'Terms & conditions',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: _isOpen
+                          ? FMSons.accent
+                          : Colors.grey.shade700,
+                    ),
+                  ),
+                  if (selected != null) ...[
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        '— ${selected.title}',
                         style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: _isOpen
-                              ? FMSons.accent
-                              : Colors.grey.shade700,
+                          fontSize: 12,
+                          color: Colors.grey.shade500,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      if (selected != null) ...[
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            '— ${selected.title}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade500,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-                AnimatedRotation(
-                  turns: _isOpen ? 0.5 : 0,
-                  duration: const Duration(milliseconds: 180),
-                  child: Icon(
-                    Icons.keyboard_arrow_down,
-                    size: 20,
-                    color: _isOpen
-                        ? FMSons.accent
-                        : Colors.grey.shade500,
-                  ),
-                ),
-              ],
+                    ),
+                  ],
+                  if (!controller.isViewMode) ...[
+                    const Spacer(),
+                    AnimatedRotation(
+                      turns: _isOpen ? 0.5 : 0,
+                      duration: const Duration(milliseconds: 180),
+                      child: Icon(
+                        Icons.keyboard_arrow_down,
+                        size: 22,
+                        color: _isOpen
+                            ? FMSons.accent
+                            : Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 10),
 
-          // ── Collapsible body ──
-          AnimatedSize(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeInOut,
-            alignment: Alignment.topCenter,
-            child: _isOpen
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // T&C field row
-                      GestureDetector(
-                        onTap: () => setState(() => _isOpen = !_isOpen),
-                        child: Container(
-                          width: double.infinity,
-                          constraints: const BoxConstraints(minHeight: 56),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 20,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).cardColor,
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(12),
-                              topRight: Radius.circular(12),
+          // ── Collapsible body (hidden entirely in view mode) ──
+          if (!controller.isViewMode)
+            AnimatedSize(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeInOut,
+              alignment: Alignment.topCenter,
+              child: _isOpen
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // T&C field row
+                        GestureDetector(
+                          onTap: () => setState(() => _isOpen = !_isOpen),
+                          child: Container(
+                            width: double.infinity,
+                            constraints: const BoxConstraints(minHeight: 56),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 20,
                             ),
-                            border: Border.all(color: Colors.grey.shade300),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: selected != null
-                                    ? Row(
-                                        children: [
-                                          Flexible(
-                                            child: Text(
-                                              selected.title,
-                                              style: const TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 6,
-                                              vertical: 2,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: const Color(
-                                                0xFF1E5EFF,
-                                              ).withValues(alpha: 0.1),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            child: Text(
-                                              selected.applicableFor.contains(
-                                                    'invoice',
-                                                  )
-                                                  ? selected.applicableFor
-                                                            .contains(
-                                                              'estimate',
-                                                            )
-                                                        ? 'Both'
-                                                        : 'Invoice'
-                                                  : 'Estimate',
-                                              style: const TextStyle(
-                                                fontSize: 10,
-                                                color: FMSons.accent,
-                                                fontWeight: FontWeight.w600,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).cardColor,
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(12),
+                                topRight: Radius.circular(12),
+                              ),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: selected != null
+                                      ? Row(
+                                          children: [
+                                            Flexible(
+                                              child: Text(
+                                                selected.title,
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
+                                            const SizedBox(width: 8),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 6,
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: const Color(
+                                                  0xFF1E5EFF,
+                                                ).withValues(alpha: 0.1),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: Text(
+                                                selected.applicableFor.contains(
+                                                      'invoice',
+                                                    )
+                                                    ? selected.applicableFor
+                                                              .contains(
+                                                                'estimate',
+                                                              )
+                                                          ? 'Both'
+                                                          : 'Invoice'
+                                                    : 'Estimate',
+                                                style: const TextStyle(
+                                                  fontSize: 10,
+                                                  color: FMSons.accent,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      : Text(
+                                          'Select T&C',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey.shade500,
                                           ),
-                                        ],
-                                      )
-                                    : Text(
-                                        'Select T&C',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.grey.shade500,
                                         ),
-                                      ),
-                              ),
-                              Icon(
-                                Icons.arrow_drop_down,
-                                color: Colors.grey.shade500,
-                                size: 22,
-                              ),
-                            ],
+                                ),
+                                Icon(
+                                  Icons.arrow_drop_down,
+                                  color: Colors.grey.shade500,
+                                  size: 22,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
 
-                      // Inline dropdown
-                      _buildDropdown(controller),
+                        // Inline dropdown
+                        _buildDropdown(controller),
 
-                      const SizedBox(height: 12),
+                        const SizedBox(height: 12),
 
-                      // Custom Notes textarea
-                      _CustomNotesField(),
-                    ],
-                  )
-                : const SizedBox.shrink(),
-          ),
+                        // Custom Notes textarea
+                        _CustomNotesField(),
+                      ],
+                    )
+                  : const SizedBox.shrink(),
+            ),
         ],
       ),
     );
@@ -1315,6 +1365,7 @@ class _CustomNotesFieldState extends State<_CustomNotesField> {
       ),
       child: TextField(
         controller: _ctrl,
+        readOnly: controller.isViewMode,
         maxLines: null,
         expands: true,
         onChanged: context.read<InvoiceController>().setCustomNotes,
@@ -1459,6 +1510,7 @@ class _InvoiceNotesSectionState extends State<_InvoiceNotesSection> {
               ),
               child: TextField(
                 controller: _notesController,
+                readOnly: controller.isViewMode,
                 maxLines: null,
                 expands: true,
                 onChanged: controller.setNotes,
@@ -1477,9 +1529,14 @@ class _InvoiceNotesSectionState extends State<_InvoiceNotesSection> {
 
           // Image attach box (right)
           GestureDetector(
-            onTap: () => imagePath == null
-                ? _showPickerOptions(controller)
-                : _showImageOptions(controller),
+            onTap: () {
+              if (imagePath == null) {
+                if (controller.isViewMode) return;
+                _showPickerOptions(controller);
+              } else {
+                _showImageOptions(controller);
+              }
+            },
             child: Container(
               width: 80,
               height: 80,
@@ -1571,9 +1628,13 @@ class _DocumentSection extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: GestureDetector(
-        onTap: () => docPath != null
-            ? _openViewer(context, controller)
-            : _pick(context, controller),
+        onTap: () {
+          if (docPath != null) {
+            _openViewer(context, controller);
+          } else if (!controller.isViewMode) {
+            _pick(context, controller);
+          }
+        },
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
@@ -1908,12 +1969,234 @@ class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
     }
   }
 
+  Future<void> _deleteInvoice(InvoiceController controller) async {
+    final id = controller.editingInvoiceId;
+    if (id == null) return;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text('Delete Invoice?'),
+        content: Text(
+          'Delete ${controller.invoiceNumber}? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          Builder(
+            builder: (ctx2) => ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(ctx2).colorScheme.error,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Delete'),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true && mounted) {
+      try {
+        await controller.deleteInvoice(id);
+        if (mounted) Navigator.of(context).pop();
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to delete: $e')),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = context.watch<InvoiceController>();
     final selectedTheme = invoiceThemeFromId(controller.templateId);
     final busy = _isSaving || _isSavingNew || controller.isLoading;
 
+    // ── View mode: Delete | Edit ──
+    if (controller.isViewMode) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, -3),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 50,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: Colors.red.shade400),
+                      foregroundColor: Colors.red.shade600,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () => _deleteInvoice(controller),
+                    child: const Text(
+                      'Delete',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FMSons.accent,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () => controller.setViewMode(false),
+                    child: const Text(
+                      'Edit',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                height: 50,
+                width: 36,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.grey.shade400),
+                    foregroundColor: Colors.grey.shade700,
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: () {
+                    if (!_validate(controller)) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const InvoicePreviewScreen(),
+                      ),
+                    );
+                  },
+                  child: const Icon(Icons.more_vert, size: 20),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // ── Existing invoice edit mode: Update | ⋮ ──
+    if (controller.isEditingInvoice) {
+      return Container(
+        padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
+        decoration: BoxDecoration(
+          color: Theme.of(context).cardColor,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 10,
+              offset: const Offset(0, -3),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 50,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: FMSons.accent,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: busy ? null : () => _saveInvoice(controller),
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Update',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              SizedBox(
+                height: 50,
+                width: 36,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.grey.shade400),
+                    foregroundColor: Colors.grey.shade700,
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: busy
+                      ? null
+                      : () {
+                          if (!_validate(controller)) return;
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const InvoicePreviewScreen(),
+                            ),
+                          );
+                        },
+                  child: const Icon(Icons.more_vert, size: 20),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // ── New invoice: template strip + Save & New | Save | ⋮ ──
     return Container(
       padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
       decoration: BoxDecoration(
@@ -1971,15 +2254,11 @@ class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
               }).toList(),
             ),
           ),
-
           const SizedBox(height: 8),
-
-          // Save & New | Save | ⋮
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Row(
               children: [
-                // Save & New
                 Expanded(
                   child: SizedBox(
                     height: 50,
@@ -2010,10 +2289,7 @@ class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
                     ),
                   ),
                 ),
-
                 const SizedBox(width: 10),
-
-                // Save (primary)
                 Expanded(
                   flex: 2,
                   child: SizedBox(
@@ -2036,9 +2312,9 @@ class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
                                 color: Colors.white,
                               ),
                             )
-                          : Text(
-                              controller.isEditingInvoice ? 'Update' : 'Save',
-                              style: const TextStyle(
+                          : const Text(
+                              'Save',
+                              style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -2046,10 +2322,7 @@ class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
                     ),
                   ),
                 ),
-
                 const SizedBox(width: 10),
-
-                // ⋮ More (preview)
                 SizedBox(
                   height: 50,
                   width: 46,
@@ -2073,7 +2346,7 @@ class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
                               ),
                             );
                           },
-                    child: const Icon(Icons.more_horiz, size: 22),
+                    child: const Icon(Icons.more_vert, size: 20),
                   ),
                 ),
               ],

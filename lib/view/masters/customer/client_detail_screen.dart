@@ -98,12 +98,12 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
     }
   }
 
-  Future<void> _previewInvoice(InvoiceModel invoice) async {
+  void _printInvoice(InvoiceModel invoice) {
     if (invoice.id == null) return;
-    await Navigator.push(
+    Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => InvoicePreviewScreen(previewInvoiceId: invoice.id!),
+        builder: (_) => InvoicePreviewScreen(previewInvoiceId: invoice.id!, autoPrint: true),
       ),
     );
   }
@@ -318,7 +318,7 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
       docType: null, // no filter — show all document types
       dateRange: _dateRange,
       onEdit: _editInvoice,
-      onPreview: _previewInvoice,
+      onPreview: _printInvoice,
     );
   }
 

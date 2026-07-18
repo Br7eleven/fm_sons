@@ -21,8 +21,11 @@ class _InvoiceItemsSectionState extends State<InvoiceItemsSection> {
     final controller = context.watch<InvoiceController>();
     final items = controller.items;
 
-    if (items.isEmpty) {
+    if (items.isEmpty && !controller.isViewMode) {
       return _buildAddItemsButton(context);
+    }
+    if (items.isEmpty && controller.isViewMode) {
+      return const SizedBox.shrink();
     }
 
     return Column(
@@ -30,7 +33,9 @@ class _InvoiceItemsSectionState extends State<InvoiceItemsSection> {
       children: [
         // Billed Items header — always visible when items exist
         InkWell(
-          onTap: () => setState(() => _isExpanded = !_isExpanded),
+          onTap: controller.isViewMode
+              ? null
+              : () => setState(() => _isExpanded = !_isExpanded),
           borderRadius: BorderRadius.circular(8),
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 10),
@@ -56,40 +61,55 @@ class _InvoiceItemsSectionState extends State<InvoiceItemsSection> {
                     ),
                   ),
                 ),
-                const Spacer(),
-                AnimatedRotation(
-                  turns: _isExpanded ? 0.5 : 0.0,
-                  duration: const Duration(milliseconds: 220),
-                  child: const Icon(Icons.keyboard_arrow_down, size: 22),
-                ),
+                if (!controller.isViewMode) ...[
+                  const Spacer(),
+                  AnimatedRotation(
+                    turns: _isExpanded ? 0.5 : 0.0,
+                    duration: const Duration(milliseconds: 220),
+                    child: const Icon(Icons.keyboard_arrow_down, size: 22),
+                  ),
+                ],
               ],
             ),
           ),
         ),
 
-        // Expandable items area
-        AnimatedSize(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeInOut,
-          alignment: Alignment.topCenter,
-          child: _isExpanded
-              ? ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 320),
-                  child: SingleChildScrollView(
-                    child: ListView.builder(
-                      itemCount: items.length,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemBuilder: (context, index) =>
-                          BillableItemTile(index: index),
+        // Expandable items area — wrapped with snackbar gesture in view mode
+        GestureDetector(
+          onTap: controller.isViewMode
+              ? () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Please click on Edit to change the item details.',
+                      ),
                     ),
-                  ),
-                )
-              : const SizedBox.shrink(),
+                  );
+                }
+              : null,
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeInOut,
+            alignment: Alignment.topCenter,
+            child: _isExpanded
+                ? ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 320),
+                    child: SingleChildScrollView(
+                      child: ListView.builder(
+                        itemCount: items.length,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemBuilder: (context, index) =>
+                            BillableItemTile(index: index),
+                      ),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
         ),
 
-        // Add Items button — always visible
-        _buildAddItemsButton(context),
+        // Add Items button — hidden in view mode
+        if (!controller.isViewMode) _buildAddItemsButton(context),
       ],
     );
   }
