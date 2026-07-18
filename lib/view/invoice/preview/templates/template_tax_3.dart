@@ -125,8 +125,8 @@ class TemplateTax3 extends InvoiceTemplate {
   Widget buildItems(BuildContext context, {required List<InvoiceItem> pageItems, required int startIndex, required bool isLastPage, required bool isFinalPage}) {
     return Column(
       children: [
-        if (pageItems.isNotEmpty) ...[
-          const SizedBox(height: 20),
+        if (pageItems.isNotEmpty || invoice.items.isEmpty) ...[
+          const SizedBox(height: 8),
           /// Header Row
           Container(
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
@@ -171,7 +171,7 @@ class TemplateTax3 extends InvoiceTemplate {
         /// Items
         ...pageItems.asMap().entries.map(
           (entry) => Container(
-            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 12),
             decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: Colors.grey.shade300)),
             ),
@@ -219,7 +219,7 @@ class TemplateTax3 extends InvoiceTemplate {
         // Total row (last page only)
         if (isLastPage && pageItems.isNotEmpty)
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 12),
             color: const Color(0xFF8F8CD9),
             child: Row(
               children: [
@@ -249,7 +249,7 @@ class TemplateTax3 extends InvoiceTemplate {
   @override
   Widget buildTotals(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 18),
+      padding: const EdgeInsets.only(top: 8),
       child: Align(
         alignment: Alignment.centerRight,
         child: Container(
@@ -279,7 +279,7 @@ class TemplateTax3 extends InvoiceTemplate {
   Widget buildFooter(BuildContext context) {
     final note = invoice.notes.trim();
     return Padding(
-      padding: const EdgeInsets.only(top: 18),
+      padding: const EdgeInsets.only(top: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -195,12 +195,12 @@ class _CreateInvoiceBody extends StatelessWidget {
                     // ── Customer field ──
                     _CustomerField(),
 
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
 
                     // ── Invoice / Estimate toggle ──
                     _DocTypeToggle(),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 4),
 
                     // ── Add Items ──
                     Padding(
@@ -342,7 +342,7 @@ class _ToggleChip extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
           color: selected ? selectedColor : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
@@ -403,29 +403,33 @@ class _CustomerFieldState extends State<_CustomerField> {
         },
         displayStringForOption: (c) => c.name,
         fieldViewBuilder: (context, textCtrl, focusNode, onSubmitted) {
-          return TextField(
-            controller: textCtrl,
-            focusNode: focusNode,
-            style: const TextStyle(fontSize: 15),
-            onChanged: (v) => invoiceController.setCustomerName(v),
-            decoration: InputDecoration(
-              labelText: 'Customer *',
-              floatingLabelBehavior: FloatingLabelBehavior.auto,
-              filled: true,
-              fillColor: Theme.of(context).cardColor,
-              suffixIcon: const Icon(Icons.arrow_drop_down),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey.shade300),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: FMSons.accent,
-                  width: 1.5,
+          return MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1.0)),
+            child: TextField(
+              controller: textCtrl,
+              focusNode: focusNode,
+              style: const TextStyle(fontSize: 15),
+              onChanged: (v) => invoiceController.setCustomerName(v),
+              decoration: InputDecoration(
+                labelText: 'Customer *',
+                floatingLabelBehavior: FloatingLabelBehavior.auto,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                filled: true,
+                fillColor: Theme.of(context).cardColor,
+                suffixIcon: const Icon(Icons.arrow_drop_down),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade300),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(
+                    color: FMSons.accent,
+                    width: 1.5,
+                  ),
                 ),
               ),
             ),

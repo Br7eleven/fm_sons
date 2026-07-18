@@ -98,7 +98,7 @@ class TemplateModern extends InvoiceTemplate {
       child: Column(
         children: [
           /// Header
-          if (pageItems.isNotEmpty)
+          if (pageItems.isNotEmpty || invoice.items.isEmpty)
             Container(
             padding: const EdgeInsets.symmetric(vertical: 10),
             decoration: BoxDecoration(

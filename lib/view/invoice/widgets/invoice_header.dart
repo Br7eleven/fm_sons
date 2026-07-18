@@ -13,7 +13,7 @@ class InvoiceHeader extends StatelessWidget {
 
     return Container(
       color: Theme.of(context).cardColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: IntrinsicHeight(
         child: Row(
           children: [
@@ -24,9 +24,9 @@ class InvoiceHeader extends StatelessWidget {
                 children: [
                   Text(
                     'Invoice No.',
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 2),
                   Row(
                     children: [
                       Flexible(
@@ -36,7 +36,7 @@ class InvoiceHeader extends StatelessWidget {
                           child: Text(
                             controller.invoiceNumber,
                             style: const TextStyle(
-                              fontSize: 15,
+                              fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -45,7 +45,7 @@ class InvoiceHeader extends StatelessWidget {
                       const SizedBox(width: 2),
                       Icon(
                         Icons.keyboard_arrow_down,
-                        size: 18,
+                        size: 16,
                         color: Colors.grey.shade500,
                       ),
                     ],
@@ -77,22 +77,22 @@ class InvoiceHeader extends StatelessWidget {
                   children: [
                     Text(
                       'Date',
-                      style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Row(
                       children: [
                         Text(
                           DateFormat('dd/MM/yyyy').format(controller.invoiceDate),
                           style: const TextStyle(
-                            fontSize: 15,
+                            fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         const SizedBox(width: 2),
                         Icon(
                           Icons.keyboard_arrow_down,
-                          size: 18,
+                          size: 16,
                           color: Colors.grey.shade500,
                         ),
                       ],

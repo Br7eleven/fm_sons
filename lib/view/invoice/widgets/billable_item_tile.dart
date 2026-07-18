@@ -24,8 +24,8 @@ class BillableItemTile extends StatelessWidget {
     final displayUnit = unitLabel.isEmpty ? '-' : unitLabel;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(14),
@@ -36,11 +36,20 @@ class BillableItemTile extends StatelessWidget {
           /// Item name + delete
           Row(
             children: [
+              Text(
+                '#${index + 1}',
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey.shade500,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(width: 6),
               Expanded(
                 child: Text(
                   item.name,
                   style: const TextStyle(
-                    fontSize: 15,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -60,14 +69,14 @@ class BillableItemTile extends StatelessWidget {
                   );
                 },
                 child: Container(
-                  padding: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
                     color: FMSons.accent.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.edit_outlined,
-                    size: 18,
+                    size: 16,
                     color: FMSons.accent,
                   ),
                 ),
@@ -77,14 +86,14 @@ class BillableItemTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 onTap: () => controller.removeItem(index),
                 child: Container(
-                  padding: const EdgeInsets.all(6),
+                  padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
                     color: Colors.red.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.delete_outline,
-                    size: 18,
+                    size: 16,
                     color: Colors.red,
                   ),
                 ),
@@ -92,7 +101,7 @@ class BillableItemTile extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
 
           /// Measurement row (govt style)
           Row(
@@ -102,27 +111,19 @@ class BillableItemTile extends StatelessWidget {
               const SizedBox(width: 12),
               _InfoChip(
                 label: 'Rate',
-                value: 'Rs ${item.rate.toStringAsFixed(2)} / $displayUnit',
+                value: '${item.quantity} × Rs ${item.rate.toStringAsFixed(2)}',
               ),
             ],
           ),
 
-          const SizedBox(height: 10),
-
-          /// Calculation hint (optional but powerful)
-          Text(
-            '${item.quantity} $displayUnit × Rs ${item.rate.toStringAsFixed(2)}',
-            style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
-          ),
-
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
 
           /// Amount (final)
           Align(
             alignment: Alignment.centerRight,
             child: Text(
               'Rs ${item.total.toStringAsFixed(2)}',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
           ),
         ],

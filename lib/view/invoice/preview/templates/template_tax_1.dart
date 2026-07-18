@@ -144,13 +144,13 @@ class TemplateTax1 extends InvoiceTemplate {
     return Column(
       children: [
         // Table Header with Border + Color
-        if (pageItems.isNotEmpty)
+        if (pageItems.isNotEmpty || invoice.items.isEmpty)
           Container(
             decoration: BoxDecoration(
               color: brandRed,
               border: Border.all(color: Colors.black, width: 1),
             ),
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
             child: Row(
               children: [
                 _cell('#', flex: 1, isHeader: true, align: TextAlign.center),
@@ -164,14 +164,18 @@ class TemplateTax1 extends InvoiceTemplate {
           ),
         // Rows with Borders
         ...pageItems.asMap().entries.map((e) => _itemRow(startIndex + e.key, e.value)),
-        if (isLastPage && pageItems.isNotEmpty) ...[
+        // Blank rows pad to 16 on last items page
+        if (isLastPage && pageItems.length < 16)
+          for (var i = pageItems.length; i < 16; i++)
+            _blankRow(startIndex + i),
+        if (isLastPage) ...[
           // Total Row with Border + Color
           Container(
             decoration: BoxDecoration(
               color: brandRed,
               border: Border.all(color: Colors.black, width: 1),
             ),
-            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
+            padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 4),
             child: Row(
               children: [
                 const Expanded(flex: 6, child: Text('Total', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
@@ -217,7 +221,7 @@ class TemplateTax1 extends InvoiceTemplate {
         ),
         color: index % 2 != 0 ? Colors.grey[50] : Colors.white,
       ),
-      padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 4),
+      padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 4),
       child: Row(
         children: [
           _cell('${index + 1}', flex: 1),
@@ -242,6 +246,30 @@ class TemplateTax1 extends InvoiceTemplate {
             align: TextAlign.right,
             isBold: true,
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _blankRow(int index) {
+    return Container(
+      decoration: BoxDecoration(
+        border: const Border(
+          left: BorderSide(color: Colors.black),
+          right: BorderSide(color: Colors.black),
+          bottom: BorderSide(color: Colors.black, width: 0.5),
+        ),
+        color: index % 2 != 0 ? Colors.grey[50] : Colors.white,
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 4),
+      child: Row(
+        children: [
+          _cell('${index + 1}', flex: 1),
+          const Expanded(flex: 5, child: SizedBox()),
+          const Expanded(flex: 2, child: SizedBox()),
+          const Expanded(flex: 2, child: SizedBox()),
+          const Expanded(flex: 3, child: SizedBox()),
+          const Expanded(flex: 3, child: SizedBox()),
         ],
       ),
     );
@@ -390,7 +418,7 @@ class TemplateTax1 extends InvoiceTemplate {
     return TableRow(
       children: [
         Container(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.fromLTRB(8, 5, 8, 5),
           color: isRed ? brandRed : Colors.white,
           child: Text(
             label,
@@ -402,7 +430,7 @@ class TemplateTax1 extends InvoiceTemplate {
           ),
         ),
         Container(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.fromLTRB(8, 5, 8, 5),
           color: isRed ? brandRed : Colors.white,
           child: Text(
             value,

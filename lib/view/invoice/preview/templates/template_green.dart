@@ -138,7 +138,7 @@ class TemplateOrange extends InvoiceTemplate {
     return Column(
       children: [
         // Green header
-        if (pageItems.isNotEmpty)
+        if (pageItems.isNotEmpty || invoice.items.isEmpty)
           Container(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
           color: green,

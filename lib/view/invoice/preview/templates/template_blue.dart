@@ -152,7 +152,7 @@ class TemplateBlue extends InvoiceTemplate {
     return Column(
       children: [
         // Blue header
-        if (pageItems.isNotEmpty)
+        if (pageItems.isNotEmpty || invoice.items.isEmpty)
           Container(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
           color: blue,
@@ -226,7 +226,7 @@ class TemplateBlue extends InvoiceTemplate {
         // Items
         ...pageItems.asMap().entries.map(
           (e) => Container(
-            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 12),
             decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(color: Colors.grey.shade300, width: 0.5),
@@ -288,7 +288,7 @@ class TemplateBlue extends InvoiceTemplate {
         // Total row (last page only)
         if (isLastPage && pageItems.isNotEmpty)
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 12),
+            padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 12),
             color: blue,
             child: Row(
               children: [

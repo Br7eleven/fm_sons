@@ -353,15 +353,17 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
 
           final List<Widget> renderedPages;
           if (isZaiqa) {
+            final zaiqa = _buildZaiqaWidget(invoice);
+            final pages = zaiqa.buildPages(context);
             _pageKeys.clear();
-            _pageKeys.add(GlobalKey());
-            renderedPages = <Widget>[
-              FittedBox(
+            renderedPages = List.generate(pages.length, (i) {
+              _pageKeys.add(GlobalKey());
+              return FittedBox(
                 fit: BoxFit.contain,
                 alignment: Alignment.topCenter,
-                child: RepaintBoundary(key: _pageKeys[0], child: _buildZaiqaTemplate(invoice)),
-              ),
-            ];
+                child: RepaintBoundary(key: _pageKeys[i], child: pages[i]),
+              );
+            });
           } else {
             final template = _buildInvoiceTemplate(invoice);
             final pages = template.buildPages(context);
@@ -379,8 +381,9 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
           return Stack(
             children: [
               InteractiveViewer(
-                minScale: 0.5,
-                maxScale: 5.0,
+                minScale: 0.3,
+                maxScale: 4.0,
+                constrained: false,
                 boundaryMargin: const EdgeInsets.all(double.infinity),
                 child: Center(
                   child: Container(
@@ -395,10 +398,8 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
                         ),
                       ],
                     ),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: renderedPages,
-                      ),
+                    child: Column(
+                      children: renderedPages,
                     ),
                   ),
                 ),
@@ -440,7 +441,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
     );
   }
 
-  Widget _buildZaiqaTemplate(InvoiceController invoice) {
+  ZaiqaInvoiceWidget _buildZaiqaWidget(InvoiceController invoice) {
     final items = invoice.items
         .map(
           (it) => ZaiqaLineItem(
@@ -453,18 +454,13 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
     final signaturePath = context
         .read<CompanyProfileController>()
         .signaturePath;
-    return Container(
-      width: 794,
-      height: 1123,
-      decoration: const BoxDecoration(color: Colors.white),
-      child: ZaiqaInvoiceWidget(
-        customerName: invoice.customerName ?? 'Walk-in Customer',
-        invoiceNumber: invoice.invoiceNumber,
-        date: invoice.invoiceDate,
-        items: items,
-        advance: invoice.receivedAmount,
-        signaturePath: signaturePath,
-      ),
+    return ZaiqaInvoiceWidget(
+      customerName: invoice.customerName ?? 'Walk-in Customer',
+      invoiceNumber: invoice.invoiceNumber,
+      date: invoice.invoiceDate,
+      items: items,
+      advance: invoice.receivedAmount,
+      signaturePath: signaturePath,
     );
   }
 

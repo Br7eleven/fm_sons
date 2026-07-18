@@ -153,12 +153,13 @@ double bpt(num v) => v / 6;
 double emuToPx(num emu) => emu / 9525;
 
 // Real column widths (DXA) from the item table's <w:gridCol>
+const double _colNum = 500;
 const double _colQty = 935;
 const double _colDesc = 6234;
 const double _colRate = 1619;
 const double _colAmount = 1619;
 const double _mergedQtyDesc =
-    _colQty + _colDesc; // 7169 — the real GRIDSPAN=2 width
+    _colNum + _colQty + _colDesc; // GRIDSPAN width with # column
 
 /// Full A4 page width at 96dpi. Wrap [ZaiqaInvoiceWidget] in a
 /// SizedBox of this width (see the demo at the bottom) — the body
@@ -174,11 +175,7 @@ class ZaiqaInvoiceWidget extends StatelessWidget {
   final num advance;
   final String? signaturePath;
 
-  /// The printed template has 12 blank ruled rows so a short invoice
-  /// still fills the page. Keep this true for the printable/share
-  /// preview; your in-app item-entry list is a separate screen and
-  /// doesn't need this.
-  final bool padToMinRows;
+  static const int itemsPerPage = 16;
 
   const ZaiqaInvoiceWidget({
     super.key,
@@ -188,48 +185,85 @@ class ZaiqaInvoiceWidget extends StatelessWidget {
     required this.items,
     this.advance = 0,
     this.signaturePath,
-    this.padToMinRows = true,
   });
 
   num get total => items.fold<num>(0, (sum, item) => sum + item.amount);
   num get balance => total - advance;
 
-  @override
-  Widget build(BuildContext context) {
+  List<List<ZaiqaLineItem>> get pageItemChunks {
+    final n = items.length;
+    if (n == 0) return [[]];
+    if (n <= itemsPerPage) return [items];
+    final chunks = <List<ZaiqaLineItem>>[];
+    chunks.add(items.sublist(0, itemsPerPage));
+    for (var i = itemsPerPage; i < n; i += itemsPerPage) {
+      final end = (i + itemsPerPage > n) ? n : i + itemsPerPage;
+      chunks.add(items.sublist(i, end));
+    }
+    return chunks;
+  }
+
+  Widget _buildPage(BuildContext context, int pageIndex) {
+    final chunks = pageItemChunks;
+    final pageItems = chunks[pageIndex];
+    final startIndex = chunks.take(pageIndex).fold<int>(0, (s, c) => s + c.length);
+    final isLastPage = pageIndex == chunks.length - 1;
+    final isFirstPage = pageIndex == 0;
+
     return Container(
+      width: kZaiqaInvoicePageWidth,
+      height: 1123,
       color: Colors.white,
       child: Stack(
         children: [
-          // Main content
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const _HeaderBanner(),
-              SizedBox(height: dxa(200)),
-              Center(
-                child: _ToInvoiceRow(
-                  customerName: customerName,
-                  invoiceNumber: invoiceNumber,
-                  date: date,
+              if (isFirstPage) ...[
+                SizedBox(height: dxa(200)),
+                Center(
+                  child: _ToInvoiceRow(
+                    customerName: customerName,
+                    invoiceNumber: invoiceNumber,
+                    date: date,
+                  ),
                 ),
-              ),
+              ],
               SizedBox(height: dxa(160)),
               Center(
-                child: _ItemsTable(items: items, padToMinRows: padToMinRows),
-              ),
-              Center(
-                child: _SummarySection(
-                  total: total,
-                  advance: advance,
-                  balance: balance,
-                  signaturePath: signaturePath,
+                child: _ItemsTable(
+                  items: pageItems,
+                  startIndex: startIndex,
+                  isLastPage: isLastPage,
                 ),
               ),
+              if (isLastPage)
+                Center(
+                  child: _SummarySection(
+                    total: total,
+                    advance: advance,
+                    balance: balance,
+                    signaturePath: signaturePath,
+                  ),
+                ),
             ],
           ),
-          // Footer pinned to bottom
           Positioned(bottom: 0, left: 0, right: 0, child: const _Footer()),
         ],
+      ),
+    );
+  }
+
+  List<Widget> buildPages(BuildContext context) {
+    return List.generate(pageItemChunks.length, (i) => _buildPage(context, i));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        children: buildPages(context),
       ),
     );
   }
@@ -565,9 +599,10 @@ class _ToInvoiceRow extends StatelessWidget {
 // ════════════════════════════════════════════════════════════
 class _ItemsTable extends StatelessWidget {
   final List<ZaiqaLineItem> items;
-  final bool padToMinRows;
+  final int startIndex;
+  final bool isLastPage;
 
-  const _ItemsTable({required this.items, required this.padToMinRows});
+  const _ItemsTable({required this.items, required this.startIndex, required this.isLastPage});
 
   static const int minRows = 12;
   static String _fmt(num v) {
@@ -585,30 +620,33 @@ class _ItemsTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final blankRowsNeeded = padToMinRows
+    // Pad to minimum 12 visible rows only on the last page
+    final blankRowsNeeded = isLastPage
         ? (minRows - items.length).clamp(0, minRows)
         : 0;
 
     return SizedBox(
-      width: dxa(_colQty + _colDesc + _colRate + _colAmount),
+      width: dxa(_colNum + _colQty + _colDesc + _colRate + _colAmount),
       child: Table(
         columnWidths: {
-          0: FixedColumnWidth(dxa(_colQty)),
-          1: FixedColumnWidth(dxa(_colDesc)),
-          2: FixedColumnWidth(dxa(_colRate)),
-          3: FixedColumnWidth(dxa(_colAmount)),
+          0: FixedColumnWidth(dxa(_colNum)),
+          1: FixedColumnWidth(dxa(_colQty)),
+          2: FixedColumnWidth(dxa(_colDesc)),
+          3: FixedColumnWidth(dxa(_colRate)),
+          4: FixedColumnWidth(dxa(_colAmount)),
         },
         children: [
           TableRow(
             decoration: const BoxDecoration(color: kBorderRed),
             children: [
+              _headerCell('#'),
               _headerCell('QTY'),
               _headerCell('DESCRIPTION'),
               _headerCell('RATE'),
               _headerCell('AMOUNT'),
             ],
           ),
-          for (final item in items) _itemRow(item),
+          for (int i = 0; i < items.length; i++) _itemRow(i, items[i]),
           for (int i = 0; i < blankRowsNeeded; i++) _blankRow(),
         ],
       ),
@@ -625,16 +663,19 @@ class _ItemsTable extends StatelessWidget {
           color: Colors.white,
           fontWeight: FontWeight.bold,
           fontFamily: 'Arial',
-          fontSize: 13.3,
+          fontSize: 12,
         ),
       ),
     ),
   );
 
-  TableRow _itemRow(ZaiqaLineItem item) {
+  TableRow _itemRow(int index, ZaiqaLineItem item) {
     const textStyle = TextStyle(fontFamily: 'Arial', fontSize: 13.3);
     return TableRow(
       children: [
+        _ruledCell(
+          child: Center(child: Text('${startIndex + index + 1}', style: textStyle)),
+        ),
         _ruledCell(
           child: Center(child: Text(_fmtQty(item.qty), style: textStyle)),
         ),
@@ -660,6 +701,7 @@ class _ItemsTable extends StatelessWidget {
   TableRow _blankRow() {
     return TableRow(
       children: [
+        _ruledCell(),
         _ruledCell(),
         _ruledCell(),
         _ruledCell(),
