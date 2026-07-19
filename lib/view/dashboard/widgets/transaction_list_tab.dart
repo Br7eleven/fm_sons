@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:fm_sons/data/local/models/invoice_model.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:fm_sons/view/invoice/controller/create_invoice_controller.dart';
 import 'package:fm_sons/view/invoice/create_invoice_screen.dart';
-import 'package:fm_sons/view/invoice/preview/invoice_preview_screen.dart';
 import 'package:fm_sons/view/payment_in/payment_in_screen.dart';
+import 'package:fm_sons/view/shared/print_invoice_helper.dart';
 import 'package:fm_sons/view/shared/transaction_action_sheet.dart';
 import 'quick_links_row.dart';
 
@@ -43,9 +44,7 @@ class _TransactionListTabState extends State<TransactionListTab> {
         QuickLinksRow(
           onAddTxn: widget.onAddTxn,
           onSaleReport: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Sale Report — coming soon')),
-            );
+            showAppSnackBar(context, 'Sale Report — coming soon', isError: false);
           },
           onTxnSettings: () {
             Navigator.push(
@@ -210,7 +209,7 @@ class _TransactionRow extends StatelessWidget {
             const Spacer(),
             InkWell(onTap: () {
               if (i.id == null) return;
-              Navigator.push(context, MaterialPageRoute(builder: (_) => InvoicePreviewScreen(previewInvoiceId: i.id, autoPrint: true)));
+              printInvoiceDirectly(context, i.id!);
             }, child: Padding(padding: const EdgeInsets.all(6), child: Icon(Icons.print_outlined, size: 18, color: Colors.grey.shade500))),
             InkWell(onTap: () => _showActionSheet(context), child: Padding(padding: const EdgeInsets.all(6), child: Icon(Icons.share_outlined, size: 18, color: Colors.grey.shade500))),
             InkWell(

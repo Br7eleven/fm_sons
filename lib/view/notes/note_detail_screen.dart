@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
 import 'note_controller.dart';
 import '../../data/local/models/note_model.dart';
@@ -139,16 +140,12 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     final body = _bodyController.text.trim();
 
     if (title.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter a title')));
+      showAppSnackBar(context, 'Please enter a title', isError: true);
       return;
     }
 
     if (body.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter some content')),
-      );
+      showAppSnackBar(context, 'Please enter some content', isError: true);
       return;
     }
 
@@ -166,9 +163,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         );
         await controller.updateNote(updatedNote);
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Note updated')));
+        showAppSnackBar(context, 'Note updated', isError: false);
       } else {
         final newNote = Note(
           title: title,
@@ -178,18 +173,14 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
         );
         await controller.addNote(newNote);
         if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Note saved')));
+        showAppSnackBar(context, 'Note saved', isError: false);
       }
 
       if (!mounted) return;
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      showAppSnackBar(context, e.toString(), isError: true);
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
@@ -237,15 +228,11 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
       final controller = context.read<NoteController>();
       await controller.deleteNote(widget.note!.id!);
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Note deleted')));
+      showAppSnackBar(context, 'Note deleted', isError: false);
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      showAppSnackBar(context, e.toString(), isError: true);
     } finally {
       if (mounted) {
         setState(() => _isDeleting = false);
@@ -258,9 +245,7 @@ class _NoteDetailScreenState extends State<NoteDetailScreen> {
     final body = _bodyController.text.trim();
 
     if (title.isEmpty && body.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Nothing to share')));
+      showAppSnackBar(context, 'Nothing to share', isError: false);
       return;
     }
 

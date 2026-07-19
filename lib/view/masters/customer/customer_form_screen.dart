@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:provider/provider.dart';
 
 import 'customer_controller.dart';
@@ -151,7 +152,6 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
                       : () async {
                           if (!_formKey.currentState!.validate()) return;
 
-                          final messenger = ScaffoldMessenger.of(context);
                           final navigator = Navigator.of(context);
 
                           setState(() => _isSubmitting = true);
@@ -183,10 +183,10 @@ class _CustomerFormScreenState extends State<CustomerFormScreen> {
                             navigator.pop(saved);
                           } catch (e) {
                             if (!mounted) return;
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: Text('Failed to save customer: $e'),
-                              ),
+                            showAppSnackBar(
+                              this.context,
+                              'Failed to save customer: $e',
+                              isError: true,
                             );
                           } finally {
                             if (mounted) {

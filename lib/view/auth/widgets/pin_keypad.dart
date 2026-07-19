@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:provider/provider.dart';
 import '../controller/pin_controller.dart';
 import '../.././dashboard/dashboard_screen.dart';
@@ -52,9 +53,7 @@ class PinKeypad extends StatelessWidget {
                   );
                 } else {
                   controller.clear();
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(const SnackBar(content: Text('Invalid PIN')));
+                  showAppSnackBar(context, 'Invalid PIN', isError: true);
                 }
               }
             },

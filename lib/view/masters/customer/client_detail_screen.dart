@@ -1,5 +1,6 @@
 import 'package:fm_sons/utils/money_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -7,8 +8,8 @@ import 'package:provider/provider.dart';
 import 'package:fm_sons/data/local/dao/invoice_dao.dart';
 import 'package:fm_sons/data/local/models/invoice_model.dart';
 import 'package:fm_sons/view/invoice/create_invoice_screen.dart';
-import 'package:fm_sons/view/invoice/preview/invoice_preview_screen.dart';
 import 'package:fm_sons/view/payment_in/payment_in_screen.dart';
+import 'package:fm_sons/view/shared/print_invoice_helper.dart';
 import 'package:fm_sons/view/shared/date_range_filter.dart';
 import 'package:fm_sons/view/shared/share_transaction_bottom_sheet.dart';
 import 'customer_controller.dart';
@@ -62,7 +63,7 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
     super.dispose();
   }
 
-  Future<void> _editInvoice(InvoiceModel invoice) async {
+  Future<void> _viewInvoice(InvoiceModel invoice) async {
     if (invoice.id == null) return;
     try {
       if (!mounted) return;
@@ -81,7 +82,7 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
         await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => CreateInvoiceScreen(invoiceId: invoice.id!),
+            builder: (_) => CreateInvoiceScreen(invoiceId: invoice.id!, viewMode: true),
           ),
         );
       }
@@ -91,21 +92,14 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Unable to open: $e')));
+        showAppSnackBar(context, 'Unable to open: $e', isError: true);
       }
     }
   }
 
   void _printInvoice(InvoiceModel invoice) {
     if (invoice.id == null) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => InvoicePreviewScreen(previewInvoiceId: invoice.id!, autoPrint: true),
-      ),
-    );
+    printInvoiceDirectly(context, invoice.id!);
   }
 
   // _deleteInvoice removed — delete is handled in the detail/preview screen's bottom bar
@@ -151,9 +145,7 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
         if (mounted) Navigator.of(context).pop();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Failed to delete: $e')));
+          showAppSnackBar(context, 'Failed to delete: $e', isError: true);
         }
       }
     }
@@ -163,19 +155,23 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
   Widget build(BuildContext context) {
     final c = widget.customer;
 
-    return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: AppBar(
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: Text(
-          c.name,
-          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
-        ),
-        actions: [
+    return Column(
+      children: [
+        Expanded(
+          child: Scaffold(
+            backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+            appBar: AppBar(
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+              title: Text(
+                c.name,
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+              ),
+              actions: [
           PopupMenuButton<String>(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -209,30 +205,6 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
           ),
           const SizedBox(width: 4),
         ],
-      ),
-      bottomNavigationBar: _BottomActionBar(
-        customerName: c.name,
-        onTakePayment: () async {
-          final result = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(
-              builder: (_) => PaymentInScreen(
-                customerId: c.id,
-                customerName: c.name,
-              ),
-            ),
-          );
-          if (result == true && mounted) {
-            _refreshKey++;
-            _loadCounts();
-          }
-        },
-        onAddSale: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const CreateInvoiceScreen()),
-          );
-        },
       ),
       body: Column(
         children: [
@@ -305,9 +277,38 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
                 ),
               ),
             ),
-        ],
+          ],
+        ),
       ),
-    );
+    ),
+    _BottomActionBar(
+      customerName: c.name,
+      onTakePayment: () async {
+        final result = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => PaymentInScreen(
+              customerId: c.id,
+              customerName: c.name,
+            ),
+          ),
+        );
+        if (result == true && mounted) {
+          _refreshKey++;
+          _loadCounts();
+        }
+      },
+      onAddSale: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CreateInvoiceScreen(prefillCustomerName: c.name),
+          ),
+        );
+      },
+    ),
+  ],
+);
   }
 
   Widget _allDocList(String customerId) {
@@ -317,7 +318,7 @@ class _ClientDetailScreenState extends State<ClientDetailScreen>
       refreshKey: _refreshKey,
       docType: null, // no filter — show all document types
       dateRange: _dateRange,
-      onEdit: _editInvoice,
+      onEdit: _viewInvoice,
       onPreview: _printInvoice,
     );
   }

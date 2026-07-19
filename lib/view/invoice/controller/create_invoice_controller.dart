@@ -333,6 +333,7 @@ class InvoiceController extends ChangeNotifier {
   }
 
   Future<void> loadInvoiceForEditing(int invoiceId) async {
+    _isViewMode = false;
     setLoading(true);
     clearError();
 
@@ -530,6 +531,7 @@ class InvoiceController extends ChangeNotifier {
   }
 
   Future<void> resetDraft() async {
+    _isViewMode = false;
     await _prepareNextInvoiceDraft();
   }
 

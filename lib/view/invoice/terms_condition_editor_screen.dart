@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:fm_sons/data/local/dao/terms_condition_dao.dart';
 import 'package:fm_sons/data/local/models/terms_condition_model.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
@@ -28,16 +29,12 @@ class _TermsConditionEditorScreenState
 
   bool _validate() {
     if (_titleCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Title is required')),
-      );
+      showAppSnackBar(context, 'Title is required', isError: true);
       return false;
     }
     if (!_forInvoice && !_forEstimate) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Select at least one applicable type')),
-      );
+      showAppSnackBar(
+          context, 'Please select applicable documents', isError: true);
       return false;
     }
     return true;
@@ -68,9 +65,7 @@ class _TermsConditionEditorScreenState
       Navigator.of(context).pop(created);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save: $e')),
-      );
+      showAppSnackBar(context, 'Failed to save: $e', isError: true);
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

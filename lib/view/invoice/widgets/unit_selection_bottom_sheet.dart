@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:fm_sons/view/masters/unit/unit_controller.dart';
 import 'package:fm_sons/view/masters/unit/unit_model.dart';
@@ -33,7 +34,6 @@ class _UnitSelectionBottomSheetState extends State<UnitSelectionBottomSheet> {
       builder: (ctx) {
         final unitController = ctx.read<UnitController>();
         final navigator = Navigator.of(ctx);
-        final messenger = ScaffoldMessenger.of(ctx);
         return AppDialog(
           title: 'Add New Unit',
           content: Form(
@@ -91,9 +91,9 @@ class _UnitSelectionBottomSheetState extends State<UnitSelectionBottomSheet> {
                   if (!mounted) return;
                   navigator.pop(unit);
                 } catch (e) {
-                  messenger.showSnackBar(
-                    SnackBar(content: Text('Failed to add unit: $e')),
-                  );
+                  if (!ctx.mounted) return;
+                  showAppSnackBar(
+                    ctx, 'Failed to add unit: $e', isError: true);
                 }
               },
             ),

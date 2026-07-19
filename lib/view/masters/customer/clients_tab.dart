@@ -1,5 +1,6 @@
 import 'package:fm_sons/utils/money_utils.dart';
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:provider/provider.dart';
 
@@ -34,8 +35,6 @@ class _ClientsTabState extends State<ClientsTab> {
   }
 
   Future<void> _showAddCustomerSheet() async {
-    final messenger = ScaffoldMessenger.of(context);
-
     final result = await showModalBottomSheet<Customer>(
       context: context,
       isScrollControlled: true,
@@ -49,11 +48,11 @@ class _ClientsTabState extends State<ClientsTab> {
 
     try {
       await context.read<CustomerController>().addOrGetCustomer(result);
-      messenger.showSnackBar(const SnackBar(content: Text('Party added')));
+      if (!mounted) return;
+      showAppSnackBar(context, 'Party added');
     } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text('Failed to add party: $e')),
-      );
+      if (!mounted) return;
+      showAppSnackBar(context, 'Failed to add party: $e', isError: true);
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:provider/provider.dart';
 
@@ -78,12 +79,10 @@ class _InvoiceItemsSectionState extends State<InvoiceItemsSection> {
         GestureDetector(
           onTap: controller.isViewMode
               ? () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Please click on Edit to change the item details.',
-                      ),
-                    ),
+                  showAppSnackBar(
+                    context,
+                    'Please click on Edit to change the item details.',
+                    isError: false,
                   );
                 }
               : null,

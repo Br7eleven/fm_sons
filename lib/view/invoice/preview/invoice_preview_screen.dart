@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:fm_sons/view/invoice/preview/templates/template_blue.dart';
@@ -35,11 +36,16 @@ class InvoicePreviewScreen extends StatefulWidget {
   /// immediately triggers the system print dialog.
   final bool autoPrint;
 
+  /// Called after [autoPrint]'s print action completes. Used by off-screen
+  /// overlay flow to clean up the overlay entry + loading spinner.
+  final VoidCallback? onPrintComplete;
+
   const InvoicePreviewScreen({
     super.key,
     this.previewInvoiceId,
     this.autoShare = false,
     this.autoPrint = false,
+    this.onPrintComplete,
   });
 
   @override
@@ -107,6 +113,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
           await WidgetsBinding.instance.endOfFrame;
           if (!mounted) return;
           await _handlePdfAction(ctrl, printOnly: true);
+          if (mounted) widget.onPrintComplete?.call();
         });
       }
     } catch (e) {
@@ -155,9 +162,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
           ? 'PDF feature needs a full app restart. Hot reload is not enough after plugin changes.'
           : 'Unable to generate PDF from preview. Please try again.';
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      showAppSnackBar(context, message, isError: true);
     } finally {
       if (mounted) {
         setState(() {
@@ -327,6 +332,11 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
       );
     }
 
+    // ── Bare template pages for off-screen capture (autoPrint / autoShare) ──
+    if (widget.autoPrint || widget.autoShare) {
+      return _buildBareTemplatePages(context, invoice);
+    }
+
     return Scaffold(
       appBar: AppBar(
         leading: const CloseButton(),
@@ -362,35 +372,7 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
 
       body: Builder(
         builder: (context) {
-          final isZaiqa = invoice.documentType != 'payment_in' && _selectedTheme == InvoiceThemeType.zaiqaTemplate;
-
-          final List<Widget> renderedPages;
-          if (isZaiqa) {
-            final zaiqa = _buildZaiqaWidget(invoice);
-            final pages = zaiqa.buildPages(context);
-            _pageKeys.clear();
-            renderedPages = List.generate(pages.length, (i) {
-              _pageKeys.add(GlobalKey());
-              return FittedBox(
-                fit: BoxFit.contain,
-                alignment: Alignment.topCenter,
-                child: RepaintBoundary(key: _pageKeys[i], child: pages[i]),
-              );
-            });
-          } else {
-            final template = _buildInvoiceTemplate(invoice);
-            final pages = template.buildPages(context);
-            _pageKeys.clear();
-            renderedPages = List.generate(pages.length, (i) {
-              _pageKeys.add(GlobalKey());
-              return FittedBox(
-                fit: BoxFit.contain,
-                alignment: Alignment.topCenter,
-                child: RepaintBoundary(key: _pageKeys[i], child: pages[i]),
-              );
-            });
-          }
-
+          final renderedPages = _renderPages(context, invoice);
           return Stack(
             children: [
               InteractiveViewer(
@@ -452,6 +434,48 @@ class _InvoicePreviewScreenState extends State<InvoicePreviewScreen> {
         },
       ),
     );
+  }
+
+  /// Returns only the RepaintBoundary-wrapped template pages — no Scaffold,
+  /// AppBar, InteractiveViewer, or zoom hint. Used for off-screen capture
+  /// during autoPrint / autoShare so the preview UI never appears on screen.
+  Widget _buildBareTemplatePages(BuildContext context, InvoiceController invoice) {
+    final renderedPages = _renderPages(context, invoice);
+    return Column(
+      children: renderedPages,
+    );
+  }
+
+  /// Builds the list of rendered template pages (FittedBox + RepaintBoundary
+  /// per page), populating [_pageKeys] for later PNG capture.
+  List<Widget> _renderPages(BuildContext context, InvoiceController invoice) {
+    final isZaiqa = invoice.documentType != 'payment_in' &&
+        _selectedTheme == InvoiceThemeType.zaiqaTemplate;
+
+    _pageKeys.clear();
+    if (isZaiqa) {
+      final zaiqa = _buildZaiqaWidget(invoice);
+      final pages = zaiqa.buildPages(context);
+      return List.generate(pages.length, (i) {
+        _pageKeys.add(GlobalKey());
+        return FittedBox(
+          fit: BoxFit.contain,
+          alignment: Alignment.topCenter,
+          child: RepaintBoundary(key: _pageKeys[i], child: pages[i]),
+        );
+      });
+    } else {
+      final template = _buildInvoiceTemplate(invoice);
+      final pages = template.buildPages(context);
+      return List.generate(pages.length, (i) {
+        _pageKeys.add(GlobalKey());
+        return FittedBox(
+          fit: BoxFit.contain,
+          alignment: Alignment.topCenter,
+          child: RepaintBoundary(key: _pageKeys[i], child: pages[i]),
+        );
+      });
+    }
   }
 
   ZaiqaInvoiceWidget _buildZaiqaWidget(InvoiceController invoice) {

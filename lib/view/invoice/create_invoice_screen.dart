@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:fm_sons/view/invoice/preview/invoice_preview_screen.dart';
@@ -28,7 +29,13 @@ import 'widgets/invoice_items_section.dart';
 class CreateInvoiceScreen extends StatefulWidget {
   final int? invoiceId;
   final bool viewMode;
-  const CreateInvoiceScreen({super.key, this.invoiceId, this.viewMode = false});
+  final String? prefillCustomerName;
+  const CreateInvoiceScreen({
+    super.key,
+    this.invoiceId,
+    this.viewMode = false,
+    this.prefillCustomerName,
+  });
 
   @override
   State<CreateInvoiceScreen> createState() => _CreateInvoiceScreenState();
@@ -54,6 +61,10 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
       }
     } else {
       await controller.resetDraft();
+      if (widget.prefillCustomerName != null &&
+          widget.prefillCustomerName!.trim().isNotEmpty) {
+        controller.setCustomerName(widget.prefillCustomerName!.trim());
+      }
     }
     if (mounted) setState(() => _isReady = true);
   }
@@ -65,6 +76,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           elevation: 0,
+          scrolledUnderElevation: 0,
           leading: IconButton(
             onPressed: () => Navigator.of(context).pop(),
             icon: const Icon(Icons.arrow_back),
@@ -96,6 +108,7 @@ class _CreateInvoiceBody extends StatelessWidget {
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           elevation: 0,
+          scrolledUnderElevation: 0,
           leading: IconButton(
             onPressed: () => Navigator.of(context).pop(),
             icon: const Icon(Icons.arrow_back),
@@ -436,12 +449,10 @@ class _CustomerFieldState extends State<_CustomerField> {
           return GestureDetector(
             onTap: isViewMode
                 ? () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Please click on Edit to change the item details.',
-                        ),
-                      ),
+                    showAppSnackBar(
+                      context,
+                      'Please click on Edit to change the item details.',
+                      isError: false,
                     );
                   }
                 : null,
@@ -1910,9 +1921,7 @@ class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
 
   bool _validate(InvoiceController controller) {
     if ((controller.customerName ?? '').trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Customer name is required')),
-      );
+      showAppSnackBar(context, 'Customer name is required', isError: true);
       return false;
     }
     return true;
@@ -1926,7 +1935,6 @@ class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
   }) async {
     if (_isSaving || _isSavingNew || !_validate(controller)) return;
 
-    final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     final wasEditing = controller.isEditingInvoice;
 
@@ -1942,14 +1950,12 @@ class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
       if (!mounted) return;
       // Refresh customer list so newly-typed names appear in future dropdowns
       context.read<CustomerController>().refresh();
-      messenger.showSnackBar(
-        SnackBar(
-          content: Text(
-            wasEditing
-                ? 'Invoice updated (ID: $id)'
-                : 'Invoice saved (ID: $id)',
-          ),
-        ),
+      showAppSnackBar(
+        context,
+        wasEditing
+            ? 'Invoice updated (ID: $id)'
+            : 'Invoice saved (ID: $id)',
+        isError: false,
       );
       if (andNew) {
         await controller.resetDraft();
@@ -1958,7 +1964,7 @@ class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
       }
     } catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+      showAppSnackBar(context, e.toString(), isError: true);
     } finally {
       if (mounted) {
         setState(() {
@@ -2006,9 +2012,7 @@ class _InvoiceBottomBarState extends State<_InvoiceBottomBar> {
         if (mounted) Navigator.of(context).pop();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to delete: $e')),
-          );
+          showAppSnackBar(context, 'Failed to delete: $e', isError: true);
         }
       }
     }

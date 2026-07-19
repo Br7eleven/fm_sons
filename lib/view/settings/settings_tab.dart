@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -95,20 +96,15 @@ class _SettingsTabState extends State<SettingsTab> {
   Future<void> _connectDrive() async {
     if (_isConnecting) return;
 
-    final messenger = ScaffoldMessenger.of(context);
     setState(() => _isConnecting = true);
     try {
       await _driveService.ensureSignedIn();
       await _refreshBackupMetadata();
       if (!mounted) return;
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Google Drive connected')),
-      );
+      showAppSnackBar(context, 'Google Drive connected', isError: false);
     } catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text(_googleSignInErrorMessage(e))),
-      );
+      showAppSnackBar(context, _googleSignInErrorMessage(e), isError: true);
     } finally {
       if (mounted) {
         setState(() => _isConnecting = false);
@@ -117,15 +113,12 @@ class _SettingsTabState extends State<SettingsTab> {
   }
 
   Future<void> _disconnectDrive() async {
-    final messenger = ScaffoldMessenger.of(context);
     await _driveService.signOut();
     if (!mounted) return;
     setState(() {
       _lastBackupAt = null;
     });
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Google Drive disconnected')),
-    );
+    showAppSnackBar(context, 'Google Drive disconnected', isError: false);
   }
 
   Future<bool> _confirmLocalNewer(
@@ -163,15 +156,10 @@ class _SettingsTabState extends State<SettingsTab> {
   Future<void> _runBackup() async {
     if (_isBackingUp || _isRestoring) return;
     if (!_driveService.isSignedIn) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Connect Google Drive first, then run backup.'),
-        ),
-      );
+      showAppSnackBar(context, 'Connect Google Drive first, then run backup.', isError: true);
       return;
     }
 
-    final messenger = ScaffoldMessenger.of(context);
     final invoiceController = context.read<InvoiceController>();
     setState(() => _isBackingUp = true);
     try {
@@ -180,14 +168,16 @@ class _SettingsTabState extends State<SettingsTab> {
 
       if (result.success) {
         await invoiceController.loadSavedInvoices();
+        if (!mounted) return;
         setState(() {
           _lastBackupAt = result.uploadedAt;
         });
-        messenger.showSnackBar(SnackBar(content: Text(result.message)));
+        showAppSnackBar(context, result.message, isError: false);
         return;
       }
 
-      messenger.showSnackBar(SnackBar(content: Text(result.message)));
+      if (!mounted) return;
+      showAppSnackBar(context, result.message, isError: true);
     } finally {
       if (mounted) {
         setState(() => _isBackingUp = false);
@@ -198,15 +188,10 @@ class _SettingsTabState extends State<SettingsTab> {
   Future<void> _runRestore() async {
     if (_isRestoring || _isBackingUp) return;
     if (!_driveService.isSignedIn) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Connect Google Drive first, then run restore.'),
-        ),
-      );
+      showAppSnackBar(context, 'Connect Google Drive first, then run restore.', isError: true);
       return;
     }
 
-    final messenger = ScaffoldMessenger.of(context);
     setState(() => _isRestoring = true);
     final result = await _restoreManager.restoreLatestBackup(
       conflictPolicy: BackupConflictPolicy.requireConfirmation,
@@ -218,9 +203,10 @@ class _SettingsTabState extends State<SettingsTab> {
 
     if (result.outcome == RestoreOutcome.restored) {
       await _refreshBackupMetadata();
+      if (!mounted) return;
     }
 
-    messenger.showSnackBar(SnackBar(content: Text(result.message)));
+    showAppSnackBar(context, result.message, isError: false);
   }
 
   Future<void> _toggleConnection(bool enabled) async {

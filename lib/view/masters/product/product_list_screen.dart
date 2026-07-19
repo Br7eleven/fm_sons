@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:provider/provider.dart';
 
 import './product_controller.dart';
@@ -198,14 +199,10 @@ class _ProductTile extends StatelessWidget {
                   try {
                     await controller.removeProduct(product.id);
                     if (!context.mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('${product.name} deleted')),
-                    );
+                    showAppSnackBar(context, '${product.name} deleted');
                   } catch (e) {
                     if (!context.mounted) return;
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text(e.toString())));
+                    showAppSnackBar(context, e.toString(), isError: true);
                   }
                 }
               },

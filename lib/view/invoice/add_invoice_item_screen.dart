@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:fm_sons/view/shared/field_decoration.dart';
 import 'package:fm_sons/view/masters/product/product_controller.dart';
@@ -299,22 +300,16 @@ class _AddInvoiceItemScreenState extends State<AddInvoiceItemScreen> {
                     final navigator = Navigator.of(context);
                     final name = _nameController.text.trim();
                     if (name.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Please enter an item name'),
-                        ),
-                      );
+                      showAppSnackBar(
+                          context, 'Item description is required',
+                          isError: true);
                       return;
                     }
 
                     if (!_formKey.currentState!.validate()) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Please fix invalid quantity/rate values',
-                          ),
-                        ),
-                      );
+                      showAppSnackBar(
+                          context, 'Rate must be greater than zero',
+                          isError: true);
                       return;
                     }
 

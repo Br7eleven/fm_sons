@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:provider/provider.dart';
 
@@ -198,7 +199,6 @@ class _UnitFormScreenState extends State<UnitFormScreen> {
   Future<void> _save(UnitController controller) async {
     if (!_formKey.currentState!.validate()) return;
 
-    final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
 
     setState(() => _isSubmitting = true);
@@ -226,9 +226,7 @@ class _UnitFormScreenState extends State<UnitFormScreen> {
       navigator.pop();
     } catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text('Failed to save unit: $e')),
-      );
+      showAppSnackBar(context, 'Failed to save unit: $e', isError: true);
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);

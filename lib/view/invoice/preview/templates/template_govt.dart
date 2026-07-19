@@ -147,7 +147,7 @@ class TemplateGovt extends InvoiceTemplate {
         5: FixedColumnWidth(90),
       },
       children: [
-        if (pageItems.isNotEmpty || invoice.items.isEmpty) _tableHeader(),
+        if (pageItems.isNotEmpty || invoice.items.isEmpty || startIndex > 0) _tableHeader(),
         ...pageItems.asMap().entries.map(
           (e) => _tableRow(startIndex + e.key + 1, e.value),
         ),

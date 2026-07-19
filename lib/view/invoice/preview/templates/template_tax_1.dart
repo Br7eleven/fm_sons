@@ -144,7 +144,7 @@ class TemplateTax1 extends InvoiceTemplate {
     return Column(
       children: [
         // Table Header with Border + Color
-        if (pageItems.isNotEmpty || invoice.items.isEmpty)
+        if (pageItems.isNotEmpty || invoice.items.isEmpty || startIndex > 0)
           Container(
             decoration: BoxDecoration(
               color: brandRed,

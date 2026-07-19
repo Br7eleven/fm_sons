@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:provider/provider.dart';
 
 import 'unit_controller.dart';
@@ -123,9 +124,7 @@ class _UnitTile extends StatelessWidget {
                   await controller.removeUnit(unit.id);
                 } catch (e) {
                   if (!context.mounted) return;
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(e.toString())));
+                  showAppSnackBar(context, e.toString(), isError: true);
                 }
               },
             ),

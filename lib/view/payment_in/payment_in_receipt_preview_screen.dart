@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:flutter/rendering.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -95,9 +96,7 @@ class _PaymentInReceiptPreviewScreenState
       await Printing.sharePdf(bytes: bytes, filename: fileName);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to share PDF: $e')),
-      );
+      showAppSnackBar(context, 'Failed to share PDF: $e', isError: true);
     } finally {
       if (mounted) setState(() => _isSharing = false);
     }
@@ -122,9 +121,7 @@ class _PaymentInReceiptPreviewScreenState
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to share image: $e')),
-      );
+      showAppSnackBar(context, 'Failed to share image: $e', isError: true);
     } finally {
       if (mounted) setState(() => _isSharing = false);
     }

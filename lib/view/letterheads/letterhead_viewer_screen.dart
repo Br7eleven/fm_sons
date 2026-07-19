@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
@@ -77,9 +78,7 @@ class _LetterheadViewerScreenState extends State<LetterheadViewerScreen> {
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to print: $e')),
-        );
+        showAppSnackBar(context, 'Failed to print: $e', isError: true);
       }
     } finally {
       if (mounted) setState(() => _isBusy = false);
@@ -100,9 +99,7 @@ class _LetterheadViewerScreenState extends State<LetterheadViewerScreen> {
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to share: $e')),
-        );
+        showAppSnackBar(context, 'Failed to share: $e', isError: true);
       }
     } finally {
       if (mounted) setState(() => _isBusy = false);

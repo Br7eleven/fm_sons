@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:fm_sons/data/local/dao/invoice_dao.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:fm_sons/view/shared/notes_attachment_widget.dart';
 import 'package:fm_sons/view/shared/transaction_action_sheet.dart';
@@ -95,26 +96,18 @@ class _PaymentInScreenState extends State<PaymentInScreen> {
     final amount = double.tryParse(_amountCtrl.text) ?? 0;
     _controller.setAmount(amount);
     if (_controller.amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Enter a valid amount')),
-      );
+      showAppSnackBar(context, 'Enter a valid amount', isError: true);
       return;
     }
 
     try {
       await _controller.save();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Payment saved — ${_controller.receiptNumber}'),
-        ),
-      );
+      showAppSnackBar(context, 'Payment saved — ${_controller.receiptNumber}', isError: false);
       Navigator.of(context).pop(true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${_controller.errorMessage ?? e}')),
-      );
+      showAppSnackBar(context, '${_controller.errorMessage ?? e}', isError: true);
     }
   }
 
@@ -149,15 +142,11 @@ class _PaymentInScreenState extends State<PaymentInScreen> {
         final dao = InvoiceDao();
         await dao.deleteInvoice(_controller.editingInvoiceId!);
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('${_controller.receiptNumber} deleted')),
-        );
+        showAppSnackBar(context, '${_controller.receiptNumber} deleted', isError: false);
         Navigator.of(context).pop(true);
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Delete failed: $e')),
-        );
+        showAppSnackBar(context, 'Delete failed: $e', isError: true);
       }
     }
   }
@@ -186,21 +175,6 @@ class _PaymentInScreenState extends State<PaymentInScreen> {
         centerTitle: false,
         actions: [
           if (!isNewRecord && _isViewMode) ...[
-            IconButton(
-              icon: const Icon(Icons.more_vert),
-              tooltip: 'More options',
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                  ),
-                  builder: (_) => TransactionActionSheet(
-                    invoiceId: widget.editingInvoiceId!,
-                  ),
-                );
-              },
-            ),
             PopupMenuButton<String>(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -457,7 +431,6 @@ class _PaymentInScreenState extends State<PaymentInScreen> {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  flex: 2,
                   child: SizedBox(
                     height: 50,
                     child: ElevatedButton(
@@ -477,6 +450,33 @@ class _PaymentInScreenState extends State<PaymentInScreen> {
                         ),
                       ),
                     ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                SizedBox(
+                  height: 50,
+                  width: 36,
+                  child: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: Colors.grey.shade400),
+                      foregroundColor: Colors.grey.shade700,
+                      padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                        ),
+                        builder: (_) => TransactionActionSheet(
+                          invoiceId: widget.editingInvoiceId!,
+                        ),
+                      );
+                    },
+                    child: const Icon(Icons.more_vert, size: 20),
                   ),
                 ),
               ],

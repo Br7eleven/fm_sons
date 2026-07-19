@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:fm_sons/view/masters/unit/unit_form_screen.dart';
 import 'package:provider/provider.dart';
@@ -232,7 +233,6 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                         : () async {
                             if (!_formKey.currentState!.validate()) return;
 
-                            final messenger = ScaffoldMessenger.of(context);
                             final navigator = Navigator.of(context);
 
                             setState(() => _isSubmitting = true);
@@ -264,10 +264,10 @@ class _ProductFormScreenState extends State<ProductFormScreen> {
                               navigator.pop();
                             } catch (e) {
                               if (!mounted) return;
-                              messenger.showSnackBar(
-                                SnackBar(
-                                  content: Text('Failed to save product: $e'),
-                                ),
+                              showAppSnackBar(
+                                this.context,
+                                'Failed to save product: $e',
+                                isError: true,
                               );
                             } finally {
                               if (mounted) {

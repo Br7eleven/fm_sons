@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
 import '../../data/local/models/invoice_model.dart';
 import '../payment_in/payment_in_screen.dart';
 import '../shared/date_range_filter.dart';
+import '../shared/print_invoice_helper.dart';
 import '../shared/transaction_action_sheet.dart';
 import 'controller/create_invoice_controller.dart';
 import 'create_invoice_screen.dart';
-import 'preview/invoice_preview_screen.dart';
 
 class InvoiceHistoryAppBar extends StatelessWidget
     implements PreferredSizeWidget {
@@ -170,9 +171,7 @@ class _InvoiceHistoryTabState extends State<InvoiceHistoryTab> {
       await context.read<InvoiceController>().loadSavedInvoices();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Unable to open: $e')),
-      );
+      showAppSnackBar(context, 'Unable to open: $e', isError: true);
     }
   }
 
@@ -217,14 +216,12 @@ class _InvoiceHistoryTabState extends State<InvoiceHistoryTab> {
     try {
       await controller.deleteInvoice(invoice.id!);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${invoice.invoiceNumber} deleted')),
-      );
+      showAppSnackBar(
+          context, '${invoice.invoiceNumber} deleted', isError: false);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to delete invoice: $e')));
+      showAppSnackBar(
+          context, 'Failed to delete invoice: $e', isError: true);
     }
   }
 
@@ -526,7 +523,7 @@ class _InvoiceHistoryCard extends StatelessWidget {
                 const Spacer(),
                 InkWell(onTap: () {
                   if (invoice.id == null) return;
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => InvoicePreviewScreen(previewInvoiceId: invoice.id!, autoPrint: true)));
+                  printInvoiceDirectly(context, invoice.id!);
                 }, child: Padding(
                   padding: const EdgeInsets.all(6), child: Icon(Icons.print_outlined, size: 18, color: Colors.grey.shade500))),
                 InkWell(onTap: () => _showShareSheet(context), child: Padding(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:provider/provider.dart';
 
 import 'package:fm_sons/view/masters/customer/customer_controller.dart';
@@ -39,7 +40,6 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final controller = context.read<CustomerController>();
-    final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
     setState(() => _saving = true);
     final updated = widget.customer.copyWith(
@@ -54,7 +54,7 @@ class _CustomerEditScreenState extends State<CustomerEditScreen> {
       navigator.pop();
     } catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text('Failed to update: $e')));
+      showAppSnackBar(context, 'Failed to update: $e', isError: true);
     } finally {
       if (mounted) setState(() => _saving = false);
     }

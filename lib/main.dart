@@ -11,6 +11,7 @@ import 'package:fm_sons/view/invoice/create_invoice_screen.dart';
 import 'package:fm_sons/view/invoice/controller/create_invoice_controller.dart';
 import 'view/masters/product/product_controller.dart';
 import 'view/notes/note_controller.dart';
+import 'utils/navigator_key.dart';
 import 'view/settings/company_profile_controller.dart';
 import 'view/settings/theme_controller.dart';
 
@@ -52,6 +53,7 @@ class MyApp extends StatelessWidget {
     final themeController = context.watch<ThemeController>();
 
     return MaterialApp(
+      navigatorKey: navigatorKey,
       title: 'FM Sons Billing',
       debugShowCheckedModeBanner: false,
       themeMode: themeController.themeMode,

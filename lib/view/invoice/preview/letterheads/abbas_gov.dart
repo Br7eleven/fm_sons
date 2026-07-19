@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 
 void main() {
   runApp(const AbbasInvoiceApp());
@@ -136,11 +137,9 @@ class InvoicePage extends StatelessWidget {
             icon: const Icon(Icons.print, color: Colors.white),
             tooltip: 'Print / Export PDF',
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Connect a PDF/print plugin to export.'),
-                ),
-              );
+              showAppSnackBar(
+                  context, 'Connect a PDF/print plugin to export.',
+                  isError: true);
             },
           ),
         ],

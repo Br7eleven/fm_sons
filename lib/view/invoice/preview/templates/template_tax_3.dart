@@ -125,7 +125,7 @@ class TemplateTax3 extends InvoiceTemplate {
   Widget buildItems(BuildContext context, {required List<InvoiceItem> pageItems, required int startIndex, required bool isLastPage, required bool isFinalPage}) {
     return Column(
       children: [
-        if (pageItems.isNotEmpty || invoice.items.isEmpty) ...[
+        if (pageItems.isNotEmpty || invoice.items.isEmpty || startIndex > 0) ...[
           const SizedBox(height: 8),
           /// Header Row
           Container(

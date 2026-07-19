@@ -148,10 +148,8 @@ abstract class InvoiceTemplate extends StatelessWidget {
             children: [
               buildHeader(context),
               const SizedBox(height: 20),
-              if (pageIndex == 0) ...[
-                buildInvoiceInfo(context),
-                const SizedBox(height: 15),
-              ],
+              buildInvoiceInfo(context),
+              const SizedBox(height: 15),
               if (!isLastPage)
                 Expanded(
                   child: SingleChildScrollView(

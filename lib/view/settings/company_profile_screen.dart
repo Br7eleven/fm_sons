@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -93,9 +94,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
       await context.read<CompanyProfileController>().setSignaturePath(picked.path);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not pick image: $e')),
-      );
+      showAppSnackBar(context, 'Could not pick image: $e', isError: true);
     }
   }
 
@@ -149,9 +148,7 @@ class _CompanyProfileScreenState extends State<CompanyProfileScreen> {
       await context.read<CompanyProfileController>().setLogoPath(picked.path);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not pick image: $e')),
-      );
+      showAppSnackBar(context, 'Could not pick image: $e', isError: true);
     }
   }
 

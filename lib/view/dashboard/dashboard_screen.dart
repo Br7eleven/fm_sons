@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:fm_sons/utils/app_snackbar.dart';
 import 'package:fm_sons/utils/constants/color_string.dart';
 import 'package:fm_sons/view/invoice/create_invoice_screen.dart';
 import 'package:fm_sons/view/invoice/controller/create_invoice_controller.dart';
@@ -69,11 +70,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
       try {
         await ctrl.addOrGetCustomer(result);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Party added')));
+          showAppSnackBar(context, 'Party added', isError: false);
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e')));
+          showAppSnackBar(context, 'Failed: $e', isError: true);
         }
       }
     }
